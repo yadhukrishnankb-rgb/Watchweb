@@ -1,0 +1,156 @@
+<!-- 
+<%-include("../../views/partials/user/header")%>
+
+    <!--=============== MAIN ===============-->
+    <main class="main">
+      <!--=============== BREADCRUMB ===============-->
+      <section class="breadcrumb">
+        <ul class="breadcrumb__list flex container">
+          <li><a href="/" class="breadcrumb__link">Home</a></li>
+          <li><span class="breadcrumb__link"></span>></li>
+          <li><span class="breadcrumb__link">Shop</span></li>
+        </ul>
+      </section>
+
+      <!--=============== PRODUCTS ===============-->
+      <section class="products container section--lg">
+        <p class="total__products">We found <span>688</span> items for you!</p>
+        <div class="products__container grid">
+          <% 
+              const hardcodedProducts = [
+                  {
+                      id: "12345",
+                      name: "Premium Branded Watch",
+                      price: 238.85,
+                      oldPrice: 245.80,
+                      category: "Watches",
+                      image: "/public/assets/img/watch1.jpg",
+                      hoverImage: "/public/assets/img/watch3.jpeg"
+                  }
+              ];
+          %>
+      
+          <% hardcodedProducts.forEach(product => { %>
+              <div class="product__item">
+                  <div class="product__banner">
+                      <a href="/products/<%= product.id %>" class="product__images">
+                          <img src="<%= product.image %>" alt="" class="product__img default" />
+                          <img src="<%= product.hoverImage %>" alt="" class="product__img hover" />
+                      </a>
+                      <div class="product__actions">
+                          <a href="#" class="action__btn" aria-label="Quick View">
+                              <i class="fi fi-rs-eye"></i>
+                          </a>
+                          <a href="#" class="action__btn" aria-label="Add to Wishlist">
+                              <i class="fi fi-rs-heart"></i>
+                          </a>
+                          <a href="#" class="action__btn" aria-label="Compare">
+                              <i class="fi fi-rs-shuffle"></i>
+                          </a>
+                      </div>
+                      <div class="product__badge light-pink">Hot</div>
+                  </div>
+                  <div class="product__content">
+                      <span class="product__category"><%= product.category %></span>
+                      <a href="/products/<%= product.id %>">
+                          <h3 class="product__title"><%= product.name %></h3>
+                      </a>
+                      <div class="product__rating">
+                          <i class="fi fi-rs-star"></i>
+                          <i class="fi fi-rs-star"></i>
+                          <i class="fi fi-rs-star"></i>
+                          <i class="fi fi-rs-star"></i>
+                          <i class="fi fi-rs-star"></i>
+                      </div>
+                      <div class="product__price flex">
+                          <span class="new__price">$<%= product.price %></span>
+                          <span class="old__price">$<%= product.oldPrice %></span>
+                      </div>
+                      <a href="#" class="action_btn cart_btn" aria-label="Add To Cart">
+                          <i class="fi fi-rs-shopping-bag-add"></i>
+                      </a>
+                  </div>
+              </div>
+          <% }); %>
+      </div>
+        <ul class="pagination">
+          <li><a href="#" class="pagination__link active">01</a></li>
+          <li><a href="#" class="pagination__link">02</a></li>
+          <li><a href="#" class="pagination__link">03</a></li>
+          <li><a href="#" class="pagination__link">...</a></li>
+          <li><a href="#" class="pagination__link">16</a></li>
+          <li><a href="#" class="pagination__link icon">
+            <i class="fi-rs-angle-double-small-right"></i>
+          </a></li>
+        </ul>
+      </section>
+
+      <!--=============== NEWSLETTER ===============-->
+      <section class="newsletter section">
+        <div class="newsletter__container container grid">
+          <h3 class="newsletter__title flex">
+            <img
+              src="./assets/img/icon-email.svg"
+              alt=""
+              class="newsletter__icon"
+            />
+            Sign in to Newsletter
+          </h3>
+          <p class="newsletter__description">
+            ...and receive $25 coupon for first shopping.
+          </p>
+          <form action="" class="newsletter__form">
+            <input
+              type="text"
+              placeholder="Enter Your Email"
+              class="newsletter__input"
+            />
+            <button type="submit" class="newsletter__btn">Subscribe</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <%-include("../../views/partials/user/footer")%>
+
+    <script>
+        // Add to cart function
+        async function addToCart(productId) {
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ productId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Update cart count
+                    document.querySelector('.header__action-btn .count').textContent = data.cartCount;
+                }
+            } catch (error) {
+                console.error('Add to cart error:', error);
+            }
+        }
+        
+        // Add to wishlist function
+        async function addToWishlist(productId) {
+            try {
+                const response = await fetch('/wishlist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ productId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Update wishlist count
+                    document.querySelector('.header__action-btn[title="Wishlist"] .count').textContent = data.wishlistCount;
+                }
+            } catch (error) {
+                console.error('Add to wishlist error:', error);
+            }
+        }
+        </script> -->

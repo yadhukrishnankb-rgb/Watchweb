@@ -1,0 +1,76 @@
+<!-- footer.ejs -->
+</div> <!-- Closing the flex-1 div from header.ejs -->
+</div> <!-- Closing the flex h-screen div from header.ejs -->
+
+<script>
+// Sales Chart
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+const salesChart = new Chart(salesCtx, {
+  type: 'line',
+  data: {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+    datasets: [{
+      label: 'Sales ($)',
+      data: [8500, 11200, 10800, 9500, 12800, 13900, 14800, 16500, 21000, 24500],
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      borderColor: 'rgba(59, 130, 246, 1)',
+      borderWidth: 2,
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          display: true,
+          drawBorder: false
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
+  }
+});
+
+// Top Products Chart
+const productsCtx = document.getElementById('productsChart').getContext('2d');
+const productsChart = new Chart(productsCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Classic Gold', 'Sport Black', 'Smart Pro', 'Luxury Silver', 'Others'],
+    datasets: [{
+      data: [30, 25, 20, 15, 10],
+      backgroundColor: [
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(168, 85, 247, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(245, 158, 11, 0.8)',
+        'rgba(239, 68, 68, 0.8)'
+      ],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom'
+      }
+    },
+    cutout: '70%'
+  }
+});
+</script>
+</body>
+</html>

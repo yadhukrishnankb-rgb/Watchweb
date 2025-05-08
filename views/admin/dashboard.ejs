@@ -1,0 +1,261 @@
+<!-- dashboard.ejs -->
+<%-include("../../views/partials/admin/header")%>
+
+<!-- Dashboard Content -->
+<div class="p-6">
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm">Total Revenue</p>
+          <h3 class="text-2xl font-bold text-gray-800">$24,532</h3>
+          <p class="text-green-500 text-sm mt-2">+12% from last month</p>
+        </div>
+        <div class="bg-blue-100 p-3 rounded-full">
+          <i class="fas fa-dollar-sign text-blue-500"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm">Orders</p>
+          <h3 class="text-2xl font-bold text-gray-800">342</h3>
+          <p class="text-green-500 text-sm mt-2">+8% from last month</p>
+        </div>
+        <div class="bg-purple-100 p-3 rounded-full">
+          <i class="fas fa-shopping-bag text-purple-500"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm">Customers</p>
+          <h3 class="text-2xl font-bold text-gray-800">1,257</h3>
+          <p class="text-green-500 text-sm mt-2">+5% from last month</p>
+        </div>
+        <div class="bg-green-100 p-3 rounded-full">
+          <i class="fas fa-users text-green-500"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm">Products</p>
+          <h3 class="text-2xl font-bold text-gray-800">128</h3>
+          <p class="text-red-500 text-sm mt-2">-2% from last month</p>
+        </div>
+        <div class="bg-yellow-100 p-3 rounded-full">
+          <i class="fas fa-box text-yellow-500"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Charts & Tables -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Sales Overview</h3>
+      <canvas id="salesChart" height="250"></canvas>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Selling Watches</h3>
+      <canvas id="productsChart" height="250"></canvas>
+    </div>
+  </div>
+  
+  <!-- Recent Orders -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">Recent Orders</h3>
+      <a href="#" class="text-blue-500 hover:text-blue-700">View All</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white">
+        <thead>
+          <tr>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr>
+            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2453</td>
+            <td class="py-4 px-4 text-sm text-gray-900">John Smith</td>
+            <td class="py-4 px-4 text-sm text-gray-900">EverTime Classic Gold</td>
+            <td class="py-4 px-4 text-sm text-gray-500">Apr 10, 2025</td>
+            <td class="py-4 px-4 text-sm text-gray-900">$299.99</td>
+            <td class="py-4 px-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+            </td>
+            <td class="py-4 px-4 text-sm">
+              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2452</td>
+            <td class="py-4 px-4 text-sm text-gray-900">Emily Johnson</td>
+            <td class="py-4 px-4 text-sm text-gray-900">EverTime Sport Black</td>
+            <td class="py-4 px-4 text-sm text-gray-500">Apr 09, 2025</td>
+            <td class="py-4 px-4 text-sm text-gray-900">$199.99</td>
+            <td class="py-4 px-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>
+            </td>
+            <td class="py-4 px-4 text-sm">
+              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2451</td>
+            <td class="py-4 px-4 text-sm text-gray-900">Robert Davis</td>
+            <td class="py-4 px-4 text-sm text-gray-900">EverTime Smart Pro</td>
+            <td class="py-4 px-4 text-sm text-gray-500">Apr 08, 2025</td>
+            <td class="py-4 px-4 text-sm text-gray-900">$349.99</td>
+            <td class="py-4 px-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Shipped</span>
+            </td>
+            <td class="py-4 px-4 text-sm">
+              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2450</td>
+            <td class="py-4 px-4 text-sm text-gray-900">Sarah Wilson</td>
+            <td class="py-4 px-4 text-sm text-gray-900">EverTime Luxury Silver</td>
+            <td class="py-4 px-4 text-sm text-gray-500">Apr 07, 2025</td>
+            <td class="py-4 px-4 text-sm text-gray-900">$499.99</td>
+            <td class="py-4 px-4">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
+            </td>
+            <td class="py-4 px-4 text-sm">
+              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Popular Products & Recent Customers -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Popular Products</h3>
+        <a href="#" class="text-blue-500 hover:text-blue-700">View All</a>
+      </div>
+      <div class="space-y-4">
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/60/60" alt="EverTime Classic Gold" class="w-12 h-12 rounded-lg">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">EverTime Classic Gold</h4>
+            <p class="text-xs text-gray-500">SKU: ET-CG-001</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">$299.99</p>
+            <p class="text-xs text-green-500">In Stock</p>
+          </div>
+        </div>
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/60/60" alt="EverTime Sport Black" class="w-12 h-12 rounded-lg">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">EverTime Sport Black</h4>
+            <p class="text-xs text-gray-500">SKU: ET-SB-002</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">$199.99</p>
+            <p class="text-xs text-green-500">In Stock</p>
+          </div>
+        </div>
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/60/60" alt="EverTime Smart Pro" class="w-12 h-12 rounded-lg">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">EverTime Smart Pro</h4>
+            <p class="text-xs text-gray-500">SKU: ET-SP-003</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">$349.99</p>
+            <p class="text-xs text-green-500">In Stock</p>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <img src="/api/placeholder/60/60" alt="EverTime Luxury Silver" class="w-12 h-12 rounded-lg">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">EverTime Luxury Silver</h4>
+            <p class="text-xs text-gray-500">SKU: ET-LS-004</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">$499.99</p>
+            <p class="text-xs text-green-500">In Stock</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Recent Customers</h3>
+<!-- In dashboard.ejs, inside Recent Customers section -->
+<a href="/admin/customers" class="text-blue-500 hover:text-blue-700">View All</a>      </div>
+      <div class="space-y-4">
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/40/40" alt="John Smith" class="w-10 h-10 rounded-full">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">John Smith</h4>
+            <p class="text-xs text-gray-500">john.smith@example.com</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">3 Orders</p>
+            <p class="text-xs text-gray-500">Joined Apr 1, 2025</p>
+          </div>
+        </div>
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/40/40" alt="Emily Johnson" class="w-10 h-10 rounded-full">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">Emily Johnson</h4>
+            <p class="text-xs text-gray-500">emily.j@example.com</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">1 Order</p>
+            <p class="text-xs text-gray-500">Joined Apr 5, 2025</p>
+          </div>
+        </div>
+        <div class="flex items-center border-b pb-4">
+          <img src="/api/placeholder/40/40" alt="Robert Davis" class="w-10 h-10 rounded-full">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">Robert Davis</h4>
+            <p class="text-xs text-gray-500">robert.d@example.com</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">2 Orders</p>
+            <p class="text-xs text-gray-500">Joined Mar 28, 2025</p>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <img src="/api/placeholder/40/40" alt="Sarah Wilson" class="w-10 h-10 rounded-full">
+          <div class="ml-4 flex-1">
+            <h4 class="text-sm font-medium text-gray-900">Sarah Wilson</h4>
+            <p class="text-xs text-gray-500">sarah.w@example.com</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900">5 Orders</p>
+            <p class="text-xs text-gray-500">Joined Mar 15, 2025</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%-include("../../views/partials/admin/footer")%>
