@@ -2,7 +2,11 @@ const User = require("../../models/userSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt");
+const crypto = require('crypto');
 
+
+const Product = require("../../models/productSchema");
+const Category = require("../../models/categorySchema");
 
 
 
@@ -30,22 +34,161 @@ res.redirect("/pageNotFound")
 }
 
 
-const loadHomepage = async(req,res)=>{
+
+
+const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
-    // return res.render("home");
-    if(user){
-        const userData = await User.findOne({_id:user._id});
-        res.render("home",{user:userData})
+        
+        // Fetch featured products (newest 8 products)
+        const featuredProducts = await Product.find({ isBlocked: false })
+            .populate('category')
+            .sort({ createdAt: -1 })
+            .limit(8)
+            .lean();
 
-    }else{
-        return res.render("home");
-    }
+        // Fetch popular products (you can modify this based on your criteria)
+        const popularProducts = await Product.find({ isBlocked: false })
+            .populate('category')
+            .sort({ salesCount: -1 })
+            .limit(8)
+            .lean();
+
+        // Fetch new arrivals
+        const newArrivals = await Product.find({ isBlocked: false })
+            .populate('category')
+            .sort({ createdAt: -1 })
+            .limit(8)
+            .lean();
+
+        // Fetch categories for the filter
+        const categories = await Category.find({ isListed: true }).lean();
+
+        if (user) {
+            const userData = await User.findOne({ _id: user._id });
+            res.render("home", {
+                user: userData,
+                featuredProducts,
+                popularProducts,
+                newArrivals,
+                categories
+            });
+        } else {
+            res.render("home", {
+                user: null,
+                featuredProducts,
+                popularProducts,
+                newArrivals,
+                categories
+            });
+        }
     } catch (error) {
-    console.log("Home page not found")
-    res.status(500).send("server error")
+        console.log("Home page error:", error);
+        res.status(500).send("Server error");
     }
+};
+
+// Add new product listing controller
+const listProducts = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12; // Products per page
+        const skip = (page - 1) * limit;
+
+        // Get filter parameters
+        const { search, sort, category, minPrice, maxPrice, brand } = req.query;
+
+        // Base query - only show unblocked products
+        let query = { isBlocked: false };
+
+        // Search functionality
+        if (search) {
+            query.$or = [
+                { productName: { $regex: search, $options: 'i' } },
+                { brand: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Category filter
+        if (category) {
+            query.category = category;
+        }
+
+        // Price range filter
+        if (minPrice || maxPrice) {
+            query.salesPrice = {};
+            if (minPrice) query.salesPrice.$gte = parseFloat(minPrice);
+            if (maxPrice) query.salesPrice.$lte = parseFloat(maxPrice);
+        }
+
+        // Brand filter
+        if (brand) {
+            query.brand = brand;
+        }
+
+        // Sort options
+        let sortOption = {};
+        switch (sort) {
+            case 'price-asc':
+                sortOption = { salesPrice: 1 };
+                break;
+            case 'price-desc':
+                sortOption = { salesPrice: -1 };
+                break;
+            case 'name-asc':
+                sortOption = { productName: 1 };
+                break;
+            case 'name-desc':
+                sortOption = { productName: -1 };
+                break;
+            default:
+                sortOption = { createdAt: -1 };
+        }
+
+        // Execute queries
+        const products = await Product.find(query)
+            .populate('category')
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const totalProducts = await Product.countDocuments(query);
+        const categories = await Category.find({ isListed: true }).lean();
+
+        // Get price range
+        const priceRange = await Product.aggregate([
+            { $match: { isBlocked: false } },
+            {
+                $group: {
+                    _id: null,
+                    minPrice: { $min: '$salesPrice' },
+                    maxPrice: { $max: '$salesPrice' }
+                }
+            }
+        ]);
+
+        // Get unique brands
+        const brands = await Product.distinct('brand', { isBlocked: false });
+
+        res.render('user/shop', {
+            products,
+            categories,
+            brands,
+            priceRange: priceRange[0] || { minPrice: 0, maxPrice: 0 },
+            currentPage: page,
+            totalPages: Math.ceil(totalProducts / limit),
+            query: req.query,
+            user: req.session.user
+        });
+
+    } catch (error) {
+        console.error('Product listing error:', error);
+        res.status(500).render('error', { message: 'Error loading products' });
     }
+};
+
+
 
 
     
@@ -246,6 +389,52 @@ const loadLogin = async (req, res) => {
 };
 
 
+// const login = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         const user = await User.findOne({ email });
+
+//         if (!user) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: 'Invalid email or password'
+//             });
+//         }
+
+//         // Check if user is blocked
+//         if (user.isBlocked) {
+//             return res.status(403).json({
+//                 success: false,
+//                 message: 'Your account has been blocked. Please contact administrator.'
+//             });
+//         }
+
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch) {
+//             return res.status(401).json({
+//                 success: false,
+//                 message: 'Invalid email or password'
+//             });
+//         }
+
+//         // Set session
+//         req.session.user = {
+//             _id: user._id,
+//             name: user.name,
+//             email: user.email,
+//             isBlocked: user.isBlocked
+//         };
+
+//         res.json({ success: true });
+//     } catch (error) {
+//         console.error('Login error:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'An error occurred during login'
+//         });
+//     }
+// };
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -263,6 +452,14 @@ const login = async (req, res) => {
             return res.status(403).json({
                 success: false,
                 message: 'Your account has been blocked. Please contact administrator.'
+            });
+        }
+
+        // Check if user has a password (if not, it's a Google account)
+        if (!user.password) {
+            return res.status(401).json({
+                success: false,
+                message: 'This account was created with Google. Please login with Google.'
             });
         }
 
@@ -293,6 +490,8 @@ const login = async (req, res) => {
 };
 
 
+
+
 const logout = async (req, res) => {
     try {
         // Destroy the session
@@ -316,10 +515,7 @@ const logout = async (req, res) => {
     }
 };
 
-
-
-
-
+//----------------------------------------------------------------------------------
 
 
 
@@ -337,6 +533,7 @@ const logout = async (req, res) => {
     
     module.exports = {
     loadHomepage,
+    listProducts,
     pageNotFound,
     loadSignup,
     signup,
@@ -344,8 +541,8 @@ const logout = async (req, res) => {
     resendOTP,
     loadLogin,
      login,
-    logout
-    
+    logout,
+   
     
     
     }

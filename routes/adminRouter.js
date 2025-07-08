@@ -44,5 +44,9 @@ router.post('/products', isAdmin, upload, processImages, productController.addPr
 router.put('/products/:id', isAdmin, upload, processImages, productController.editProduct);
 router.delete('/products/:id', isAdmin, productController.deleteProduct);
 router.get('/products/:id', isAdmin, productController.getProductById);
+// Add these new routes while keeping existing routes
+router.put('/products/:id/block', adminAuth, productController.blockProduct);
+router.put('/products/:id/unblock', adminAuth, productController.unblockProduct);
+router.delete('/products/:id/delete', adminAuth, productController.deleteProduct);
 
 module.exports = router;

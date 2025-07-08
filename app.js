@@ -8,6 +8,10 @@ require("dotenv").config();
 const session = require("express-session");
 const passport = require("passport"); // Changed from local path to package
 
+
+const flash = require('connect-flash');
+
+
 const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require('./routes/adminRouter');
@@ -41,6 +45,13 @@ app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store'); // Fixed casing
     next();
 });
+
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true
+}));
+app.use(flash());
 
 
 

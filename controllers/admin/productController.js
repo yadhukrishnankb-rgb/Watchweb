@@ -7,6 +7,9 @@ const mongoose = require('mongoose');
 
 
 
+
+
+//---------------------------------------------------------------------------------------------------
 exports.getProducts = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -14,31 +17,32 @@ exports.getProducts = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
+        // Remove isBlocked: false from the query to show all products
         const query = {
-            isBlocked: false,
             ...(searchQuery && {
                 $or: [
                     { productName: { $regex: searchQuery, $options: 'i' } },
-                    { discription: { $regex: searchQuery, $options: 'i' } }
+                    { description: { $regex: searchQuery, $options: 'i' } }
                 ]
             })
         };
 
-        // Add proper population and error handling
         const [products, totalProducts] = await Promise.all([
             Product.find(query)
-                .populate('category', 'name')  // Only populate the name field
+                .populate('category', 'name')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
-                .lean(),  // Convert to plain objects
+                .lean(),
             Product.countDocuments(query)
         ]);
 
-        // Add category name fallback
+        // Add status indicator to products
         const processedProducts = products.map(product => ({
             ...product,
-            category: product.category || { name: 'Uncategorized' }
+            category: product.category || { name: 'Uncategorized' },
+            statusClass: product.isBlocked ? 'text-red-600' : 'text-green-600',
+            statusText: product.isBlocked ? 'Blocked' : 'Active'
         }));
 
         const categories = await Category.find({ isListed: true }).lean();
@@ -56,6 +60,9 @@ exports.getProducts = async (req, res) => {
     }
 };
 
+
+
+//-------------------------------------------------------------------------------------------
 
 
 
@@ -292,7 +299,7 @@ exports.editProduct = async (req, res) => {
   }
 };
 
-// Delete product (soft delete)
+
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -303,18 +310,23 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
-    const product = await Product.findByIdAndUpdate(
-      id,
-      { isBlocked: true },
-      { new: true }
-    );
-
+    // Find the product first
+    const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Product not found'
       });
     }
+
+    // Delete all associated images
+    for (let imagePath of product.productImage) {
+      await fs.unlink(path.join(process.cwd(), 'public', imagePath))
+        .catch(err => console.error('Error deleting image:', err));
+    }
+
+    // Delete the product from database
+    await Product.findByIdAndDelete(id);
 
     res.json({
       success: true,
@@ -327,4 +339,84 @@ exports.deleteProduct = async (req, res) => {
       message: 'Error deleting product'
     });
   }
+};
+
+//--------------------------------------------------------------------
+
+exports.blockProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid product ID'
+            });
+        }
+
+        const product = await Product.findByIdAndUpdate(
+            id,
+            { 
+                isBlocked: true,
+                status: 'Blocked'
+            },
+            { new: true }
+        );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Product blocked successfully'
+        });
+    } catch (err) {
+        console.error('Error blocking product:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Error blocking product'
+        });
+    }
+};
+
+exports.unblockProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid product ID'
+            });
+        }
+
+        const product = await Product.findByIdAndUpdate(
+            id,
+            { 
+                isBlocked: false,
+                status: 'Available'
+            },
+            { new: true }
+        );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Product unblocked successfully'
+        });
+    } catch (err) {
+        console.error('Error unblocking product:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Error unblocking product'
+        });
+    }
 };
