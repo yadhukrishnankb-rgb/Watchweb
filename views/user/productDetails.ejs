@@ -1,8 +1,16 @@
-
-  <%- include('../partials/user/header') %>
+ <%- include('../partials/user/header') %> 
 
 <!-- Fallback for Tailwind CSS in case it's not included in header.ejs -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Magnify.js (the plugin you already reference) -->
+<script src="/js/jquery.magnify.js"></script>
+<link rel="stylesheet" href="/css/magnify.css">
+
+<!-- OPTIONAL – medium-zoom fallback (tiny, no jQuery) -->
+<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script>
 
 <style>
 /* Custom CSS for Product Details UI */
@@ -255,6 +263,16 @@
             Add to Cart
           </button>
 
+<form action="/buy-now" method="POST" style="margin-top: 1rem;">
+  <input type="hidden" name="productId" value="<%= product._id %>">
+  <button type="submit"
+          class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 transition-colors"
+          <%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'disabled' %>>
+    Buy Now
+  </button>
+</form>
+
+
           <!-- Product Highlights -->
           <div class="space-y-4">
             <h3 class="text-lg font-medium text-gray-900">Product Highlights</h3>
@@ -330,81 +348,135 @@
   </div>
 </main>
 
+
+
+
+
 <script>
-// Image zoom functionality
-$(document).ready(function() {
-  try {
-    $('#mainImage').magnify();
-  } catch (e) {
-    console.error('Magnify.js error:', e.message);
+/* --------------------------------------------------------------
+   Unified zoom initializer – Magnify.js → medium-zoom → CSS fallback
+   -------------------------------------------------------------- */
+(function () {
+  const $mainImg = $('#mainImage');                 // jQuery selector (if jQuery exists)
+  let zoomInstance = null;                          // will hold medium-zoom instance
+
+  /* ---------- 1. Magnify.js (preferred) ---------- */
+  function initMagnify() {
+    if (typeof $.fn.magnify === 'function') {
+      try {
+        $mainImg.magnify({ speed: 200 });
+        console.info('Zoom: Magnify.js active');
+        return true;
+      } catch (e) {
+        console.warn('Magnify.js failed →', e);
+      }
+    }
+    return false;
   }
-});
 
-function changeMainImage(src, button) {
-  const mainImage = document.getElementById('mainImage');
-  mainImage.src = src;
-  mainImage.dataset.magnifySrc = src;
+  /* ---------- 2. medium-zoom fallback ---------- */
+  function initMediumZoom() {
+    if (typeof mediumZoom === 'function') {
+      // detach previous instance if any
+      if (zoomInstance && typeof zoomInstance.detach === 'function') {
+        zoomInstance.detach();
+      }
+      zoomInstance = mediumZoom('#mainImage', {
+        margin: 30,
+        background: '#fff',
+        scrollOffset: 0
+      });
+      console.info('Zoom: medium-zoom active');
+      return true;
+    }
+    return false;
+  }
 
-  // Update selected thumbnail
-  document.querySelectorAll('.border-blue-500').forEach(el => {
-    el.classList.remove('border-blue-500');
-    el.classList.add('border-transparent');
+  /* ---------- 3. Pure-CSS hover fallback ---------- */
+  function initCssZoom() {
+    const el = document.getElementById('mainImage');
+    if (!el) return;
+    el.style.transition = 'transform .25s ease';
+    el.addEventListener('mouseenter', () => el.style.transform = ' translateZ(0) scale(1.08)');
+    el.addEventListener('mouseleave', () => el.style.transform = 'translateZ(0) scale(1)');
+    console.info('Zoom: CSS hover fallback');
+  }
+
+  /* ---------- Public init (called on load & after image change) ---------- */
+  window.initProductZoom = function () {
+    // always reset any previous medium-zoom
+    if (zoomInstance) { zoomInstance.detach(); zoomInstance = null; }
+
+    if (!initMagnify()) {
+      if (!initMediumZoom()) {
+        initCssZoom();
+      }
+    }
+  };
+
+  /* ---------- Thumbnail click handler ---------- */
+  window.changeMainImage = function (src, btn) {
+    const main = document.getElementById('mainImage');
+    if (!main) return;
+
+    main.src = src;
+    main.dataset.magnifySrc = src;   // for Magnify.js
+
+    // ---- thumbnail border highlight ----
+    document.querySelectorAll('.thumbnail-btn')
+      .forEach(b => b.classList.remove('border-blue-500', 'border-transparent'));
+    btn.classList.add('border-blue-500');
+
+    // ---- re-init zoom for the new image ----
+    setTimeout(window.initProductZoom, 50);
+  };
+
+  /* ---------- Run on DOM ready ---------- */
+  $(document).ready(function () {
+    window.initProductZoom();
   });
-  button.classList.remove('border-transparent');
-  button.classList.add('border-blue-500');
+})();
+</script>
 
-  // Reinitialize magnify
-  try {
-    $('#mainImage').magnify();
-  } catch (e) {
-    console.error('Magnify.js reinitialization error:', e.message);
-  }
-}
-
-// Add to cart functionality with availability check
+<!-- --------------------------------------------------------------
+     Add-to-Cart (unchanged – keep your existing code)
+     -------------------------------------------------------------- -->
+<script>
 async function addToCart(productId) {
   try {
-    const response = await fetch('/cart/add', {
+    const res = await fetch('/cart/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId })
     });
-
-    const data = await response.json();
+    const data = await res.json();
 
     if (data.success) {
       Swal.fire({
         icon: 'success',
         title: 'Added to Cart!',
-        showConfirmButton: false,
-        timer: 1500,
+        toast: true,
         position: 'top-end',
-        toast: true
+        timer: 1500,
+        showConfirmButton: false
       });
     } else {
-      if (data.redirect) {
-        window.location.href = '/shop';
-      } else {
-        throw new Error(data.message);
-      }
+      if (data.redirect) location.href = '/shop';
+      else throw new Error(data.message || 'Unknown error');
     }
-  } catch (error) {
+  } catch (err) {
     Swal.fire({
       icon: 'error',
-      title: 'Oops...',
-      text: error.message || 'Error adding to cart',
-      position: 'top-end',
+      title: 'Oops…',
+      text: err.message,
       toast: true,
+      position: 'top-end',
       timer: 3000
     });
   }
 }
 </script>
 
-<!-- Include jQuery and Magnify.js -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="/js/jquery.magnify.js"></script>
-<link rel="stylesheet" href="/css/magnify.css">
 
 
   <%- include('../partials/user/footer') %>

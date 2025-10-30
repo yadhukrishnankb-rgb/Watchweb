@@ -1,146 +1,364 @@
-<!-- header.ejs -->
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>EverTime Admin Dashboard</title>
+
+
+
+  <!-- Tailwind CSS -->
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+
+  <!-- Font Awesome -->
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Chart.js -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-  
+
+  <!-- SweetAlert2 -->
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+
+  <!-- CropperJS -->
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 
 
-
-
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    .sidebar-icon {
-      width: 24px;
-      text-align: center;
-      margin-right: 12px;
-    }
-    
-    .dashboard-card {
-      transition: all 0.3s ease;
-    }
-    
-    .dashboard-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
+
+    .sidebar-icon { width:24px; text-align:center; margin-right:12px; }
+
+    .dashboard-card { transition:all .3s ease; }
+
+    .dashboard-card:hover { transform:translateY(-5px); box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05); }
+
+
+
+    /* ADMIN LOGO */
+
+    .admin-logo-container { display: flex; align-items: center; gap:0.75rem; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.1); text-decoration:none; transition:all 0.3s ease; }
+
+    .admin-logo-container:hover { background: rgba(255,255,255,0.05); }
+
+    .admin-logo-icon { width:40px; height:40px; position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+    .admin-clock-circle { position:absolute; width:100%; height:100%; border:3px solid #10b981; border-radius:50%; animation: rotateClockAdmin 20s linear infinite; }
+
+    .admin-clock-circle::before { content:''; position:absolute; top:2px; left:50%; transform:translateX(-50%); width:4px; height:4px; background:#10b981; border-radius:50%; }
+
+    @keyframes rotateClockAdmin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+    .admin-logo-letter { font-size:1.4rem; font-weight:800; color:#10b981; font-family:'Arial',sans-serif; z-index:1; }
+
+    .admin-logo-text { display:flex; flex-direction:column; line-height:1; }
+
+    .admin-logo-text-main { font-size:1.25rem; font-weight:800; color:white; letter-spacing:-0.5px; font-family:'Arial',sans-serif; }
+
+    .admin-logo-text-main .text-accent { color:#10b981; }
+
+    .admin-logo-text-subtitle { font-size:0.6rem; color:rgba(255,255,255,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:500; margin-top:3px; }
+
+    .admin-logo-container:hover .admin-clock-circle { border-color:#34d399; animation:rotateClockAdmin 3s linear infinite; }
+
+    .admin-logo-container:hover .admin-logo-letter { color:#34d399; transform:scale(1.1); transition:all 0.3s ease; }
+
+    .admin-logo-container:hover .admin-logo-text-main .text-accent { color:#34d399; transition:color 0.3s ease; }
+
   </style>
+
 </head>
+
 <body class="bg-gray-100">
+
   <div class="flex h-screen">
+
+
+
     <!-- Sidebar -->
+
     <div class="w-64 bg-gray-800 text-white">
-      <div class="p-4 flex items-center border-b border-gray-700">
-        <div class="mr-2">⌚</div>
-        <h1 class="text-xl font-bold">EverTime Admin</h1>
-      </div>
+
+      <a href="/admin/dashboard" class="admin-logo-container">
+
+        <div class="admin-logo-icon">
+
+          <div class="admin-clock-circle"></div>
+
+          <span class="admin-logo-letter">E</span>
+
+        </div>
+
+        <div class="admin-logo-text">
+
+          <span class="admin-logo-text-main">Ever<span class="text-accent">Time</span></span>
+
+          <span class="admin-logo-text-subtitle">Admin Panel</span>
+
+        </div>
+
+      </a>
+
+
+
       <nav class="mt-4">
+
         <a href="/admin/dashboard" class="block py-3 px-4 bg-gray-900 text-blue-400 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-tachometer-alt"></i></span>
-          Dashboard
+
+          <span class="sidebar-icon"><i class="fas fa-tachometer-alt"></i></span> Dashboard
+
         </a>
+
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-clipboard-list"></i></span>
-          Orders
+
+          <span class="sidebar-icon"><i class="fas fa-clipboard-list"></i></span> Orders
+
         </a>
+
         <a href="/admin/Products" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-box"></i></span>
-          Products
+
+          <span class="sidebar-icon"><i class="fas fa-box"></i></span> Products
+
         </a>
+
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-industry"></i></span>
-          Brands
+
+          <span class="sidebar-icon"><i class="fas fa-industry"></i></span> Brands
+
         </a>
+
         <a href="/admin/customers" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-            <span class="sidebar-icon"><i class="fas fa-users"></i></span>
-            Customers
-          </a>
-          <a href="/admin/categories" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-            <span class="sidebar-icon"><i class="fas fa-users"></i></span>
-            Category
-          </a>
 
+          <span class="sidebar-icon"><i class="fas fa-users"></i></span> Customers
 
+        </a>
+
+        <a href="/admin/categories" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+
+          <span class="sidebar-icon"><i class="fas fa-users"></i></span> Category
+
+        </a>
 
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-image"></i></span>
-          Banners
+
+          <span class="sidebar-icon"><i class="fas fa-image"></i></span> Banners
+
         </a>
-       
+
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-dollar-sign"></i></span>
-          Sales
+
+          <span class="sidebar-icon"><i class="fas fa-dollar-sign"></i></span> Sales
+
         </a>
+
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-chart-line"></i></span>
-          Analytics
+
+          <span class="sidebar-icon"><i class="fas fa-chart-line"></i></span> Analytics
+
         </a>
+
         <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-          <span class="sidebar-icon"><i class="fas fa-cog"></i></span>
-          Settings
+
+          <span class="sidebar-icon"><i class="fas fa-cog"></i></span> Settings
+
         </a>
+
       </nav>
+
     </div>
-    
+
+
+
     <!-- Main Content -->
+
     <div class="flex-1 overflow-y-auto">
+
+
+
       <!-- Top Bar -->
+
       <div class="bg-white shadow-sm p-4 flex justify-between items-center">
+
         <div class="flex items-center">
-          <button class="mr-4 text-gray-600 hover:text-gray-800">
-            <i class="fas fa-bars"></i>
-          </button>
+
+          <button class="mr-4 text-gray-600 hover:text-gray-800"><i class="fas fa-bars"></i></button>
+
           <h2 class="text-xl font-semibold text-gray-800">Dashboard Overview</h2>
+
         </div>
+
+
+
         <div class="flex items-center">
+
           <div class="relative mx-4">
+
             <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+
           </div>
+
+
+
           <div class="relative mx-2">
+
             <button class="relative p-2">
+
               <i class="fas fa-bell text-gray-600"></i>
+
               <span class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">3</span>
+
             </button>
+
           </div>
 
 
-          
+
           <div class="relative inline-block text-left ml-2">
+
             <div class="flex items-center cursor-pointer" onclick="toggleDropdown()">
+
               <img src="/api/placeholder/40/40" alt="Admin" class="h-8 w-8 rounded-full">
+
               <span class="ml-2 text-gray-700">Admin</span>
+
               <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+
               </svg>
+
             </div>
-          
+
+
+
             <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg">
+
               <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+
               <a href="/admin/logout" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+
             </div>
+
           </div>
-          
+
         </div>
+
       </div>
+
+
+
 <script>
-      function toggleDropdown() {
-        const menu = document.getElementById('dropdownMenu');
-        menu.classList.toggle('hidden');
+
+  function toggleDropdown() {
+
+    const menu = document.getElementById('dropdownMenu');
+
+    menu.classList.toggle('hidden');
+
+  }
+
+
+
+  /* =========================
+
+     ADMIN BACK-BUTTON GUARD
+
+     ========================= */
+
+  (function () {
+
+    if (!location.pathname.startsWith('/admin')) return;
+
+
+
+    if (window.__adminBackGuard) return;
+
+    window.__adminBackGuard = true;
+
+
+
+    const DASHBOARD = '/admin/dashboard';
+
+    const DEBOUNCE = 600;
+
+    const KEY = 'admin_back_ts';
+
+    let handling = false;
+
+
+
+    history.replaceState({ guard: true }, '', location.href);
+
+    history.pushState({ guard: true }, '', location.href);
+
+
+
+    const onBack = (e) => {
+
+      if (e.state && e.state.guard) return;
+
+      if (handling) return;
+
+
+
+      const now = Date.now();
+
+      const last = Number(sessionStorage.getItem(KEY) || 0);
+
+      if (now - last < DEBOUNCE) return;
+
+
+
+      sessionStorage.setItem(KEY, String(now));
+
+      handling = true;
+
+
+
+      const win = window.open(DASHBOARD, '_blank', 'noopener,noreferrer');
+
+
+
+      if (!win) {
+
+        window.location.replace(DASHBOARD);
+
+      } else {
+
+        try { history.pushState({ guard: true }, '', location.href); } catch (_) {}
+
       }
 
-      </script>
+
+
+      setTimeout(() => { handling = false; }, DEBOUNCE);
+
+    };
+
+
+
+    window.addEventListener('popstate', onBack, { passive: true });
+
+  })();
+
+</script>
+
+
+
+</body>
+
+</html>
+

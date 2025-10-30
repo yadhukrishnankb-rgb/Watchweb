@@ -1,36 +1,5 @@
 const Category = require('../../models/categorySchema');
 
-// Get all categories with pagination and search
-// exports.getCategories = async (req, res) => {
-//     try {
-//         const page = parseInt(req.query.page) || 1;
-//         const limit = 10;
-//         const skip = (page - 1) * limit;
-//         const searchQuery = req.query.search || '';
-
-//         const query = searchQuery ? {
-//             name: { $regex: searchQuery, $options: 'i' }
-//         } : {};
-
-//         const [categories, totalCategories] = await Promise.all([
-//             Category.find(query)
-//                 .sort({ createdAt: -1 })
-//                 .skip(skip)
-//                 .limit(limit),
-//             Category.countDocuments(query)
-//         ]);
-
-//         res.render('admin/categories', {
-//             categories,
-//             currentPage: page,
-//             totalPages: Math.ceil(totalCategories / limit),
-//             searchQuery
-//         });
-//     } catch (err) {
-//         console.error('Error fetching categories:', err);
-//         res.status(500).render('admin/error', { message: 'Error loading categories' });
-//     }
-// };
 
 exports.getCategories = async (req, res) => {
     try {
@@ -47,13 +16,17 @@ exports.getCategories = async (req, res) => {
             })
         };
 
-        const [categories, totalCategories] = await Promise.all([
+        
+
+        const [totalCategories, categories] = await Promise.all([
+            Category.countDocuments(query),
             Category.find(query)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit),
-            Category.countDocuments(query)
-        ]);
+            .select('name description createdAt')
+            .sort({createdAt: -1,_id: -1})
+            .skip(skip)
+            .limit(limit)
+
+        ])
 
         res.render('admin/categories', {
             categories,

@@ -1,7 +1,4 @@
 
-
-
-
 const User = require("../../models/userSchema");
 require('dotenv').config();
 
@@ -53,15 +50,36 @@ const loadDashboard = async(req, res) => {
 
 
 
-const logout = async(req, res) => {
-    try {
-        req.session.destroy();
-        res.redirect('/admin/login');
-    } catch(error) {
-        console.log("Logout error:", error);
-        res.redirect('/admin/dashboard');
-    }
+// const logout = async(req, res) => {
+//     try {
+//         req.session.destroy();
+//         res.redirect('/admin/login');
+//     } catch(error) {
+//         console.log("Logout error:", error);
+//         res.redirect('/admin/dashboard');
+//     }
+// };
+
+
+
+// ...existing code...
+const logout = (req, res) => {
+    // If no session, just redirect
+    if (!req.session) return res.redirect('/admin/login');
+
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Session destroy error:', err);
+            // Clear cookie as fallback and redirect
+            res.clearCookie('sid');
+            return res.redirect('/admin/login');
+        }
+        // clear the session cookie and redirect to login
+        res.clearCookie('sid');
+        return res.redirect('/admin/login');
+    });
 };
+
 
 
 

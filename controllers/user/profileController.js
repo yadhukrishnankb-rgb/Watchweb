@@ -1,5 +1,6 @@
 const User = require("../../models/userSchema");
 const nodemailer = require("nodemailer");
+const Order = require("../../models/orderSchema");
 
 // Helper to generate OTP
 function generateOtp() {
@@ -31,6 +32,9 @@ exports.sendForgotPasswordOtp = async (req, res) => {
     req.session.resetEmail = email;
     req.session.otp = otp;
     req.session.otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
+
+     console.log("OTP sent to email:", email);
+        console.log("Generated OTP:", otp);
 
     await transporter.sendMail({
         to: email,
@@ -101,4 +105,194 @@ exports.handleResetPassword = async (req, res) => {
     req.session.otpVerified = false;
     req.session.resetEmail = null;
     res.redirect('/login');
+};
+
+
+
+
+
+
+// Show profile page
+exports.profilePage = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const user = await User.findById(userId).lean();
+    user.addresses = user.addresses || [];
+    const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
+    res.render('user/profile', { user, orders });
+};
+
+// Edit profile page
+exports.editProfilePage = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const user = await User.findById(userId).lean();
+    user.addresses = user.addresses || []; // Ensure addresses is always an array
+    res.render('user/edit-profile', { user, message: null });
+};
+
+// Handle profile update
+// exports.updateProfile = async (req, res) => {
+//     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+//     if (!userId) return res.redirect('/login');
+//     const { name, phone, email, line1, city, state, zip, country } = req.body;
+//     const user = await User.findById(userId);
+//     // If email changed, send OTP and require verification
+//     if (email !== user.email) {
+//         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//         req.session.emailChange = { email, otp, name, phone, address: { line1, city, state, zip, country } };
+//         // Send OTP
+//         const transporter = nodemailer.createTransport({
+//             service: 'gmail',
+//             auth: {
+//                 user: process.env.NODEMAILER_EMAIL,
+//                 pass: process.env.NODEMAILER_PASSWORD
+//             }
+//         });
+//         await transporter.sendMail({
+//             to: email,
+//             from: process.env.NODEMAILER_EMAIL,
+//             subject: 'Email Change Verification',
+//             html: `<p>Your OTP is <b>${otp}</b></p>`
+//         });
+//         return res.redirect('/profile/verify-email');
+//     }
+//     user.name = name;
+//     user.phone = phone;
+//     user.addresses = [{ line1, city, state, zip, country }];
+//     await user.save();
+//     res.redirect('/profile');
+// };
+//-------------------
+exports.updateProfile = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const { name, phone, email, line1, city, state, zip, country } = req.body;
+    const user = await User.findById(userId);
+
+    // Only trigger OTP if email is changed
+    if (email !== user.email) {
+        // Check for duplicate email
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            user.addresses = user.addresses || [];
+            return res.render('user/edit-profile', { user: user.toObject(), message: 'Email already in use.' });
+        }
+        // Generate OTP and store all data in session
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        req.session.emailChange = {
+            email,
+            otp,
+            name,
+            phone,
+            address: { line1, city, state, zip, country }
+        };
+        // Send OTP
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.NODEMAILER_EMAIL,
+                pass: process.env.NODEMAILER_PASSWORD
+            }
+        });
+        await transporter.sendMail({
+            to: email,
+            from: process.env.NODEMAILER_EMAIL,
+            subject: 'Email Change Verification',
+            html: `<p>Your OTP is <b>${otp}</b></p>`
+        });
+        return res.redirect('/profile/verify-email');
+    }
+
+    // If email not changed, update directly
+    user.name = name;
+    user.phone = phone;
+    user.addresses = [{ line1, city, state, zip, country }];
+    await user.save();
+    res.redirect('/profile');
+};
+//------------
+// Show verify email page
+exports.verifyEmailPage = (req, res) => {
+    res.render('user/verify-email', { message: null });
+};
+
+// Handle email OTP verification
+// exports.verifyEmailOtp = async (req, res) => {
+//     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+//     if (!userId) return res.redirect('/login');
+//     const { otp } = req.body;
+//     if (req.session.emailChange && req.session.emailChange.otp === otp) {
+//         const user = await User.findById(userId);
+//         user.email = req.session.emailChange.email;
+//         user.name = req.session.emailChange.name;
+//         user.phone = req.session.emailChange.phone;
+//         user.addresses = [req.session.emailChange.address];
+//         await user.save();
+//         req.session.emailChange = null;
+//         res.redirect('/profile');
+//     } else {
+//         res.render('user/verify-email', { message: 'Invalid OTP' });
+//     }
+// };
+
+//---------------
+exports.verifyEmailOtp = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const { otp } = req.body;
+
+    // Debug: log session and OTP
+    console.log("Session emailChange:", req.session.emailChange);
+    console.log("Submitted OTP:", otp);
+
+    if (req.session.emailChange && req.session.emailChange.otp === otp) {
+        const user = await User.findById(userId);
+        user.email = req.session.emailChange.email;
+        user.name = req.session.emailChange.name;
+        user.phone = req.session.emailChange.phone;
+        user.addresses = [req.session.emailChange.address];
+        await user.save();
+        req.session.emailChange = null;
+        return res.redirect('/profile');
+    } else {
+        return res.render('user/verify-email', { message: 'Invalid OTP' });
+    }
+};
+//--------------
+
+// Show change password page
+exports.changePasswordPage = (req, res) => {
+    res.render('user/change-password', { message: null });
+};
+
+// Handle password change
+exports.changePassword = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const user = await User.findById(userId);
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match) {
+        return res.render('user/change-password', { message: 'Old password incorrect' });
+    }
+    if (newPassword !== confirmPassword) {
+        return res.render('user/change-password', { message: 'Passwords do not match' });
+    }
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.redirect('/profile');
+};
+
+// Cancel order
+exports.cancelOrder = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+    const orderId = req.params.id;
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (order && order.status === 'Placed') {
+        order.status = 'Cancelled';
+        await order.save();
+    }
+    res.redirect('/profile');
 };

@@ -88,6 +88,8 @@ const loadHomepage = async (req, res) => {
     }
 };
 
+
+
 // Add new product listing controller
 const listProducts = async (req, res) => {
     try {
@@ -187,9 +189,6 @@ const listProducts = async (req, res) => {
         res.status(500).render('error', { message: 'Error loading products' });
     }
 };
-
-
-
 
     
     function generateOtp(){
@@ -389,51 +388,7 @@ const loadLogin = async (req, res) => {
 };
 
 
-// const login = async (req, res) => {
-//     try {
-//         const { email, password } = req.body;
-//         const user = await User.findOne({ email });
 
-//         if (!user) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: 'Invalid email or password'
-//             });
-//         }
-
-//         // Check if user is blocked
-//         if (user.isBlocked) {
-//             return res.status(403).json({
-//                 success: false,
-//                 message: 'Your account has been blocked. Please contact administrator.'
-//             });
-//         }
-
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: 'Invalid email or password'
-//             });
-//         }
-
-//         // Set session
-//         req.session.user = {
-//             _id: user._id,
-//             name: user.name,
-//             email: user.email,
-//             isBlocked: user.isBlocked
-//         };
-
-//         res.json({ success: true });
-//     } catch (error) {
-//         console.error('Login error:', error);
-//         res.status(500).json({
-//             success: false,
-//             message: 'An error occurred during login'
-//         });
-//     }
-// };
 
 const login = async (req, res) => {
     try {
@@ -515,9 +470,35 @@ const logout = async (req, res) => {
     }
 };
 
+
+
+
+
 //----------------------------------------------------------------------------------
 
 
+// exports.loadHomepage = async (req, res) => {
+//     try {
+//         // Fetch up to 8 latest products that are not blocked
+//         const featuredProducts = await Product.find({ isBlocked: false })
+//             .populate('category')
+//             .sort({ createdAt: -1 })
+//             .limit(8)
+//             .lean();
+
+//         // Fetch categories for filters or display
+//         const categories = await Category.find({ isListed: true }).lean();
+
+//         res.render("home", {
+//             featuredProducts,
+//             categories,
+//             user: req.session.user
+//         });
+//     } catch (error) {
+//         console.error("Error loading homepage:", error);
+//         res.status(500).render("error", { message: "Error loading homepage" });
+//     }
+// };
 
  
 

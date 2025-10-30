@@ -1,0 +1,7 @@
+<%- include('../partials/user/header') %>
+<form action="/profile/verify-email" method="POST">
+  <input type="text" name="otp" placeholder="Enter OTP" required>
+  <button type="submit">Verify</button>
+  <% if (message) { %><div><%= message %></div><% } %>
+</form>
+<%- include('../partials/user/footer') %>

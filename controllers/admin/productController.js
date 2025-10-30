@@ -5,11 +5,6 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 
-
-
-
-
-//---------------------------------------------------------------------------------------------------
 exports.getProducts = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -30,7 +25,7 @@ exports.getProducts = async (req, res) => {
         const [products, totalProducts] = await Promise.all([
             Product.find(query)
                 .populate('category', 'name')
-                .sort({ createdAt: -1 })
+                .sort({ createdAt: -1,_id:-1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
@@ -59,10 +54,6 @@ exports.getProducts = async (req, res) => {
         res.status(500).render('admin/error', { message: 'Error loading products' });
     }
 };
-
-
-
-//-------------------------------------------------------------------------------------------
 
 
 
@@ -343,44 +334,73 @@ exports.deleteProduct = async (req, res) => {
 
 //--------------------------------------------------------------------
 
+// exports.blockProduct = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         if (!mongoose.isValidObjectId(id)) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Invalid product ID'
+//             });
+//         }
+
+//         const product = await Product.findByIdAndUpdate(
+//             id,
+//             { 
+//                 isBlocked: true,
+//                 status: 'Blocked'
+//             },
+//             { new: true }
+//         );
+
+//         if (!product) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Product not found'
+//             });
+//         }
+
+//         res.json({
+//             success: true,
+//             message: 'Product blocked successfully'
+//         });
+//     } catch (err) {
+//         console.error('Error blocking product:', err);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error blocking product'
+//         });
+//     }
+// };
+
+//------------------------------------------------------------
+// ...existing code...
 exports.blockProduct = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!mongoose.isValidObjectId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid product ID'
-            });
-        }
-
-        const product = await Product.findByIdAndUpdate(
-            id,
-            { 
-                isBlocked: true,
-                status: 'Blocked'
-            },
-            { new: true }
-        );
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: 'Product not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Product blocked successfully'
-        });
-    } catch (err) {
-        console.error('Error blocking product:', err);
-        res.status(500).json({
-            success: false,
-            message: 'Error blocking product'
-        });
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid product ID' });
     }
+    const product = await Product.findByIdAndUpdate(id, { isBlocked: true, status: 'Blocked' }, { new: true });
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    // respond with JSON (API)
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.json({ success: true, message: 'Product blocked successfully', product });
+    }
+    // fallback: redirect back when called from a normal form
+    return res.redirect(req.get('referer') || '/admin/products');
+  } catch (err) {
+    console.error('Error blocking product:', err);
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(500).json({ success: false, message: 'Error blocking product' });
+    }
+    return res.status(500).render('admin/error', { message: 'Error blocking product' });
+  }
 };
+// ...apply same pattern for unblockProduct and deleteProduct...
+
+//--------------------------------------------------------------------
 
 exports.unblockProduct = async (req, res) => {
     try {

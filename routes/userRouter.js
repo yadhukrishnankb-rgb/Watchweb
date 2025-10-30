@@ -5,13 +5,17 @@ const passport = require("passport")//----------------
 const productController = require("../controllers/user/productController")//========
 const profileController = require("../controllers/user/profileController");
 const {isUser,checkBlockedStatus} = require('../middlewares/auth')
+
+
+
+
 router.get("/pageNotFound",userController.pageNotFound)
 router.get("/",userController.loadHomepage)
 router.get("/signup",userController.loadSignup)
 router.post("/signup",userController.signup)
 router.post("/verify-otp",userController.verifyOtp)
  router.post("/resend-otp",userController.resendOTP)
- 
+ router.get("/", userController.loadHomepage);
 router.get('/shop', userController.listProducts);
 
 
@@ -32,10 +36,20 @@ router.post('/reset-password', profileController.handleResetPassword);
 
 
 
+router.get('/profile', profileController.profilePage);
+router.get('/profile/edit', profileController.editProfilePage);
+router.post('/profile/edit', profileController.updateProfile);
+router.get('/profile/verify-email', profileController.verifyEmailPage);
+router.post('/profile/verify-email', profileController.verifyEmailOtp);
+router.get('/profile/change-password', profileController.changePasswordPage);
+router.post('/profile/change-password', profileController.changePassword);
+router.post('/order/:id/cancel', profileController.cancelOrder);
+
 
 
 router.get('/product/:id', productController.getProductDetails);
-
+// Add this route with your other routes
+router.get('/search', productController.searchProducts);
 
 
 

@@ -9,6 +9,7 @@ const {upload, processImages} = require("../middlewares/multerConfig")
 const categoryController = require('../controllers/admin/categoryController');
 const customerController = require("../controllers/admin/customerController")
 const productController = require('../controllers/admin/productController')
+
 const isAdmin = (req, res, next) => {
     if(req.session.admin) {
         next();
@@ -20,7 +21,9 @@ const isAdmin = (req, res, next) => {
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
 router.get("/dashboard", isAdmin, adminController.loadDashboard);
-router.get("/logout",isAdmin,adminController.logout)
+router.post("/logout",isAdmin,adminController.logout)
+router.get("/logout", isAdmin, adminController.logout);
+
 
 
 
@@ -47,6 +50,7 @@ router.get('/products/:id', isAdmin, productController.getProductById);
 // Add these new routes while keeping existing routes
 router.put('/products/:id/block', adminAuth, productController.blockProduct);
 router.put('/products/:id/unblock', adminAuth, productController.unblockProduct);
-router.delete('/products/:id/delete', adminAuth, productController.deleteProduct);
-
+//  router.delete('/products/:id/delete', adminAuth, productController.deleteProduct);
+router.patch('/products/:id/block', isAdmin, productController.blockProduct);
+router.patch('/products/:id/unblock', isAdmin, productController.unblockProduct);
 module.exports = router;

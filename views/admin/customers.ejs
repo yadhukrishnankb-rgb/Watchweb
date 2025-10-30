@@ -32,13 +32,14 @@
                                     <%= customer.status === 'active' ? 'Active' : 'Blocked' %>
                                 </span>
                             </td>
+
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <% if (customer.status === 'active') { %>
-                                    <form action="/admin/customers/block/<%= customer._id %>" method="POST" class="inline">
+                                    <form action="/admin/customers/block/<%= customer._id %>?page=<%= currentPage %><%= searchQuery ? '&search=' + encodeURIComponent(searchQuery) : '' %>" method="POST" class="inline confirm-action" data-action="block" data-name="<%= customer.name %>">
                                         <button type="submit" class="text-red-600 hover:text-red-900">Block</button>
                                     </form>
                                 <% } else { %>
-                                    <form action="/admin/customers/unblock/<%= customer._id %>" method="POST" class="inline">
+                                    <form action="/admin/customers/unblock/<%= customer._id %>?page=<%= currentPage %><%= searchQuery ? '&search=' + encodeURIComponent(searchQuery) : '' %>" method="POST" class="inline confirm-action" data-action="unblock" data-name="<%= customer.name %>">
                                         <button type="submit" class="text-green-600 hover:text-green-900">Unblock</button>
                                     </form>
                                 <% } %>
@@ -57,11 +58,50 @@
     </div>
 
     <!-- Pagination -->
-    <% if (totalPages > 1) { %>
-        <div class="mt-6 flex justify-center">
-            <!-- ... pagination code ... -->
+    <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+        <div class="mt-6 flex justify-center items-center gap-2">
+            <% let prevPage = Math.max(1, currentPage - 1); %>
+            <a href="/admin/customers?page=<%= prevPage %><%= searchQuery ? '&search=' + encodeURIComponent(searchQuery) : '' %>" class="px-3 py-1 border rounded <% if (currentPage===1) { %>opacity-50 pointer-events-none<% } %>">Prev</a>
+
+            <% pages.forEach(page => { %>
+                <a href="/admin/customers?page=<%= page %><%= searchQuery ? '&search=' + encodeURIComponent(searchQuery) : '' %>" class="px-3 py-1 border rounded <% if (page === currentPage) { %>bg-blue-600 text-white<% } else { %>text-gray-700<% } %>"><%= page %></a>
+            <% }) %>
+
+            <% let nextPage = Math.min(totalPages, currentPage + 1); %>
+            <a href="/admin/customers?page=<%= nextPage %><%= searchQuery ? '&search=' + encodeURIComponent(searchQuery) : '' %>" class="px-3 py-1 border rounded <% if (currentPage===totalPages) { %>opacity-50 pointer-events-none<% } %>">Next</a>
         </div>
     <% } %>
 </div>
+
+<!-- Include SweetAlert2 and confirmation script (unchanged) -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.confirm-action').forEach(function(form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const action = form.dataset.action || 'perform this action';
+            const name = form.dataset.name || 'the user';
+            const verb = action === 'block' ? 'Block' : (action === 'unblock' ? 'Unblock' : 'Confirm');
+            const confirmColor = action === 'block' ? '#e74c3c' : '#16a34a';
+
+            Swal.fire({
+                title: `${verb} ${name}?`,
+                text: `Are you sure you want to ${action} ${name}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: verb,
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
 
 <%- include('../partials/admin/footer') %>

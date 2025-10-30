@@ -53,12 +53,10 @@
                   class="h-16 w-16 object-cover rounded">
               </td>
               <td class="px-6 py-4 whitespace-nowrap"><%= product.productName %></td>
-              <!-- <td class="px-6 py-4 whitespace-nowrap"><%= product.category.name %></td> -->
 
-<!-- Replace the category cell with this -->
-<td class="px-6 py-4 whitespace-nowrap">
-    <%= product.category?.name || 'Uncategorized' %>
-</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <%= product.category?.name || 'Uncategorized' %>
+              </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
                 <div>Regular: ₹<%= product.regularPrice %></div>
@@ -71,25 +69,23 @@
                   Edit
                 </button>
 
-<% if (product.isBlocked) { %>
-    <button onclick="confirmUnblock('<%= product._id %>')"
-      class="text-green-600 hover:text-green-900">
-      Unblock
-    </button>
-  <% } else { %>
-    <button onclick="confirmBlock('<%= product._id %>')"
-      class="text-red-600 hover:text-red-900">
-      Block
-    </button>
-  <% } %>
-
-
-
-
-
+                <!-- Block / Unblock Button (will be toggled by JS) -->
+                <span class="block-unblock-btn">
+                  <% if (product.isBlocked) { %>
+                    <button onclick="confirmUnblock('<%= product._id %>')"
+                      class="text-green-600 hover:text-green-900">
+                      Unblock
+                    </button>
+                  <% } else { %>
+                    <button onclick="confirmBlock('<%= product._id %>')"
+                      class="text-red-600 hover:text-red-900">
+                      Block
+                    </button>
+                  <% } %>
+                </span>
 
                 <button onclick="confirmDelete('<%= product._id %>')"
-                  class="text-red-600 hover:text-red-900">
+                  class="text-red-600 hover:text-red-900 ml-3">
                   Delete
                 </button>
               </td>
@@ -266,19 +262,18 @@
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
         </div>
     
-<div class="mb-4">
-  <label class="block text-gray-700 text-sm font-bold mb-2">Images* (Min 3, Max 4)</label>
-  <input type="file" 
-         name="productImages" 
-         required 
-         multiple 
-         accept="image/*"
-         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-         onchange="previewAndCropImages(event)">
-  <div id="imagePreview" class="mt-2 flex gap-2"></div>
-  <p class="text-sm text-gray-500 mt-1">Please select 3-4 images</p>
-</div>
-
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Images* (Min 3, Max 4)</label>
+          <input type="file" 
+                 name="productImages" 
+                 required 
+                 multiple 
+                 accept="image/*"
+                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                 onchange="previewAndCropImages(event)">
+          <div id="imagePreview" class="mt-2 flex gap-2"></div>
+          <p class="text-sm text-gray-500 mt-1">Please select 3-4 images</p>
+        </div>
 
         <div class="flex justify-end mt-6">
           <button type="button" onclick="closeAddModal()"
@@ -293,7 +288,6 @@
       </form>
     </div>
   </div>
-
 </div>
 
 <!-- Cropper Modal -->
@@ -320,14 +314,6 @@
   </div>
 </div>
 
-
-
-
-
-
-
-
-
 <script>
 let cropper = null;
 let currentFileInput = null;
@@ -345,9 +331,6 @@ function resetCropState() {
     cropper = null;
   }
 }
-
-
-
 
 function previewAndCropImages(event, previewId = 'imagePreview') {
     const files = event.target.files;
@@ -450,15 +433,13 @@ function cropImage() {
         const url = URL.createObjectURL(blob);
         croppedImages.push(url);
 
-        // Create a new file from blob
         const fileName = `cropped-${Date.now()}.jpg`;
         const croppedFile = new File([blob], fileName, {
             type: 'image/jpeg',
             lastModified: Date.now()
         });
 
-  // Update the files in the input
-  const dataTransfer = new DataTransfer();
+        const dataTransfer = new DataTransfer();
         currentFiles.forEach((file, index) => {
             if (index === currentImageIndex) {
                 dataTransfer.items.add(croppedFile);
@@ -474,13 +455,6 @@ function cropImage() {
         }
     }, 'image/jpeg', 0.8);
 }
-
-
-document.querySelectorAll('input[type="file"][name="productImages"]').forEach(input => {
-    input.addEventListener('change', (e) => previewAndCropImages(e, e.target.closest('form').querySelector('.image-preview').id));
-});
-//-----------------------------------------------------------
-
 
 function openAddModal() {
   resetCropState();
@@ -504,49 +478,57 @@ function closeEditModal() {
   resetCropState();
 }
 
+/* === Helper: fetchJson === */
+async function fetchJson(url, opts = {}) {
+  opts.credentials = opts.credentials || 'same-origin';
+  opts.headers = opts.headers || {};
+  opts.headers['Accept'] = opts.headers['Accept'] || 'application/json';
+  const resp = await fetch(url, opts);
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    try {
+      const json = JSON.parse(txt);
+      throw new Error(json.message || 'Request failed');
+    } catch (e) {
+      throw new Error('Session expired or unauthorized. Please login again.');
+    }
+  }
+  return resp.json();
+}
+
+/* === Open edit modal === */
 async function openEditModal(productId) {
   try {
-    const response = await fetch(`/admin/products/${productId}`);
-    const data = await response.json();
+    const data = await fetchJson(`/admin/products/${productId}`, { method: 'GET' });
+    if (!data.success) throw new Error(data.message || 'Failed to load product');
 
-    if (data.success) {
-      const product = data.product;
-      document.getElementById('editProductId').value = product._id;
-      document.getElementById('editProductName').value = product.productName;
-      document.getElementById('editBrand').value = product.brand;
-      document.getElementById('editCategory').value = product.category._id;
-      document.getElementById('editRegularPrice').value = product.regularPrice;
-      document.getElementById('editSalesPrice').value = product.salesPrice;
-      document.getElementById('editProductOffer').value = product.productOffer;
-      document.getElementById('editQuantity').value = product.quantity;
-      document.getElementById('editColor').value = product.color;
-      document.getElementById('editDescription').value = product.description;
+    const product = data.product;
+    document.getElementById('editProductId').value = product._id;
+    document.getElementById('editProductName').value = product.productName;
+    document.getElementById('editBrand').value = product.brand;
+    document.getElementById('editCategory').value = product.category?._id || '';
+    document.getElementById('editRegularPrice').value = product.regularPrice;
+    document.getElementById('editSalesPrice').value = product.salesPrice;
+    document.getElementById('editProductOffer').value = product.productOffer;
+    document.getElementById('editQuantity').value = product.quantity;
+    document.getElementById('editColor').value = product.color;
+    document.getElementById('editDescription').value = product.description;
 
-      const imagePreview = document.getElementById('editImagePreview');
-      imagePreview.innerHTML = product.productImage
-        .map(img => `
-          <div class="w-20 h-20 relative">
-            <img src="${img}" class="w-full h-full object-cover rounded">
-          </div>
-        `).join('');
+    const imagePreview = document.getElementById('editImagePreview');
+    imagePreview.innerHTML = (product.productImage || []).map(img => `
+      <div class="w-20 h-20 relative">
+        <img src="${img}" class="w-full h-full object-cover rounded">
+      </div>
+    `).join('');
 
-      document.getElementById('editModal').classList.remove('hidden');
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: data.message
-      });
-    }
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Error loading product details'
-    });
+    document.getElementById('editModal').classList.remove('hidden');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error loading product details' });
   }
 }
-//confirmDelete and deleteProduct functions
+
+/* === DELETE PRODUCT === */
 function confirmDelete(productId) {
   Swal.fire({
     title: 'Are you sure?',
@@ -565,154 +547,73 @@ function confirmDelete(productId) {
 
 async function deleteProduct(productId) {
   try {
-    const response = await fetch(`/admin/products/${productId}/delete`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const data = await response.json();
-
+    const data = await fetchJson(`/admin/products/${productId}`, { method: 'DELETE' });
     if (data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Deleted!',
-        text: 'Product has been deleted.',
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => {
-        // Remove the product row from the table
-        const row = document.querySelector(`tr[data-product-id="${productId}"]`);
-        if (row) {
-          row.remove();
-        } else {
-          // If row not found, reload the page
-          window.location.reload();
-        }
-      });
+      Swal.fire({ icon: 'success', title: 'Deleted!', text: 'Product has been deleted.', showConfirmButton: false, timer: 1500 })
+        .then(() => {
+          const row = document.querySelector(`tr[data-product-id="${productId}"]`);
+          if (row) row.remove(); else location.reload();
+        });
     } else {
-      throw new Error(data.message);
+      throw new Error(data.message || 'Delete failed');
     }
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: error.message || 'Error deleting product'
-    });
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error deleting product' });
   }
 }
 
-//-----------------------------------------------------------------------------
-
-
-document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+/* === ADD PRODUCT FORM === */
+const addForm = document.getElementById('addProductForm');
+if (addForm) {
+  addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // Get the file input
     const fileInput = e.target.querySelector('input[name="productImages"]');
     if (!fileInput.files || fileInput.files.length < 3 || fileInput.files.length > 4) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: 'Please select 3-4 images'
-        });
-        return;
+      Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 3-4 images' });
+      return;
     }
+    const formData = new FormData(e.target);
+    try {
+      const data = await fetchJson('/admin/products', { method: 'POST', body: formData });
+      if (data.success) {
+        Swal.fire({ icon: 'success', title: 'Success!', text: data.message, showConfirmButton: false, timer: 1500 })
+          .then(() => location.reload());
+      } else throw new Error(data.message || 'Add failed');
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error adding product' });
+    }
+  });
+}
 
+/* === EDIT PRODUCT FORM === */
+const editForm = document.getElementById('editProductForm');
+if (editForm) {
+  editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const productId = document.getElementById('editProductId').value;
     const formData = new FormData(e.target);
 
+    const imageInput = e.target.querySelector('input[name="productImages"]');
+    const existingImages = document.getElementById('editImagePreview').children.length;
+    const newImages = imageInput?.files?.length || 0;
+    if (existingImages + newImages < 3 && newImages > 0) {
+      Swal.fire({ icon: 'error', title: 'Error!', text: 'Total images must be at least 3' });
+      return;
+    }
+
     try {
-        const response = await fetch('/admin/products', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: data.message,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                window.location.reload();
-            });
-        } else {
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: error.message || 'Error adding product'
-        });
+      const data = await fetchJson(`/admin/products/${productId}`, { method: 'PUT', body: formData });
+      if (data.success) {
+        Swal.fire({ icon: 'success', title: 'Success!', text: data.message, showConfirmButton: false, timer: 1500 })
+          .then(() => location.reload());
+      } else throw new Error(data.message || 'Update failed');
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error updating product' });
     }
-});
+  });
+}
 
-
-
-
-
-document.getElementById('editProductForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const productId = document.getElementById('editProductId').value;
-
-  const imageInput = e.target.querySelector('input[name="productImages"]');
-  const existingImages = document.getElementById('editImagePreview').children.length;
-  const newImages = imageInput.files.length;
-
-  if (existingImages + newImages < 3 && newImages > 0) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Total images must be at least 3'
-    });
-    return;
-  }
-
-  try {
-    const response = await fetch(`/admin/products/${productId}`, {
-      method: 'PUT',
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: data.message,
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => {
-        window.location.reload();
-      });
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: data.message
-      });
-    }
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Error updating product'
-    });
-  }
-});
-
-//---------------------------------------------------------------------------------------------
-
-
-
-// Keep existing functions and add these new ones
+/* === BLOCK / UNBLOCK === */
 function confirmBlock(productId) {
   Swal.fire({
     title: 'Block Product?',
@@ -723,9 +624,7 @@ function confirmBlock(productId) {
     cancelButtonColor: '#3085d6',
     confirmButtonText: 'Yes, block it!'
   }).then((result) => {
-    if (result.isConfirmed) {
-      blockProduct(productId);
-    }
+    if (result.isConfirmed) blockProduct(productId);
   });
 }
 
@@ -739,75 +638,35 @@ function confirmUnblock(productId) {
     cancelButtonColor: '#d33',
     confirmButtonText: 'Yes, unblock it!'
   }).then((result) => {
-    if (result.isConfirmed) {
-      unblockProduct(productId);
-    }
+    if (result.isConfirmed) unblockProduct(productId);
   });
 }
 
 async function blockProduct(productId) {
   try {
-    const response = await fetch(`/admin/products/${productId}/block`, {
-      method: 'PUT'
-    });
-
-    const data = await response.json();
-
+    const data = await fetchJson(`/admin/products/${productId}/block`, { method: 'PATCH' });
     if (data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Blocked!',
-        text: 'Product has been blocked.',
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => {
-        window.location.reload();
-      });
-    } else {
-      throw new Error(data.message);
-    }
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: error.message || 'Error blocking product'
-    });
+      const btnSpan = document.querySelector(`tr[data-product-id="${productId}"] .block-unblock-btn`);
+      btnSpan.innerHTML = `<button onclick="confirmUnblock('${productId}')" class="text-green-600 hover:text-green-900">Unblock</button>`;
+      Swal.fire({ icon: 'success', title: 'Blocked!', text: data.message || 'Product blocked', showConfirmButton: false, timer: 1200 });
+    } else throw new Error(data.message || 'Block failed');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error blocking product' });
   }
 }
 
 async function unblockProduct(productId) {
   try {
-    const response = await fetch(`/admin/products/${productId}/unblock`, {
-      method: 'PUT'
-    });
-
-    const data = await response.json();
-
+    const data = await fetchJson(`/admin/products/${productId}/unblock`, { method: 'PATCH' });
     if (data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Unblocked!',
-        text: 'Product has been unblocked.',
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => {
-        window.location.reload();
-      });
-    } else {
-      throw new Error(data.message);
-    }
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: error.message || 'Error unblocking product'
-    });
+      const btnSpan = document.querySelector(`tr[data-product-id="${productId}"] .block-unblock-btn`);
+      btnSpan.innerHTML = `<button onclick="confirmBlock('${productId}')" class="text-red-600 hover:text-red-900">Block</button>`;
+      Swal.fire({ icon: 'success', title: 'Unblocked!', text: data.message || 'Product unblocked', showConfirmButton: false, timer: 1200 });
+    } else throw new Error(data.message || 'Unblock failed');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error unblocking product' });
   }
 }
-
-
-
-
 </script>
 
 <%- include('../partials/admin/footer') %>

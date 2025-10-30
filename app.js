@@ -1,12 +1,23 @@
 
-
-
 const express = require("express");
 const app = express();
 const path = require("path");
 require("dotenv").config();
 const session = require("express-session");
+//------------------------------------------------
+
+let MongoStore;
+try {
+    MongoStore = require('connect-mongo');
+} catch (err) {
+    console.warn('connect-mongo not installed — using MemoryStore. Run `npm i connect-mongo` to enable persistent sessions.');
+    MongoStore = null;
+}
+
+//-----------------------------------------------------------
 const passport = require("passport"); // Changed from local path to package
+ 
+
 
 
 const flash = require('connect-flash');
@@ -23,17 +34,59 @@ db();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+//-----------------------------------------
+// --- SESSION (single configuration, persisted to MongoDB) ---
+app.set('trust proxy', 1); // if behind proxy (Heroku/nginx) — keep if needed
+
+//----------------------------------------
+
 // Session configuration
+// app.use(session({
+//     secret: process.env.SESSION_SECRET,
+//     resave: false,
+//     saveUninitialized: false, // Changed from true to false for better security
+//     cookie: { // Fixed typo from cookies to cookie
+//         secure: process.env.NODE_ENV === 'production', // Make secure in production
+//         httpOnly: true,
+//         maxAge: 72 * 60 * 60 * 1000
+//     }
+// }));
+
+
+//---------------------------------------------------------------
+
+// create store (MongoStore if available, otherwise MemoryStore)
+const store = MongoStore
+  ? MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/project',
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60
+    })
+  : new session.MemoryStore();
+
+
+
+
+
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    name: 'sid',
+    secret: process.env.SESSION_SECRET || 'change-this-secret',
     resave: false,
-    saveUninitialized: false, // Changed from true to false for better security
-    cookie: { // Fixed typo from cookies to cookie
-        secure: process.env.NODE_ENV === 'production', // Make secure in production
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/project',
+        collectionName: 'sessions',
+        ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
+    cookie: {
         httpOnly: true,
-        maxAge: 72 * 60 * 60 * 1000
+        secure: process.env.NODE_ENV === 'production', // set true in production with HTTPS
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
     }
 }));
+
+//------------------------------------------------------------------------
 
 // Passport initialization
 require("./config/passport"); // Add passport config
@@ -82,13 +135,8 @@ module.exports = app;
 
 
 
-//------------------------------------------------------------------------------------------
 
-// Add after your session middleware
-// app.use((req, res, next) => {
-//     res.locals.user = req.session.user;
-//     next();
-// });
+
 
 
 

@@ -1,0 +1,14 @@
+<%- include('../partials/user/header') %>
+<form action="/profile/edit" method="POST">
+  <input type="text" name="name" value="<%= user.name %>" required>
+  <input type="email" name="email" value="<%= user.email %>" required>
+  <input type="text" name="phone" value="<%= user.phone %>" required>
+  <input type="text" name="line1" value="<%= (user.addresses && user.addresses[0]) ? user.addresses[0].line1 : '' %>" placeholder="Address Line 1">
+  <input type="text" name="city" value="<%= (user.addresses && user.addresses[0]) ? user.addresses[0].city : '' %>" placeholder="City">
+  <input type="text" name="state" value="<%= (user.addresses && user.addresses[0]) ? user.addresses[0].state : '' %>" placeholder="State">
+  <input type="text" name="zip" value="<%= (user.addresses && user.addresses[0]) ? user.addresses[0].zip : '' %>" placeholder="ZIP">
+  <input type="text" name="country" value="<%= (user.addresses && user.addresses[0]) ? user.addresses[0].country : '' %>" placeholder="Country">
+  <button type="submit">Update</button>
+  <% if (message) { %><div><%= message %></div><% } %>
+</form>
+<%- include('../partials/user/footer') %>

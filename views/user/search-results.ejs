@@ -1,0 +1,133 @@
+<%- include("../partials/user/header") %>
+
+<main class="main">
+  <section class="search-results section container">
+    <div class="search-header">
+      <h2 class="section__title">
+        <% if (totalProducts > 0) { %>
+          Search Results for "<%= searchQuery %>"
+          <span class="results-count">(<%= totalProducts %> items)</span>
+        <% } else { %>
+          No Results Found
+        <% } %>
+      </h2>
+    </div>
+
+    <% if (totalProducts === 0) { %>
+      <div class="no-results">
+        <div class="no-results__content">
+          <i class="fi fi-rs-search text-4xl mb-4"></i>
+          <h3>No products found for "<%= searchQuery %>"</h3>
+          <p>Try checking your spelling or using more general terms</p>
+          <a href="/" class="btn btn--md mt-4">Back to Home</a>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="products__container grid">
+        <% products.forEach(product => { %>
+          <div class="product__item">
+            <div class="product__banner">
+              <a href="/product/<%= product._id %>" class="product__images">
+                <img src="<%= product.productImage[0] %>" alt="" class="product__img default">
+                <img src="<%= product.productImage[1] || product.productImage[0] %>" alt="" class="product__img hover">
+              </a>
+
+              <div class="product__actions">
+                <button onclick="addToWishlist('<%= product._id %>')" class="action__btn" aria-label="Add to Wishlist">
+                  <i class="fi fi-rs-heart"></i>
+                </button>
+
+                <button onclick="addToCart('<%= product._id %>')" class="action__btn" aria-label="Add to Cart">
+                  <i class="fi fi-rs-shopping-cart"></i>
+                </button>
+              </div>
+
+              <% if (product.regularPrice > product.salesPrice) { %>
+                <div class="product__badge">
+                  <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
+                </div>
+              <% } %>
+            </div>
+
+            <div class="product__content">
+              <span class="product__category"><%= product.category.name %></span>
+              <a href="/product/<%= product._id %>">
+                <h3 class="product__title"><%= product.productName %></h3>
+              </a>
+              <div class="product__price flex">
+                <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
+                <% if (product.regularPrice > product.salesPrice) { %>
+                  <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <% if (totalPages > 1) { %>
+        <div class="pagination">
+          <% for(let i = 1; i <= totalPages; i++) { %>
+            <a href="/search?q=<%= searchQuery %>&page=<%= i %>" 
+               class="pagination__link <%= currentPage === i ? 'active' : '' %>">
+              <%= i %>
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </section>
+</main>
+
+<style>
+.search-header {
+  margin-bottom: 2rem;
+}
+
+.results-count {
+  color: var(--text-color-light);
+  font-size: 0.9em;
+}
+
+.no-results {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.no-results__content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-results h3 {
+  margin-bottom: 1rem;
+  color: var(--title-color);
+}
+
+.no-results p {
+  color: var(--text-color-light);
+  margin-bottom: 1.5rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pagination__link {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+}
+
+.pagination__link.active {
+  background-color: var(--first-color);
+  color: var(--body-color);
+  border-color: var(--first-color);
+}
+</style>
+
+<%- include("../partials/user/footer") %>

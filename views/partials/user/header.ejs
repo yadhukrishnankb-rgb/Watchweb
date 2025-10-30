@@ -20,9 +20,201 @@
     />
 
     <!--=============== CSS ===============-->
-    <link rel="stylesheet" href="public/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
 
-    <title>Ecommerce Website</title>
+    <style>
+      /* ============================================
+         EVERTIME LOGO STYLES
+         ============================================ */
+      
+      .nav__logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        gap: 0.5rem;
+      }
+      
+      .nav__logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      
+      /* Logo Icon */
+      .logo-icon {
+        width: 45px;
+        height: 45px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* Animated Clock Circle */
+      .clock-circle {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 3px solid rgb(8, 129, 121);
+        border-radius: 50%;
+        animation: rotateClock 20s linear infinite;
+      }
+      
+      .clock-circle::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        background: rgb(8, 129, 121);
+        border-radius: 50%;
+      }
+      
+      @keyframes rotateClock {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Center E Letter */
+      .logo-letter {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: rgb(8, 129, 121);
+        font-family: 'Arial', sans-serif;
+        z-index: 1;
+      }
+      
+      /* Logo Text */
+      .logo-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+      }
+      
+      .logo-text-main {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1f2937;
+        letter-spacing: -0.5px;
+        font-family: 'Arial', sans-serif;
+      }
+      
+      .logo-text-main .text-accent {
+        color: rgb(8, 129, 121);
+      }
+      
+      .logo-text-tagline {
+        font-size: 0.65rem;
+        color: #6b7280;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 500;
+        margin-top: 2px;
+      }
+      
+      /* Hover Effects */
+      .nav__logo:hover .clock-circle {
+        border-color: #047857;
+        animation: rotateClock 2s linear infinite;
+      }
+      
+      .nav__logo:hover .logo-letter {
+        color: #047857;
+        transform: scale(1.1);
+        transition: all 0.3s ease;
+      }
+      
+      .nav__logo:hover .logo-text-main {
+        color: rgb(8, 129, 121);
+        transition: color 0.3s ease;
+      }
+      
+      /* Mobile Menu Logo */
+      .nav__menu-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+      }
+      
+      .nav__menu-logo .nav__logo-container {
+        gap: 0.5rem;
+      }
+      
+      .nav__menu-logo .logo-icon {
+        width: 40px;
+        height: 40px;
+      }
+      
+      .nav__menu-logo .logo-text-main {
+        font-size: 1.3rem;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .logo-icon {
+          width: 38px;
+          height: 38px;
+        }
+        
+        .logo-letter {
+          font-size: 1.3rem;
+        }
+        
+        .logo-text-main {
+          font-size: 1.3rem;
+        }
+        
+        .logo-text-tagline {
+          font-size: 0.55rem;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .logo-text-tagline {
+          display: none;
+        }
+      }
+
+
+
+
+
+
+      .search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #666;
+}
+
+.clear-search:hover {
+  color: #333;
+}
+
+.search-form {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.header__search .form__input {
+  padding-right: 30px;
+}
+    </style>
+
+    <title>EverTime - Timeless Shopping Experience</title>
   </head>
   <body>
     <!--=============== HEADER ===============-->
@@ -59,33 +251,38 @@
   </div>
 <%}%>
 
-
-
-
-
         </div>
-
       </div> 
 
       <nav class="nav container">
-        <a href="index.html" class="nav__logo">
-          <img
-            class="nav__logo-img"
-            src="public/assets/img/logo.svg"
-            alt="website logo"
-          />
+        <!-- NEW EVERTIME LOGO -->
+        <a href="/" class="nav__logo">
+          <div class="nav__logo-container">
+            <div class="logo-icon">
+              <div class="clock-circle"></div>
+              <span class="logo-letter">E</span>
+            </div>
+            <div class="logo-text">
+              <span class="logo-text-main">Ever<span class="text-accent">Time</span></span>
+              <span class="logo-text-tagline">Timeless Shopping</span>
+            </div>
+          </div>
         </a>
-        <!-- <a href="index.html" class="nav__logo">
-          <img
-            class="nav__logo-img"
-            src="public/assets/img/watchlogo.png"
-            alt="website logo"
-          />
-        </a> -->
+       
         <div class="nav__menu" id="nav-menu">
           <div class="nav__menu-top">
-            <a href="index.html" class="nav__menu-logo">
-              <img src="./assets/img/logo.svg" alt="">
+            <!-- Mobile Menu Logo -->
+            <a href="/" class="nav__menu-logo">
+              <div class="nav__logo-container">
+                <div class="logo-icon">
+                  <div class="clock-circle"></div>
+                  <span class="logo-letter">E</span>
+                </div>
+                <div class="logo-text">
+                  <span class="logo-text-main">Ever<span class="text-accent">Time</span></span>
+                  <span class="logo-text-tagline">Timeless Shopping</span>
+                </div>
+              </div>
             </a>
             <div class="nav__close" id="nav-close">
               <i class="fi fi-rs-cross-small"></i>
@@ -93,7 +290,7 @@
           </div>
           <ul class="nav__list">
             <li class="nav__item">
-              <a href="/" class="nav__link ">Home</a>
+              <a href="/" class="nav__link">Home</a>
             </li>
             <li class="nav__item">
               <a href="/shop" class="nav__link">Shop</a>
@@ -108,16 +305,32 @@
               <a href="login-register.html" class="nav__link">Login</a>
             </li>
           </ul>
-          <div class="header__search">
-            <input
-              type="text"
-              placeholder="Search For Items..."
-              class="form__input"
-            />
-            <button class="search__btn">
-              <img src="public/assets/img/search.png" alt="search icon" />
-            </button>
-          </div>
+       
+          
+<div class="header__search">
+  <form action="/search" method="GET" class="search-form">
+    <div class="search-input-wrapper">
+      <input
+        type="text"
+        name="q"
+        placeholder="Search For Items..."
+        class="form__input"
+        value="<%= locals.searchQuery || '' %>"
+        id="searchInput"
+      />
+      <% if (locals.searchQuery) { %>
+        <button type="button" class="clear-search" onclick="clearSearch()">
+          <i class="fi fi-rs-cross-small"></i>
+        </button>
+      <% } %>
+    </div>
+    <button type="submit" class="search__btn">
+      <img src="/assets/img/search.png" alt="search icon" />
+    </button>
+  </form>
+</div>
+
+          
         </div>
         <div class="header__user-actions">
           <a href="wishlist.html" class="header__action-btn" title="Wishlist">
@@ -134,3 +347,38 @@
         </div>
       </nav>
     </header>
+  </body>
+</html>
+
+
+<script>
+function clearSearch() {
+  window.location.href = '/'; // Redirect to home page
+}
+
+
+
+ // Prevent going back from admin side to user side
+  // (function () {
+  //   if (!location.pathname.startsWith('/admin')) return;
+
+  //   const ADMIN_DASHBOARD = '/admin/dashboard';
+
+  //   // Create a guard state
+  //   history.replaceState({ adminGuard: true }, document.title, location.href);
+  //   history.pushState({ adminGuard: true }, document.title, location.href);
+
+  //   // Detect back button press
+  //   window.addEventListener('popstate', function (e) {
+  //     // Stay on admin dashboard or open it in new tab
+  //     if (!e.state || !e.state.adminGuard) {
+  //       const newTab = window.open(ADMIN_DASHBOARD, '_blank');
+  //       if (!newTab) {
+  //         window.location.replace(ADMIN_DASHBOARD);
+  //       } else {
+  //         history.pushState({ adminGuard: true }, document.title, location.href);
+  //       }
+  //     }
+  //   });
+  // })();
+</script>

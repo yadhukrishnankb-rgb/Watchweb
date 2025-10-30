@@ -116,82 +116,7 @@ exports.listProducts = async (req, res) => {
 
 
 
-//=======================================================================
 
-// exports.getProductDetails = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-
-//         // Get product with populated category
-//         const product = await Product.findById(id)
-//             .populate('category')
-//             .lean();
-
-//         // Check if product exists and is available
-//         if (!product || product.isBlocked) {
-//             return res.redirect('/shop');
-//         }
-
-//         // Get related products from same category
-//         const relatedProducts = await Product.find({
-//             category: product.category._id,
-//             _id: { $ne: product._id },
-//             isBlocked: false
-//         })
-//         .limit(4)
-//         .lean();
-
-//         // Get product reviews
-//         const reviews = await Review.find({ product: id })
-//             .populate('user', 'name')
-//             .sort({ createdAt: -1 })
-//             .lean();
-
-//         // Calculate average rating
-//         const averageRating = reviews.length > 0 
-//             ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
-//             : 0;
-
-//         // Check stock status
-//         const stockStatus = getStockStatus(product);
-
-//         // Get applicable discounts/coupons
-//         const discounts = await Discount.find({
-//             validFrom: { $lte: new Date() },
-//             validUntil: { $gte: new Date() },
-//             applicableProducts: id
-//         }).lean();
-
-//         res.render('user/productDetails', {
-//             product,
-//             relatedProducts,
-//             reviews,
-//             averageRating,
-//             stockStatus,
-//             discounts,
-//             breadcrumbs: [
-//                 { name: 'Home', url: '/' },
-//                 { name: 'Shop', url: '/shop' },
-//                 { name: product.category.name, url: `/shop?category=${product.category._id}` },
-//                 { name: product.productName, url: null }
-//             ],
-//             user: req.session.user
-//         });
-
-//     } catch (error) {
-//         console.error('Product details error:', error);
-//         res.redirect('/shop');
-//     }
-// };
-
-// // Helper function for stock status
-// function getStockStatus(product) {
-//     if (product.isBlocked) return 'UNAVAILABLE';
-//     if (product.status === 'Out of Stock') return 'OUT_OF_STOCK';
-//     if (product.quantity <= 0) return 'SOLD_OUT';
-//     if (product.quantity <= 5) return 'LOW_STOCK';
-//     return 'IN_STOCK';
-// }
 
 
 
@@ -299,3 +224,61 @@ function getStockMessage(status, quantity) {
             return 'Status Unknown';
     }
 }
+
+
+exports.searchProducts = async (req, res) => {
+    try {
+        const searchQuery = req.query.q?.trim();
+        
+        // If no search query, redirect to home
+        if (!searchQuery) {
+            return res.redirect('/');
+        }
+
+        // Build search query
+        const searchRegex = new RegExp(searchQuery, 'i');
+        const query = {
+            isBlocked: false,
+            $or: [
+                { productName: searchRegex },
+                { brand: searchRegex },
+                { description: searchRegex }
+            ]
+        };
+
+        // Execute search with pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12;
+        const skip = (page - 1) * limit;
+
+        const products = await Product.find(query)
+            .populate('category')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const totalProducts = await Product.countDocuments(query);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        // Get categories for sidebar
+        const categories = await Category.find({ isListed: true }).lean();
+
+        res.render('user/search-results', {
+            products,
+            searchQuery,
+            currentPage: page,
+            totalPages,
+            totalProducts,
+            categories,
+            user: req.session.user
+        });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).render('error', { 
+            message: 'Error performing search',
+            user: req.session.user
+        });
+    }
+};
