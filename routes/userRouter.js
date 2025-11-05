@@ -4,7 +4,12 @@ const userController = require("../controllers/user/userController")
 const passport = require("passport")//----------------
 const productController = require("../controllers/user/productController")//========
 const profileController = require("../controllers/user/profileController");
-const {isUser,checkBlockedStatus} = require('../middlewares/auth')
+
+const cartController = require("../controllers/user/cartController")
+
+const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
+
+
 
 
 router.get("/pageNotFound",userController.pageNotFound)
@@ -13,8 +18,8 @@ router.get("/signup",userController.loadSignup)
 router.post("/signup",userController.signup)
 router.post("/verify-otp",userController.verifyOtp)
  router.post("/resend-otp",userController.resendOTP)
- router.get("/", userController.loadHomepage);
-router.get('/shop', userController.listProducts);
+router.get('/shop', productController.listProducts);
+
 
 
 router.get('/login', userController.loadLogin);
@@ -54,6 +59,25 @@ router.get('/search', productController.searchProducts);
 
 
 
+
+// // ...existing code...
+
+// Cart Routes (Protected)
+// router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
+// router.post('/cart/add', isUser, checkBlockedStatus, cartController.addToCart);
+// router.post('/cart/update', isUser, checkBlockedStatus, cartController.updateQuantity);
+// router.delete('/cart/remove/:productId', isUser, checkBlockedStatus, cartController.removeFromCart);
+
+
+// Cart Routes (Protected)
+router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
+router.post('/cart/add', isUser, checkBlockedStatus, cartController.addToCart);
+router.post('/cart/update', isUser, checkBlockedStatus, cartController.updateQuantity);
+router.delete('/cart/remove/:productId', isUser, checkBlockedStatus, cartController.removeFromCart);
+
+
+
+
 router.get('/auth/google',passport.authenticate('google',{scope:['profile','email']}));
 
 
@@ -70,44 +94,4 @@ router.get('/auth/google/callback',
 
 module.exports = router;
 
-//------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// // // //----------------------
