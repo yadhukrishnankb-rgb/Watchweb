@@ -119,7 +119,6 @@ exports.listProducts = async (req, res) => {
 
 
 
-
 exports.getProductDetails = async (req, res) => {
     try {
         const { id } = req.params;
@@ -178,6 +177,7 @@ exports.getProductDetails = async (req, res) => {
             { name: product.productName, url: null }
         ];
 
+
         res.render('user/productDetails', {
             product,
             relatedProducts,
@@ -197,6 +197,8 @@ exports.getProductDetails = async (req, res) => {
         return res.redirect('/shop');
     }
 };
+
+
 
 // Helper function for stock status
 function getStockStatus(product) {

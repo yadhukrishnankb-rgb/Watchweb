@@ -1,6 +1,8 @@
 const User = require("../../models/userSchema");
 const nodemailer = require("nodemailer");
 const Order = require("../../models/orderSchema");
+const bcrypt = require("bcrypt");
+
 
 // Helper to generate OTP
 function generateOtp() {
@@ -131,39 +133,7 @@ exports.editProfilePage = async (req, res) => {
     res.render('user/edit-profile', { user, message: null });
 };
 
-// Handle profile update
-// exports.updateProfile = async (req, res) => {
-//     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-//     if (!userId) return res.redirect('/login');
-//     const { name, phone, email, line1, city, state, zip, country } = req.body;
-//     const user = await User.findById(userId);
-//     // If email changed, send OTP and require verification
-//     if (email !== user.email) {
-//         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-//         req.session.emailChange = { email, otp, name, phone, address: { line1, city, state, zip, country } };
-//         // Send OTP
-//         const transporter = nodemailer.createTransport({
-//             service: 'gmail',
-//             auth: {
-//                 user: process.env.NODEMAILER_EMAIL,
-//                 pass: process.env.NODEMAILER_PASSWORD
-//             }
-//         });
-//         await transporter.sendMail({
-//             to: email,
-//             from: process.env.NODEMAILER_EMAIL,
-//             subject: 'Email Change Verification',
-//             html: `<p>Your OTP is <b>${otp}</b></p>`
-//         });
-//         return res.redirect('/profile/verify-email');
-//     }
-//     user.name = name;
-//     user.phone = phone;
-//     user.addresses = [{ line1, city, state, zip, country }];
-//     await user.save();
-//     res.redirect('/profile');
-// };
-//-------------------
+
 exports.updateProfile = async (req, res) => {
     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
     if (!userId) return res.redirect('/login');
@@ -217,26 +187,7 @@ exports.verifyEmailPage = (req, res) => {
     res.render('user/verify-email', { message: null });
 };
 
-// Handle email OTP verification
-// exports.verifyEmailOtp = async (req, res) => {
-//     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-//     if (!userId) return res.redirect('/login');
-//     const { otp } = req.body;
-//     if (req.session.emailChange && req.session.emailChange.otp === otp) {
-//         const user = await User.findById(userId);
-//         user.email = req.session.emailChange.email;
-//         user.name = req.session.emailChange.name;
-//         user.phone = req.session.emailChange.phone;
-//         user.addresses = [req.session.emailChange.address];
-//         await user.save();
-//         req.session.emailChange = null;
-//         res.redirect('/profile');
-//     } else {
-//         res.render('user/verify-email', { message: 'Invalid OTP' });
-//     }
-// };
 
-//---------------
 exports.verifyEmailOtp = async (req, res) => {
     const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
     if (!userId) return res.redirect('/login');
@@ -281,6 +232,49 @@ exports.changePassword = async (req, res) => {
     }
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
+    res.redirect('/profile');
+};
+
+//-----------------------------
+
+// Add or Update Address
+exports.manageAddress = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+
+    const { line1, city, state, zip, country } = req.body;
+    const user = await User.findById(userId);
+
+    user.addresses = user.addresses || [];
+
+    if (req.params.index !== undefined) {
+        // Edit existing
+        const index = parseInt(req.params.index);
+        if (index >= 0 && index < user.addresses.length) {
+            user.addresses[index] = { line1, city, state, zip, country };
+        }
+    } else {
+        // Add new
+        user.addresses.push({ line1, city, state, zip, country });
+    }
+
+    await user.save();
+    res.redirect('/profile');
+};
+
+// Delete Address
+exports.deleteAddress = async (req, res) => {
+    const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+    if (!userId) return res.redirect('/login');
+
+    const index = parseInt(req.params.index);
+    const user = await User.findById(userId);
+
+    if (user.addresses && index >= 0 && index < user.addresses.length) {
+        user.addresses.splice(index, 1);
+        await user.save();
+    }
+
     res.redirect('/profile');
 };
 

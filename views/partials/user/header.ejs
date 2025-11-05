@@ -183,35 +183,60 @@
 
 
       .search-input-wrapper {
-  position: relative;
-  flex: 1;
-}
+        position: relative;
+        flex: 1;
+      }
 
-.clear-search {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  color: #666;
-}
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        pointer-events: none;
+        font-size: 16px;
+      }
 
-.clear-search:hover {
-  color: #333;
-}
+      .clear-search {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        color: #666;
+      }
 
-.search-form {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
+      .clear-search:hover {
+        color: #333;
+      }
 
-.header__search .form__input {
-  padding-right: 30px;
-}
+      .search-form {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .header__search .form__input {
+        padding-left: 40px;
+        padding-right: 30px;
+      }
+
+      /* ============================================
+         WISHLIST & CART ICON STYLES
+         ============================================ */
+      
+      .header__action-btn i {
+        font-size: 24px;
+        color: #1f2937;
+        transition: color 0.3s ease;
+      }
+      
+      .header__action-btn:hover i {
+        color: rgb(8, 129, 121);
+      }
     </style>
 
     <title>EverTime - Timeless Shopping Experience</title>
@@ -301,15 +326,14 @@
             <li class="nav__item">
               <a href="compare.html" class="nav__link">Compare</a>
             </li>
-            <li class="nav__item">
-              <a href="login-register.html" class="nav__link">Login</a>
-            </li>
+            
           </ul>
        
           
 <div class="header__search">
   <form action="/search" method="GET" class="search-form">
     <div class="search-input-wrapper">
+      <i class="fi fi-rs-search search-icon"></i>
       <input
         type="text"
         name="q"
@@ -324,9 +348,7 @@
         </button>
       <% } %>
     </div>
-    <button type="submit" class="search__btn">
-      <img src="/assets/img/search.png" alt="search icon" />
-    </button>
+    
   </form>
 </div>
 
@@ -334,11 +356,11 @@
         </div>
         <div class="header__user-actions">
           <a href="wishlist.html" class="header__action-btn" title="Wishlist">
-            <img src="public/assets/img/icon-heart.svg" alt="" />
+            <i class="fi fi-rs-heart"></i>
             <span class="count">3</span>
           </a>
           <a href="cart.html" class="header__action-btn" title="Cart">
-            <img src="public/assets/img/icon-cart.svg" alt="" />
+            <i class="fi fi-rs-shopping-cart"></i>
             <span class="count">3</span>
           </a>
           <div class="header__action-btn nav__toggle" id="nav-toggle">
@@ -358,27 +380,5 @@ function clearSearch() {
 
 
 
- // Prevent going back from admin side to user side
-  // (function () {
-  //   if (!location.pathname.startsWith('/admin')) return;
 
-  //   const ADMIN_DASHBOARD = '/admin/dashboard';
-
-  //   // Create a guard state
-  //   history.replaceState({ adminGuard: true }, document.title, location.href);
-  //   history.pushState({ adminGuard: true }, document.title, location.href);
-
-  //   // Detect back button press
-  //   window.addEventListener('popstate', function (e) {
-  //     // Stay on admin dashboard or open it in new tab
-  //     if (!e.state || !e.state.adminGuard) {
-  //       const newTab = window.open(ADMIN_DASHBOARD, '_blank');
-  //       if (!newTab) {
-  //         window.location.replace(ADMIN_DASHBOARD);
-  //       } else {
-  //         history.pushState({ adminGuard: true }, document.title, location.href);
-  //       }
-  //     }
-  //   });
-  // })();
 </script>

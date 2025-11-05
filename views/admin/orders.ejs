@@ -1,0 +1,80 @@
+<!-- views/admin/orders.ejs -->
+<%- include('../partials/admin/header') %>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<style>
+  .status-badge { @apply px-2 py-1 text-xs font-medium rounded; }
+  .pending { @apply bg-yellow-100 text-yellow-800; }
+  .processing { @apply bg-blue-100 text-blue-800; }
+  .shipped { @apply bg-purple-100 text-purple-800; }
+  .delivered { @apply bg-green-100 text-green-800; }
+  .cancelled { @apply bg-red-100 text-red-800; }
+</style>
+
+<main class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Order Management</h1>
+
+    <form method="GET" class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-3">
+      <input name="search" value="<%= search %>" placeholder="Search Order ID / User" class="px-3 py-2 border rounded flex-1 min-w-64">
+      <select name="status" class="px-3 py-2 border rounded">
+        <% statusOptions.forEach(o => { %>
+          <option value="<%= o.value %>" <%= o.value === statusFilter ? 'selected' : '' %>><%= o.label %></option>
+        <% }) %>
+      </select>
+      <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Search</button>
+      <% if (hasSearch) { %>
+        <a href="/admin/orders" class="px-4 py-2 bg-gray-600 text-white rounded">Clear</a>
+      <% } %>
+    </form>
+
+    <div class="bg-white rounded shadow overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% orders.forEach(order => { %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 text-sm font-medium"><%= order.orderId.slice(0,8) %>...</td>
+              <td class="px-6 py-4 text-sm text-gray-500"><%= new Date(order.createdOn).toLocaleDateString() %></td>
+              <td class="px-6 py-4 text-sm">
+                <%= order.address?.name || 'N/A' %><br>
+                <small class="text-gray-500"><%= order.address?.email %></small>
+              </td>
+              <td class="px-6 py-4 text-sm font-bold">₹<%= order.finalAmount.toLocaleString() %></td>
+              <td class="px-6 py-4">
+                <span class="status-badge <%= order.status.toLowerCase().replace(/\s/g,'-') %>">
+                  <%= order.status %>
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <a href="/admin/orders/<%= order._id %>" class="text-blue-600 hover:underline">View</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div class="mt-6 flex justify-center gap-2">
+        <% for(let i=1; i<=totalPages; i++) { %>
+          <a href="/admin/orders?page=<%= i %>&search=<%= search %>&status=<%= statusFilter %>"
+             class="px-3 py-1 rounded <%= i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200' %>">
+            <%= i %>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/admin/footer') %>

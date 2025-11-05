@@ -9,6 +9,9 @@ const {upload, processImages} = require("../middlewares/multerConfig")
 const categoryController = require('../controllers/admin/categoryController');
 const customerController = require("../controllers/admin/customerController")
 const productController = require('../controllers/admin/productController')
+const orderController = require('../controllers/admin/orderController')
+const inventoryController = require('../controllers/admin/inventoryController')
+
 
 const isAdmin = (req, res, next) => {
     if(req.session.admin) {
@@ -53,4 +56,13 @@ router.put('/products/:id/unblock', adminAuth, productController.unblockProduct)
 //  router.delete('/products/:id/delete', adminAuth, productController.deleteProduct);
 router.patch('/products/:id/block', isAdmin, productController.blockProduct);
 router.patch('/products/:id/unblock', isAdmin, productController.unblockProduct);
+
+
+router.get('/orders', isAdmin, orderController.getOrders);
+router.get('/orders/:id', isAdmin, orderController.getOrderDetails);
+router.patch('/orders/:id/status', isAdmin, orderController.updateOrderStatus);
+
+router.get('/inventory', isAdmin, inventoryController.getInventory);
+router.patch('/inventory/:id/stock', isAdmin, inventoryController.updateStock);
+
 module.exports = router;

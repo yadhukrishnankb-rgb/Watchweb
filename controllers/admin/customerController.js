@@ -1,4 +1,3 @@
-// ...existing code...
 const Customer = require('../../models/userSchema');
 
 // Get all customers
@@ -142,4 +141,3 @@ exports.unblockCustomer = async (req, res) => {
         res.status(500).render('error', { message: 'Error unblocking customer' });
     }
 };
-// ...existing code...

@@ -7,8 +7,6 @@ const profileController = require("../controllers/user/profileController");
 const {isUser,checkBlockedStatus} = require('../middlewares/auth')
 
 
-
-
 router.get("/pageNotFound",userController.pageNotFound)
 router.get("/",userController.loadHomepage)
 router.get("/signup",userController.loadSignup)
@@ -45,17 +43,14 @@ router.get('/profile/change-password', profileController.changePasswordPage);
 router.post('/profile/change-password', profileController.changePassword);
 router.post('/order/:id/cancel', profileController.cancelOrder);
 
-
+// Address Management
+router.post('/profile/address', profileController.manageAddress);
+router.post('/profile/address/:index/edit', profileController.manageAddress);
+router.post('/profile/address/:index/delete', profileController.deleteAddress);
 
 router.get('/product/:id', productController.getProductDetails);
 // Add this route with your other routes
 router.get('/search', productController.searchProducts);
-
-
-
-
-
-
 
 
 

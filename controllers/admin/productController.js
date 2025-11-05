@@ -55,7 +55,10 @@ exports.getProducts = async (req, res) => {
     }
 };
 
+//--------------------------------------------------------------------------------------------------------------
 
+
+//-----------------------------------------------------------------------------------------------------------
 
 
 // Get product by ID
@@ -174,7 +177,6 @@ exports.addProduct = async (req, res) => {
     });
   }
 };
-
 
 
 
@@ -332,49 +334,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-//--------------------------------------------------------------------
 
-// exports.blockProduct = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         if (!mongoose.isValidObjectId(id)) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Invalid product ID'
-//             });
-//         }
-
-//         const product = await Product.findByIdAndUpdate(
-//             id,
-//             { 
-//                 isBlocked: true,
-//                 status: 'Blocked'
-//             },
-//             { new: true }
-//         );
-
-//         if (!product) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: 'Product not found'
-//             });
-//         }
-
-//         res.json({
-//             success: true,
-//             message: 'Product blocked successfully'
-//         });
-//     } catch (err) {
-//         console.error('Error blocking product:', err);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Error blocking product'
-//         });
-//     }
-// };
-
-//------------------------------------------------------------
-// ...existing code...
 exports.blockProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -440,3 +400,4 @@ exports.unblockProduct = async (req, res) => {
         });
     }
 };
+

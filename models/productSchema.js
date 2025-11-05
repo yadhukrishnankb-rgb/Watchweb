@@ -1,67 +1,3 @@
-// const mongoose = require("mongoose")
-// const {Schema} = mongoose;
-
-// const productSchema = new Schema({
-//     productName : {
-//         type: String,
-//         required: true,
-//     },
-//     discription: {
-//         type :String,
-//         required : true,
-//     },
-//     brand: {
-//         type :String,
-//         required: true,
-//     },
-//     category: {
-//         type:Schema.Types.ObjectId,
-//         ref:"Category",
-//         required:true,
-//     },
-//     regularPrice:{
-//         type:Number,
-//         required:true,
-//     },
-//     salesPrice:{
-//         type:Number,
-//         required:true
-//     },
-//     productOffer : {
-//         type: Number,
-//         default: 0,
-//     },
-//     quantity : {
-//         type:Number,
-//         default:true
-//     },
-//     color: {
-//         type:String,
-//         required:true
-//     },
-//     productImage: {
-//         type:[String],
-//         required:true
-//     },
-//     isBlocked: {
-//         type:Boolean,
-//         default:false
-//     },
-//     status: {
-//       type: String,
-//       enum:["Available","out of stock","Discountinued"],
-//       requied:true,
-//       default:"Available"
-//     },
-
-
-// },{timestamp:true});
-
-// const Product = mongoose.model("Product",productSchema);
-
-// module.exports = Product;
-
-
 
 
 const mongoose = require('mongoose');
@@ -134,3 +70,42 @@ const productSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Product', productSchema);
+
+
+
+// models/productSchema.js
+// const mongoose = require('mongoose');
+
+// const productSchema = new mongoose.Schema({
+//   productName: { type: String, required: true, trim: true },
+//   description: { type: String, required: true },
+//   brand: { type: String, required: true },
+//   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+//   regularPrice: { type: Number, required: true },
+//   salesPrice: { type: Number, required: true },
+//   productOffer: { type: Number, default: 0 },
+//   // --- STOCK FIELDS ---
+//   quantity: { type: Number, required: true, min: 0, default: 0 },
+//   lowStockThreshold: { type: Number, default: 5 }, // alert when ≤5
+//   // --------------------
+//   color: { type: String, required: true },
+//   productImage: { type: [String], required: true },
+//   status: { type: String, enum: ['Available', 'Out of Stock'], default: 'Available' },
+//   isBlocked: { type: Boolean, default: false },
+//   createdAt: { type: Date, default: Date.now }
+// });
+
+// // Virtual: auto-set status
+// productSchema.virtual('inStock').get(function () {
+//   return this.quantity > 0;
+// });
+// productSchema.virtual('isLowStock').get(function () {
+//   return this.quantity <= this.lowStockThreshold && this.quantity > 0;
+// });
+
+// productSchema.set('toJSON', { virtuals: true });
+// productSchema.set('toObject', { virtuals: true });
+
+// module.exports = mongoose.model('Product', productSchema);
+
+

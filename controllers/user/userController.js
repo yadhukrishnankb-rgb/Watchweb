@@ -474,32 +474,6 @@ const logout = async (req, res) => {
 
 
 
-//----------------------------------------------------------------------------------
-
-
-// exports.loadHomepage = async (req, res) => {
-//     try {
-//         // Fetch up to 8 latest products that are not blocked
-//         const featuredProducts = await Product.find({ isBlocked: false })
-//             .populate('category')
-//             .sort({ createdAt: -1 })
-//             .limit(8)
-//             .lean();
-
-//         // Fetch categories for filters or display
-//         const categories = await Category.find({ isListed: true }).lean();
-
-//         res.render("home", {
-//             featuredProducts,
-//             categories,
-//             user: req.session.user
-//         });
-//     } catch (error) {
-//         console.error("Error loading homepage:", error);
-//         res.status(500).render("error", { message: "Error loading homepage" });
-//     }
-// };
-
  
 
 
