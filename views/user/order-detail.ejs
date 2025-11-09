@@ -1,0 +1,61 @@
+<!-- views/user/order-detail.ejs -->
+<%- include('../partials/user/header') %>
+
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Order Details - #<%= order.orderId %></h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Order Summary -->
+        <div class="md:col-span-2">
+            <div class="card mb-6">
+                <h2 class="text-xl font-bold mb-4">Order Items</h2>
+                <% order.orderedItems.forEach(item => { %>
+                    <div class="flex items-center gap-4 mb-4 p-4 border rounded">
+                        <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="w-16 h-16 object-cover">
+                        <div>
+                            <h3 class="font-bold"><%= item.name %></h3>
+                            <p>Qty: <%= item.quantity %> × ₹<%= item.price %> = ₹<%= item.totalPrice %></p>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Shipping Address</h2>
+                <p><strong><%= order.address.fullName %></strong></p>
+                <p><%= order.address.street %></p>
+                <p><%= order.address.city %>, <%= order.address.state %> - <%= order.address.pincode %></p>
+                <p>Phone: <%= order.address.phone %></p>
+            </div>
+        </div>
+
+        <!-- Order Status -->
+        <div class="space-y-6">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Order Status</h2>
+                <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
+                <p class="text-sm text-gray-600 mt-2">Placed on <%= new Date(order.createdOn).toLocaleDateString() %></p>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Payment</h2>
+                <p>Method: <%= order.paymentMethod %></p>
+                <p>Status: <%= order.paymentStatus %></p>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Amount</h2>
+                <p>Subtotal: ₹<%= order.subtotal %></p>
+                <p>Tax: ₹<%= order.tax %></p>
+                <p>Shipping: ₹<%= order.shipping %></p>
+                <p>Total: ₹<%= order.finalAmount %></p>
+            </div>
+
+            <div class="card">
+                <a href="/orders/<%= order._id %>/invoice" class="btn-green w-full text-center">Download Invoice</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/user/footer') %>

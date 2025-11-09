@@ -7,6 +7,10 @@ const profileController = require("../controllers/user/profileController");
 
 const cartController = require("../controllers/user/cartController")
 
+const checkoutController = require("../controllers/user/checkoutController");
+
+const orderController = require("../controllers/user/orderController")
+
 const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
 
 
@@ -60,20 +64,29 @@ router.get('/search', productController.searchProducts);
 
 
 
-// // ...existing code...
-
-// Cart Routes (Protected)
-// router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
-// router.post('/cart/add', isUser, checkBlockedStatus, cartController.addToCart);
-// router.post('/cart/update', isUser, checkBlockedStatus, cartController.updateQuantity);
-// router.delete('/cart/remove/:productId', isUser, checkBlockedStatus, cartController.removeFromCart);
-
 
 // Cart Routes (Protected)
 router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
 router.post('/cart/add', isUser, checkBlockedStatus, cartController.addToCart);
 router.post('/cart/update', isUser, checkBlockedStatus, cartController.updateQuantity);
 router.delete('/cart/remove/:productId', isUser, checkBlockedStatus, cartController.removeFromCart);
+
+
+router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheckout);
+
+router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutController.placeOrder);
+router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
+
+// Order Management Routes
+router.get('/orders', isUser, orderController.listOrders);
+router.get('/orders/:id', isUser, orderController.orderDetails);
+router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
+router.post('/orders/:id/return', isUser, orderController.returnOrder);
+router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
+
+router.post('/profile/address', isUser, profileController.manageAddress);
+router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
+router.post('/profile/address/:index/delete', isUser, profileController.deleteAddress);
 
 
 

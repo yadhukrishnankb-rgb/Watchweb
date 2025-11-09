@@ -1,0 +1,523 @@
+<!-- 
+<style>
+    :root { --primary: #5a7f72; }
+    body {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif;
+        padding: 20px; /* Added padding for better spacing */
+    }
+    .success-container {
+        text-align: center;
+        max-width: 600px; /* Increased max-width for better layout */
+        padding: 3rem; /* Increased padding for a more spacious feel */
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        transition: transform 0.3s; /* Added transition for hover effect */
+    }
+    .success-container:hover {
+        transform: scale(1.02); /* Slight scale effect on hover */
+    }
+    .success-icon {
+        width: 120px; height: 120px;
+        background: var(--primary);
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem; /* Increased icon size */
+        animation: bounce 1.8s infinite;
+        box-shadow: 0 15px 30px rgba(90,127,114,0.3);
+    }
+    @keyframes bounce {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+    .success-title {
+        font-size: 2.6rem; /* Increased title size */
+        font-weight: 800;
+        background: linear-gradient(90deg, var(--primary), #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+    }
+    .success-msg {
+        color: #374151;
+        font-size: 1.2rem; /* Increased message size */
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+    .order-id {
+        background: #ecfdf5;
+        color: #065f46;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        display: inline-block;
+        margin: 0.5rem 0;
+        font-size: 1.2rem; /* Increased order ID size */
+    }
+    .btn-group {
+        display: flex;
+        gap: 1.5rem; /* Increased gap between buttons */
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem; /* Increased margin for better spacing */
+    }
+    .btn-success {
+        background: linear-gradient(90deg, var(--primary), #10b981);
+        color: white;
+        padding: 0.75rem 2rem; /* Increased button padding */
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 8px 20px rgba(90,127,114,0.25);
+        transition: all 0.2s;
+        font-size: 1rem; /* Increased button font size */
+    }
+    .btn-success:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(90,127,114,0.35);
+    }
+</style>
+
+<div class="success-container">
+    <div class="success-icon">
+        <i class="fas fa-check"></i>
+    </div>
+    <h1 class="success-title">Order Placed Successfully!</h1>
+    <p class="success-msg">
+        Thank you for shopping with us!<br>
+        Your order has been confirmed and will be delivered soon.
+    </p>
+    <div class="order-id">#<%= order._id %></div>
+
+    <div class="btn-group">
+        <a href="/orders/<%= order._id %>" class="btn-success">
+            <i class="fas fa-receipt"></i> View Order Details
+        </a>
+        <a href="/" class="btn-success">
+            <i class="fas fa-shopping-bag"></i> Continue Shopping
+        </a>
+    </div>
+</div>
+ -->
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-header {
+            background: linear-gradient(135deg, #5a7568 0%, #6d8b7e 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .success-icon-wrapper {
+            margin-bottom: 1.5rem;
+            animation: scaleIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .success-icon {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .success-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: pulse 2s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        .success-icon i {
+            font-size: 3.5rem;
+            color: #5a7568;
+        }
+
+        .success-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .success-body {
+            padding: 2.5rem;
+            text-align: center;
+        }
+
+        .thank-you-section {
+            margin-bottom: 2rem;
+        }
+
+        .thank-you-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 1rem;
+        }
+
+        .thank-you-text {
+            font-size: 1.05rem;
+            color: #636e72;
+            line-height: 1.7;
+            margin-bottom: 0.75rem;
+        }
+
+        .highlight {
+            color: #5a7568;
+            font-weight: 600;
+        }
+
+        .illustration {
+            margin: 2rem 0;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .illustration svg {
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+        }
+
+        .order-info {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            animation: fadeIn 0.8s ease-out 0.6s both;
+        }
+
+        .order-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #868e96;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-id {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #5a7568;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+            animation: fadeIn 0.8s ease-out 0.8s both;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #5a7568;
+            color: white;
+            box-shadow: 0 4px 15px rgba(90, 117, 104, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #4a6558;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 117, 104, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #5a7568;
+            border: 2px solid #5a7568;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(90, 117, 104, 0.2);
+        }
+
+        .delivery-note {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #e8f5e9;
+            border-radius: 8px;
+            animation: fadeIn 0.8s ease-out 1s both;
+        }
+
+        .delivery-note p {
+            font-size: 0.95rem;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .delivery-note i {
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 640px) {
+            .success-header {
+                padding: 2.5rem 1.5rem;
+            }
+
+            .success-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .success-icon i {
+                font-size: 3rem;
+            }
+
+            .success-title {
+                font-size: 1.8rem;
+            }
+
+            .success-body {
+                padding: 2rem 1.5rem;
+            }
+
+            .thank-you-title {
+                font-size: 1.4rem;
+            }
+
+            .illustration svg {
+                max-width: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-header">
+            <div class="success-icon-wrapper">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <h1 class="success-title">Order Placed Successfully!</h1>
+            <p class="success-subtitle">Thank you for shopping with EverTime</p>
+        </div>
+
+        <div class="success-body">
+            <div class="thank-you-section">
+                <h2 class="thank-you-title">Thank You for Your Purchase! 🎉</h2>
+                <p class="thank-you-text">
+                    We appreciate your trust in <span class="highlight">EverTime</span> and are excited to deliver your order.
+                </p>
+                <p class="thank-you-text">
+                    Your order has been confirmed and will be <span class="highlight">delivered soon</span>.
+                </p>
+            </div>
+
+            <div class="illustration">
+                <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Package Box -->
+                    <rect x="120" y="140" width="160" height="120" fill="#5a7568" rx="8"/>
+                    <rect x="120" y="140" width="160" height="40" fill="#6d8b7e" rx="8"/>
+                    <line x1="200" y1="140" x2="200" y2="260" stroke="#4a6558" stroke-width="4"/>
+                    <line x1="120" y1="200" x2="280" y2="200" stroke="#4a6558" stroke-width="4"/>
+                    
+                    <!-- Checkmark Circle -->
+                    <circle cx="200" cy="90" r="45" fill="#e8f5e9" stroke="#5a7568" stroke-width="3"/>
+                    <path d="M175 90 L190 105 L225 70" fill="none" stroke="#5a7568" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                    
+                    <!-- Decorative elements -->
+                    <circle cx="80" cy="80" r="6" fill="#b2dfdb"/>
+                    <circle cx="320" cy="100" r="8" fill="#b2dfdb"/>
+                    <circle cx="340" cy="200" r="5" fill="#b2dfdb"/>
+                    <circle cx="60" cy="220" r="7" fill="#b2dfdb"/>
+                </svg>
+            </div>
+
+            <div class="order-info">
+                <div class="order-label">Order ID</div>
+                <div class="order-id">#ORD123456789</div>
+            </div>
+
+            <div class="button-group">
+                <a href="/orders" class="btn btn-primary">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>View Orders</span>
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    <i class="fas fa-home"></i>
+                    <span>Back to Home</span>
+                </a>
+            </div>
+
+            <div class="delivery-note">
+                <p>
+                    <i class="fas fa-truck"></i>
+                    You will receive tracking details via email shortly
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add smooth entrance animation
+        window.addEventListener('load', () => {
+            document.querySelector('.success-container').style.opacity = '0';
+            setTimeout(() => {
+                document.querySelector('.success-container').style.transition = 'opacity 0.6s ease-out';
+                document.querySelector('.success-container').style.opacity = '1';
+            }, 100);
+        });
+
+        // Add ripple effect to buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.5)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.pointerEvents = 'none';
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes ripple {
+                        to {
+                            transform: scale(4);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                ripple.style.animation = 'ripple 0.6s ease-out';
+                
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>

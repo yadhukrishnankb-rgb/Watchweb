@@ -290,3 +290,61 @@ exports.cancelOrder = async (req, res) => {
     }
     res.redirect('/profile');
 };
+
+
+//--------------------------------------------
+
+// Add or Edit Address
+// exports.manageAddress = async (req, res) => {
+//     try {
+//         const userId = req.session.user._id;
+//         const { fullName, phone, street, city, state, pincode, isDefault } = req.body;
+//         const index = req.params.index;
+
+//         const user = await User.findById(userId);
+//         if (!user.addresses) user.addresses = [];
+
+//         const newAddr = {
+//             _id: new mongoose.Types.ObjectId(),
+//             fullName, phone, street, city, state, pincode,
+//             isDefault: !!isDefault
+//         };
+
+//         if (index !== undefined && index !== '-1') {
+//             user.addresses[parseInt(index)] = newAddr;
+//         } else {
+//             user.addresses.push(newAddr);
+//         }
+
+//         // Only one default
+//         if (newAddr.isDefault) {
+//             user.addresses.forEach(a => {
+//                 if (a._id.toString() !== newAddr._id.toString()) a.isDefault = false;
+//             });
+//         }
+
+//         await user.save();
+//         res.json({ success: true });
+//     } catch (err) {
+//         res.status(500).json({ success: false, message: 'Failed to save address' });
+//     }
+// };
+
+// // Delete Address
+// exports.deleteAddress = async (req, res) => {
+//     try {
+//         const userId = req.session.user._id;
+//         const index = parseInt(req.params.index);
+//         const user = await User.findById(userId);
+
+//         if (!user.addresses || user.addresses.length <= index) {
+//             return res.status(404).json({ success: false, message: 'Address not found' });
+//         }
+
+//         user.addresses.splice(index, 1);
+//         await user.save();
+//         res.json({ success: true });
+//     } catch (err) {
+//         res.status(500).json({ success: false, message: 'Failed to delete address' });
+//     }
+// };
