@@ -1,58 +1,465 @@
 <!-- views/user/order-detail.ejs -->
 <%- include('../partials/user/header') %>
 
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Order Details - #<%= order.orderId %></h1>
+<style>
+    .order-detail-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6b7280;
+        text-decoration: none;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .back-link:hover {
+        color: #3b82f6;
+        transform: translateX(-4px);
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+    }
+    
+    .order-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    @media (min-width: 768px) {
+        .order-grid {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .card-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .card-icon {
+        font-size: 1.5rem;
+    }
+    
+    .order-item {
+        display: flex;
+        gap: 1.25rem;
+        padding: 1.25rem;
+        border: 2px solid #f3f4f6;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .order-item:hover {
+        border-color: #3b82f6;
+        background: #f9fafb;
+        transform: translateX(4px);
+    }
+    
+    .order-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .item-image {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .item-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .item-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-price {
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+    
+    .item-total {
+        font-weight: 700;
+        color: #3b82f6;
+        font-size: 1.1rem;
+        margin-top: 0.25rem;
+    }
+    
+    .address-card {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .address-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.75rem;
+    }
+    
+    .address-line {
+        color: #4b5563;
+        margin-bottom: 0.4rem;
+        line-height: 1.6;
+    }
+    
+    .status-card {
+        text-align: center;
+        padding: 2rem 1.5rem;
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border: 2px solid #e5e7eb;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: capitalize;
+        margin-bottom: 1rem;
+    }
+    
+    .status-pending { 
+        background: #fef3c7; 
+        color: #92400e;
+        border: 2px solid #fbbf24;
+    }
+    
+    .status-processing { 
+        background: #dbeafe; 
+        color: #1e40af;
+        border: 2px solid #3b82f6;
+    }
+    
+    .status-shipped { 
+        background: #dcfce7; 
+        color: #166534;
+        border: 2px solid #22c55e;
+    }
+    
+    .status-delivered { 
+        background: #d1fae5; 
+        color: #047857;
+        border: 2px solid #10b981;
+    }
+    
+    .status-cancelled { 
+        background: #fee2e2; 
+        color: #991b1b;
+        border: 2px solid #ef4444;
+    }
+    
+    .status-date {
+        font-size: 0.9rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #6b7280;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    .amount-card {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 2px solid #bae6fd;
+    }
+    
+    .amount-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        font-size: 0.95rem;
+    }
+    
+    .amount-label {
+        color: #0c4a6e;
+        font-weight: 500;
+    }
+    
+    .amount-value {
+        color: #0c4a6e;
+        font-weight: 600;
+    }
+    
+    .amount-divider {
+        height: 1px;
+        background: #7dd3fc;
+        margin: 0.75rem 0;
+    }
+    
+    .amount-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 0 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0c4a6e;
+    }
+    
+    .btn-invoice {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-invoice:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    .payment-method {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #f3f4f6;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+    }
+    
+    .payment-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #d1fae5;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #047857;
+    }
+    
+    @media (max-width: 768px) {
+        .order-detail-container {
+            padding: 1rem 0.5rem;
+        }
+        
+        .page-header {
+            padding: 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .order-item {
+            flex-direction: column;
+        }
+        
+        .item-image {
+            width: 100%;
+            height: 200px;
+        }
+        
+        .card {
+            padding: 1.25rem;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+        }
+    }
+</style>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="order-detail-container">
+    <a href="/orders" class="back-link">
+        ← Back to Orders
+    </a>
+
+    <div class="page-header">
+        <h1 class="page-title">Order #<%= order.orderId %></h1>
+        <p class="page-subtitle">Complete details of your order and delivery information</p>
+    </div>
+
+    <div class="order-grid">
         <!-- Order Summary -->
-        <div class="md:col-span-2">
-            <div class="card mb-6">
-                <h2 class="text-xl font-bold mb-4">Order Items</h2>
+        <div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-icon">📦</span>
+                    Order Items
+                </h2>
                 <% order.orderedItems.forEach(item => { %>
-                    <div class="flex items-center gap-4 mb-4 p-4 border rounded">
-                        <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="w-16 h-16 object-cover">
-                        <div>
-                            <h3 class="font-bold"><%= item.name %></h3>
-                            <p>Qty: <%= item.quantity %> × ₹<%= item.price %> = ₹<%= item.totalPrice %></p>
+                    <div class="order-item">
+                        <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="item-image">
+                        <div class="item-details">
+                            <h3 class="item-name"><%= item.name %></h3>
+                            <p class="item-price">
+                                Quantity: <%= item.quantity %> × ₹<%= item.price.toLocaleString() %>
+                            </p>
+                            <p class="item-total">Total: ₹<%= item.totalPrice.toLocaleString() %></p>
                         </div>
                     </div>
                 <% }) %>
             </div>
 
             <div class="card">
-                <h2 class="text-xl font-bold mb-4">Shipping Address</h2>
-                <p><strong><%= order.address.fullName %></strong></p>
-                <p><%= order.address.street %></p>
-                <p><%= order.address.city %>, <%= order.address.state %> - <%= order.address.pincode %></p>
-                <p>Phone: <%= order.address.phone %></p>
+                <h2 class="card-title">
+                    <span class="card-icon">📍</span>
+                    Shipping Address
+                </h2>
+                <div class="address-card">
+                    <p class="address-name"><%= order.address.fullName %></p>
+                    <p class="address-line"><%= order.address.street %></p>
+                    <p class="address-line"><%= order.address.city %>, <%= order.address.state %> - <%= order.address.pincode %></p>
+                    <p class="address-line">📞 <%= order.address.phone %></p>
+                </div>
             </div>
         </div>
 
         <!-- Order Status -->
-        <div class="space-y-6">
-            <div class="card">
-                <h2 class="text-xl font-bold mb-4">Order Status</h2>
+        <div>
+            <div class="card status-card">
+                <h2 class="card-title">
+                    <span class="card-icon">📊</span>
+                    Order Status
+                </h2>
                 <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
-                <p class="text-sm text-gray-600 mt-2">Placed on <%= new Date(order.createdOn).toLocaleDateString() %></p>
+                <p class="status-date">
+                    📅 <%= new Date(order.createdOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                </p>
             </div>
 
             <div class="card">
-                <h2 class="text-xl font-bold mb-4">Payment</h2>
-                <p>Method: <%= order.paymentMethod %></p>
-                <p>Status: <%= order.paymentStatus %></p>
+                <h2 class="card-title">
+                    <span class="card-icon">💳</span>
+                    Payment Details
+                </h2>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Payment Method</span>
+                        <span class="payment-method">
+                            💰 <%= order.paymentMethod %>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Payment Status</span>
+                        <span class="payment-status">
+                            ✓ <%= order.paymentStatus %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card amount-card">
+                <h2 class="card-title">
+                    <span class="card-icon">💰</span>
+                    Order Summary
+                </h2>
+                <div class="amount-row">
+                    <span class="amount-label">Subtotal</span>
+                    <span class="amount-value">₹<%= order.subtotal.toLocaleString() %></span>
+                </div>
+                <div class="amount-row">
+                    <span class="amount-label">Tax</span>
+                    <span class="amount-value">₹<%= order.tax.toLocaleString() %></span>
+                </div>
+                <div class="amount-row">
+                    <span class="amount-label">Shipping</span>
+                    <span class="amount-value">₹<%= order.shipping.toLocaleString() %></span>
+                </div>
+                <div class="amount-divider"></div>
+                <div class="amount-total">
+                    <span>Total Amount</span>
+                    <span>₹<%= order.finalAmount.toLocaleString() %></span>
+                </div>
             </div>
 
             <div class="card">
-                <h2 class="text-xl font-bold mb-4">Amount</h2>
-                <p>Subtotal: ₹<%= order.subtotal %></p>
-                <p>Tax: ₹<%= order.tax %></p>
-                <p>Shipping: ₹<%= order.shipping %></p>
-                <p>Total: ₹<%= order.finalAmount %></p>
-            </div>
-
-            <div class="card">
-                <a href="/orders/<%= order._id %>/invoice" class="btn-green w-full text-center">Download Invoice</a>
+                <a href="/orders/<%= order._id %>/invoice" class="btn-invoice">
+                    📄 Download Invoice
+                </a>
             </div>
         </div>
     </div>

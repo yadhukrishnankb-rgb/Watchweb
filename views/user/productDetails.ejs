@@ -528,20 +528,15 @@ Add to Cart
 
 
 
-<form action="/buy-now" method="POST" style="margin-top: 1rem;">
-
-<input type="hidden" name="productId" value="<%= product._id %>">
-
-<button type="submit"
-
-class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 transition-colors"
-
-<%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'disabled' %>>
-
-Buy Now
-
-</button>
-
+<!-- Buy Now → Direct Checkout -->
+<form action="/checkout/direct" method="POST" style="margin-top: 1rem;">
+  <input type="hidden" name="productId" value="<%= product._id %>">
+  <input type="hidden" name="quantity" value="1">
+  <button type="submit"
+    class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 transition-colors"
+    <%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'disabled' %>>
+    Buy Now
+  </button>
 </form>
 
 

@@ -1,8 +1,10 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
-const fs = require('fs').promises;
-const path = require('path');
+// const fs = require('fs').promises;
+// const path = require('path');
 const mongoose = require('mongoose');
+const cloudinary = require('../../config/cloudinary');
+
 
 
 exports.getProducts = async (req, res) => {
@@ -94,245 +96,411 @@ exports.getProductById = async (req, res) => {
 };
 
 // Add new product
+// exports.addProduct = async (req, res) => {
+//   try {
+//     const {
+//       productName,
+//       description,
+//       brand,
+//       category,
+//       regularPrice,
+//       salesPrice,
+//       productOffer,
+//       quantity,
+//       color,
+//       status
+//     } = req.body;
+
+//     // Validate required fields
+//     if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Please fill all required fields'
+//       });
+//     }
+
+//     // Validate numeric fields
+//     if (isNaN(regularPrice) || isNaN(salesPrice) || isNaN(quantity) || (productOffer && isNaN(productOffer))) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Price, quantity, and offer must be valid numbers'
+//       });
+//     }
+
+//     // Validate category
+//     if (!mongoose.isValidObjectId(category)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid category ID'
+//       });
+//     }
+
+//     const categoryExists = await Category.findById(category);
+//     if (!categoryExists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Category does not exist'
+//       });
+//     }
+
+//     // Check images
+//     if (!req.processedImages || req.processedImages.length < 3) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Please upload at least 3 images'
+//       });
+//     }
+
+//     const product = new Product({
+//       productName,
+//       description,
+//       brand,
+//       category,
+//       regularPrice: parseFloat(regularPrice),
+//       salesPrice: parseFloat(salesPrice),
+//       productOffer: parseInt(productOffer) || 0,
+//       quantity: parseInt(quantity) || 0,
+//       color,
+//       productImage: req.processedImages,
+//       status: status || 'Available'
+//     });
+
+//     await product.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Product added successfully'
+//     });
+//   } catch (err) {
+//     console.error('Error adding product:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: err.message || 'Error adding product'
+//     });
+//   }
+// };
+
+
+
+
+// // Edit product
+// exports.editProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     if (!mongoose.isValidObjectId(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid product ID'
+//       });
+//     }
+
+//     const {
+//       productName,
+//       description,
+//       brand,
+//       category,
+//       regularPrice,
+//       salesPrice,
+//       productOffer,
+//       quantity,
+//       color,
+//       status
+//     } = req.body;
+
+//     // Validate required fields
+//     if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Please fill all required fields'
+//       });
+//     }
+
+//     // Validate numeric fields
+//     if (isNaN(regularPrice) || isNaN(salesPrice) || isNaN(quantity) || (productOffer && isNaN(productOffer))) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Price, quantity, and offer must be valid numbers'
+//       });
+//     }
+
+//     // Validate category
+//     if (!mongoose.isValidObjectId(category)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid category ID'
+//       });
+//     }
+
+//     const categoryExists = await Category.findById(category);
+//     if (!categoryExists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Category does not exist'
+//       });
+//     }
+
+//     const updateData = {
+//       productName,
+//       description,
+//       brand,
+//       category,
+//       regularPrice: parseFloat(regularPrice),
+//       salesPrice: parseFloat(salesPrice),
+//       productOffer: parseInt(productOffer) || 0,
+//       quantity: parseInt(quantity) || 0,
+//       color,
+//       status: status || 'Available'
+//     };
+
+//     const oldProduct = await Product.findById(id);
+//     if (!oldProduct) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Product not found'
+//       });
+//     }
+
+//     // Handle images
+//     if (req.processedImages?.length > 0) {
+//       // Delete old images
+//       for (let imagePath of oldProduct.productImage) {
+//         await fs.unlink(path.join(process.cwd(), 'public', imagePath)).catch(err => console.error('Error deleting old image:', err));
+//       }
+//       updateData.productImage = req.processedImages;
+//     } else {
+//       updateData.productImage = oldProduct.productImage;
+//     }
+
+//     // Validate total images
+//     if (updateData.productImage.length < 3) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Product must have at least 3 images'
+//       });
+//     }
+
+//     const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
+
+//     res.json({
+//       success: true,
+//       message: 'Product updated successfully'
+//     });
+//   } catch (err) {
+//     console.error('Error updating product:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: err.message || 'Error updating product'
+//     });
+//   }
+// };
+
+
+// exports.deleteProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     if (!mongoose.isValidObjectId(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid product ID'
+//       });
+//     }
+
+//     // Find the product first
+//     const product = await Product.findById(id);
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Product not found'
+//       });
+//     }
+
+//     // Delete all associated images
+//     for (let imagePath of product.productImage) {
+//       await fs.unlink(path.join(process.cwd(), 'public', imagePath))
+//         .catch(err => console.error('Error deleting image:', err));
+//     }
+
+//     // Delete the product from database
+//     await Product.findByIdAndDelete(id);
+
+//     res.json({
+//       success: true,
+//       message: 'Product deleted successfully'
+//     });
+//   } catch (err) {
+//     console.error('Error deleting product:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error deleting product'
+//     });
+//   }
+// };
+
+////-------------------------------------
+
+
+// ... keep existing getProducts function ...
+
 exports.addProduct = async (req, res) => {
-  try {
-    const {
-      productName,
-      description,
-      brand,
-      category,
-      regularPrice,
-      salesPrice,
-      productOffer,
-      quantity,
-      color,
-      status
-    } = req.body;
+    try {
+        const {
+            productName,
+            description,
+            brand,
+            category,
+            regularPrice,
+            salesPrice,
+            productOffer,
+            quantity,
+            color,
+            status
+        } = req.body;
 
-    // Validate required fields
-    if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please fill all required fields'
-      });
+        // Validate required fields
+        if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please fill all required fields'
+            });
+        }
+
+        // Check images
+        if (!req.files || req.files.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please upload at least 3 images'
+            });
+        }
+
+        // Get Cloudinary URLs from uploaded files
+        const productImages = req.files.map(file => file.path);
+
+        const product = new Product({
+            productName,
+            description,
+            brand,
+            category,
+            regularPrice: parseFloat(regularPrice),
+            salesPrice: parseFloat(salesPrice),
+            productOffer: parseInt(productOffer) || 0,
+            quantity: parseInt(quantity) || 0,
+            color,
+            productImage: productImages,
+            status: status || 'Available'
+        });
+
+        await product.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Product added successfully'
+        });
+    } catch (err) {
+        console.error('Error adding product:', err);
+        res.status(500).json({
+            success: false,
+            message: err.message || 'Error adding product'
+        });
     }
-
-    // Validate numeric fields
-    if (isNaN(regularPrice) || isNaN(salesPrice) || isNaN(quantity) || (productOffer && isNaN(productOffer))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Price, quantity, and offer must be valid numbers'
-      });
-    }
-
-    // Validate category
-    if (!mongoose.isValidObjectId(category)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid category ID'
-      });
-    }
-
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category does not exist'
-      });
-    }
-
-    // Check images
-    if (!req.processedImages || req.processedImages.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please upload at least 3 images'
-      });
-    }
-
-    const product = new Product({
-      productName,
-      description,
-      brand,
-      category,
-      regularPrice: parseFloat(regularPrice),
-      salesPrice: parseFloat(salesPrice),
-      productOffer: parseInt(productOffer) || 0,
-      quantity: parseInt(quantity) || 0,
-      color,
-      productImage: req.processedImages,
-      status: status || 'Available'
-    });
-
-    await product.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Product added successfully'
-    });
-  } catch (err) {
-    console.error('Error adding product:', err);
-    res.status(500).json({
-      success: false,
-      message: err.message || 'Error adding product'
-    });
-  }
 };
 
-
-
-
-// Edit product
 exports.editProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid product ID'
-      });
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid product ID'
+            });
+        }
+
+        const oldProduct = await Product.findById(id);
+        if (!oldProduct) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        const updateData = { ...req.body };
+
+        // Handle images
+        if (req.files?.length > 0) {
+            // Delete old images from Cloudinary
+            for (let imageUrl of oldProduct.productImage) {
+                const publicId = imageUrl.split('/').pop().split('.')[0];
+                await cloudinary.uploader.destroy(publicId);
+            }
+            
+            // Add new Cloudinary URLs
+            updateData.productImage = req.files.map(file => file.path);
+        }
+
+        // Validate total images
+        if (updateData.productImage && updateData.productImage.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product must have at least 3 images'
+            });
+        }
+
+        const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
+
+        res.json({
+            success: true,
+            message: 'Product updated successfully'
+        });
+    } catch (err) {
+        console.error('Error updating product:', err);
+        res.status(500).json({
+            success: false,
+            message: err.message || 'Error updating product'
+        });
     }
-
-    const {
-      productName,
-      description,
-      brand,
-      category,
-      regularPrice,
-      salesPrice,
-      productOffer,
-      quantity,
-      color,
-      status
-    } = req.body;
-
-    // Validate required fields
-    if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please fill all required fields'
-      });
-    }
-
-    // Validate numeric fields
-    if (isNaN(regularPrice) || isNaN(salesPrice) || isNaN(quantity) || (productOffer && isNaN(productOffer))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Price, quantity, and offer must be valid numbers'
-      });
-    }
-
-    // Validate category
-    if (!mongoose.isValidObjectId(category)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid category ID'
-      });
-    }
-
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category does not exist'
-      });
-    }
-
-    const updateData = {
-      productName,
-      description,
-      brand,
-      category,
-      regularPrice: parseFloat(regularPrice),
-      salesPrice: parseFloat(salesPrice),
-      productOffer: parseInt(productOffer) || 0,
-      quantity: parseInt(quantity) || 0,
-      color,
-      status: status || 'Available'
-    };
-
-    const oldProduct = await Product.findById(id);
-    if (!oldProduct) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
-
-    // Handle images
-    if (req.processedImages?.length > 0) {
-      // Delete old images
-      for (let imagePath of oldProduct.productImage) {
-        await fs.unlink(path.join(process.cwd(), 'public', imagePath)).catch(err => console.error('Error deleting old image:', err));
-      }
-      updateData.productImage = req.processedImages;
-    } else {
-      updateData.productImage = oldProduct.productImage;
-    }
-
-    // Validate total images
-    if (updateData.productImage.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'Product must have at least 3 images'
-      });
-    }
-
-    const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
-
-    res.json({
-      success: true,
-      message: 'Product updated successfully'
-    });
-  } catch (err) {
-    console.error('Error updating product:', err);
-    res.status(500).json({
-      success: false,
-      message: err.message || 'Error updating product'
-    });
-  }
 };
-
 
 exports.deleteProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid product ID'
-      });
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid product ID'
+            });
+        }
+
+        const product = await Product.findById(id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Delete images from Cloudinary
+        for (let imageUrl of product.productImage) {
+            const publicId = imageUrl.split('/').pop().split('.')[0];
+            await cloudinary.uploader.destroy(publicId);
+        }
+
+        await Product.findByIdAndDelete(id);
+
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
+        });
+    } catch (err) {
+        console.error('Error deleting product:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting product'
+        });
     }
-
-    // Find the product first
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
-
-    // Delete all associated images
-    for (let imagePath of product.productImage) {
-      await fs.unlink(path.join(process.cwd(), 'public', imagePath))
-        .catch(err => console.error('Error deleting image:', err));
-    }
-
-    // Delete the product from database
-    await Product.findByIdAndDelete(id);
-
-    res.json({
-      success: true,
-      message: 'Product deleted successfully'
-    });
-  } catch (err) {
-    console.error('Error deleting product:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting product'
-    });
-  }
 };
+
+// ... keep other existing functions ...
+
+///------------------------------------
 
 
 exports.blockProduct = async (req, res) => {

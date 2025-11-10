@@ -6,6 +6,7 @@ const multer = require('multer');
 const adminController = require("../controllers/admin/adminController");
 const {userAuth,adminAuth} = require("../middlewares/auth")
 const {upload, processImages} = require("../middlewares/multerConfig")
+
 const categoryController = require('../controllers/admin/categoryController');
 const customerController = require("../controllers/admin/customerController")
 const productController = require('../controllers/admin/productController')
@@ -20,6 +21,28 @@ const isAdmin = (req, res, next) => {
         res.redirect("/admin/login");
     }
 };
+
+// const isAdmin = (req, res, next) => {
+//     if (req.session.admin) {
+//         next();
+//     } else {
+//         // Check if it's an API request
+//         if (req.xhr || req.headers.accept?.includes('application/json')) {
+//             res.status(401).json({
+//                 success: false,
+//                 message: 'Session expired or unauthorized. Please login again.'
+//             });
+//         } else {
+//             res.redirect("/admin/login");
+//         }
+//     }
+// };
+
+
+
+
+
+
 
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
@@ -46,16 +69,25 @@ router.delete('/categories/:id', isAdmin, categoryController.deleteCategory);
 
 // Product Management Routes
 router.get('/products', isAdmin, productController.getProducts);
-router.post('/products', isAdmin, upload, processImages, productController.addProduct);
+// router.post('/products', isAdmin, upload, processImages, productController.addProduct);
 router.put('/products/:id', isAdmin, upload, processImages, productController.editProduct);
 router.delete('/products/:id', isAdmin, productController.deleteProduct);
 router.get('/products/:id', isAdmin, productController.getProductById);
 // Add these new routes while keeping existing routes
-router.put('/products/:id/block', adminAuth, productController.blockProduct);
-router.put('/products/:id/unblock', adminAuth, productController.unblockProduct);
-//  router.delete('/products/:id/delete', adminAuth, productController.deleteProduct);
+// router.put('/products/:id/block', adminAuth, productController.blockProduct);
+// router.put('/products/:id/unblock', adminAuth, productController.unblockProduct);
 router.patch('/products/:id/block', isAdmin, productController.blockProduct);
 router.patch('/products/:id/unblock', isAdmin, productController.unblockProduct);
+
+
+//------------
+router.post('/products', isAdmin, upload, productController.addProduct);
+
+//  router.post('/admin/products', adminAuth, upload, /*processImages (no-op)*/ productController.addProduct);
+//  router.put('/admin/products/:id', adminAuth, upload, productController.editProduct);
+// //-----------
+
+
 
 
 router.get('/orders', isAdmin, orderController.getOrders);

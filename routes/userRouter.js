@@ -84,10 +84,15 @@ router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
 router.post('/orders/:id/return', isUser, orderController.returnOrder);
 router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
 
+
+// Direct checkout (Buy Now)
+router.post('/checkout/direct', isUser, checkBlockedStatus, checkoutController.directCheckout);
+// Direct order (Buy Now → Place Order)
+router.post('/checkout/direct-order', isUser, checkBlockedStatus, checkoutController.directPlaceOrder);
+
 router.post('/profile/address', isUser, profileController.manageAddress);
 router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
 router.post('/profile/address/:index/delete', isUser, profileController.deleteAddress);
-
 
 
 

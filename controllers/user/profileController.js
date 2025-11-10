@@ -212,6 +212,8 @@ exports.verifyEmailOtp = async (req, res) => {
 };
 //--------------
 
+
+
 // Show change password page
 exports.changePasswordPage = (req, res) => {
     res.render('user/change-password', { message: null });
