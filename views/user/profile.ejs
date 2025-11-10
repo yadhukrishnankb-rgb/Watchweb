@@ -570,7 +570,7 @@
                             </span>
                         </div>
                         <div class="order-actions">
-                            <a href="/order/<%= order._id %>" class="btn-small btn-view">View</a>
+                            <a href="/orders/<%= order._id %>" class="btn-small btn-view">View</a>
                             <% if (order.status === 'Placed') { %>
                                 <form action="/order/<%= order._id %>/cancel" method="POST" style="display: inline;">
                                     <button type="submit" class="btn-small btn-cancel">Cancel Order</button>

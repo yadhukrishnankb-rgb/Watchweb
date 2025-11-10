@@ -1,7 +1,7 @@
 // controllers/admin/orderController.js
-const Order = require('../../models/orderSchema');  // ← Fixed path
+const Order = require('../../models/orderSchema');  
 const User = require('../../models/userSchema');
-const Address = require('../../models/addressSchema'); // if you have it
+const Address = require('../../models/addressSchema'); 
 const mongoose = require('mongoose');
 
 // GET /admin/orders

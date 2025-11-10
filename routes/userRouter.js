@@ -11,6 +11,9 @@ const checkoutController = require("../controllers/user/checkoutController");
 
 const orderController = require("../controllers/user/orderController")
 
+const { cancelOrder } = require('../controllers/user/orderController');
+
+
 const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
 
 
@@ -83,6 +86,10 @@ router.get('/orders/:id', isUser, orderController.orderDetails);
 router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
 router.post('/orders/:id/return', isUser, orderController.returnOrder);
 router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
+
+
+
+
 
 
 // Direct checkout (Buy Now)

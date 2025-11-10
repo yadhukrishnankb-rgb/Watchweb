@@ -589,7 +589,7 @@ function confirmCancel() {
     fetch(`/orders/${currentOrderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
+        body: JSON.stringify({ reason ,isFullOrder: true})
     }).then(res => res.json()).then(data => {
         if (data.success) location.reload();
         else alert(data.message);

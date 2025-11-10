@@ -58,40 +58,47 @@ const orderDetails = async (req, res) => {
     }
 };
 
+
+
 const cancelOrder = async (req, res) => {
     try {
         const userId = req.session.user._id;
         const orderId = req.params.id;
-        const { reason, isFullOrder } = req.body;
+        const { reason } = req.body;               // <-- reason from modal
 
+        // Find order that belongs to the logged-in user
         const order = await Order.findOne({ _id: orderId, user: userId });
-        if (!order || order.status !== 'pending') {
-            return res.json({ success: false, message: 'Cannot cancel this order' });
+
+        // ----  VALIDATIONS  ----
+        if (!order) {
+            return res.json({ success: false, message: 'Order not found' });
+        }
+        if (order.status !== 'pending') {
+            return res.json({ success: false, message: 'Only pending orders can be cancelled' });
         }
 
-        if (isFullOrder) {
-            // Cancel entire order
-            for (let item of order.orderedItems) {
-                const product = await Product.findById(item.product);
-                if (product) {
-                    product.quantity += item.quantity;
-                    await product.save();
-                }
-            }
-            order.status = 'cancelled';
-            order.cancelReason = reason || 'No reason provided';
-            await order.save();
-        } else {
-            // Cancel specific item (logic similar, but update order items array)
-            // Implementation for individual item cancel...
+        // ----  RESTORE STOCK  ----
+        for (const item of order.orderedItems) {
+            await Product.updateOne(
+                { _id: item.product },
+                { $inc: { quantity: item.quantity } }   // add back the qty
+            );
         }
+
+        // ----  UPDATE ORDER  ----
+        order.status = 'cancelled';
+        order.cancelReason = reason?.trim() || 'No reason provided';
+        order.cancelledAt = new Date();
+        await order.save();
 
         res.json({ success: true, message: 'Order cancelled successfully' });
     } catch (err) {
-        console.error(err);
+        console.error('Cancel order error →', err);
         res.json({ success: false, message: 'Cancellation failed' });
     }
 };
+
+
 
 const returnOrder = async (req, res) => {
     try {

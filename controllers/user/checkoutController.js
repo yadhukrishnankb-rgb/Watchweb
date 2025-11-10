@@ -142,7 +142,11 @@ const placeOrder = async (req, res) => {
         res.json({ success: false, message: 'Failed to place order' });
     }
 };
-// ...existing code...
+// // ...existing code...
+
+
+
+
 
 //---------
 // ...existing code...

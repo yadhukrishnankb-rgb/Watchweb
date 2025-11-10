@@ -185,34 +185,47 @@
                 <% if (user.addresses && user.addresses.length > 0) { %>
                     <div class="address-list" role="list" aria-label="Saved addresses">
                         <% user.addresses.forEach((addr, idx) => { %>
-                            <label class="address-card <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
-                                <div class="radio-wrap">
-                                    <input type="radio" name="selectedAddress" value="<%= addr._id %>" aria-label="Select delivery address" <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'checked' : '' %> required>
-                                </div>
+    <label class="address-card <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
+        <div class="radio-wrap">
+            <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'checked' : '' %> required>
+        </div>
 
-                                <div class="address-info">
-                                    <div class="address-title">
-                                        <h4 title="<%= addr.fullName %>"><%= addr.fullName %></h4>
-                                        <% if (addr.isDefault) { %>
-                                            <span class="default-tag" aria-hidden="true">DEFAULT</span>
-                                        <% } %>
-                                    </div>
+        <div class="address-info">
+            <!-- Address Type (e.g., home) -->
+            <div style="font-weight:700; color:var(--primary); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">
+                <%= addr.type || 'home' %>
+            </div>
 
-                                    <div class="address-meta" title="<%= addr.street %>">
-                                        <div><%= addr.street %></div>
-                                        <div style="margin-top:.25rem;"><%= addr.city %>, <%= addr.state %> - <%= addr.pincode %></div>
-                                        <div style="margin-top:.5rem; color:var(--muted); font-weight:600;">
-                                            <i class="fas fa-phone" style="color:var(--primary); margin-right:.4rem;"></i>
-                                            +91 <%= addr.phone %>
-                                        </div>
-                                    </div>
-                                </div>
+            <!-- Full Name -->
+            <div style="font-weight:700; font-size:1.1rem; margin:0.25rem 0; color:#0f172a;">
+                <%= addr.fullName %>
+            </div>
 
-                                <button type="button" onclick="editAddress('<%= idx %>')" class="edit-btn" aria-label="Edit address">
-                                    <i class="fas fa-edit" aria-hidden="true"></i> Edit
-                                </button>
-                            </label>
-                        <% }) %>
+            <!-- Street -->
+            <div style="color:#374151; margin-bottom:0.25rem;">
+                <%= addr.street %>
+            </div>
+
+            <!-- City, State, Pincode -->
+            <div style="color:#374151; margin-bottom:0.5rem; font-weight:500;">
+                <%= addr.city %>, <%= addr.state %> <%= addr.pincode %>
+            </div>
+
+            <!-- Phone -->
+            <div style="color:var(--primary); font-weight:600; font-size:0.95rem;">
+                <i class="fas fa-phone" style="margin-right:0.4rem;"></i>
+                <%= addr.phone %>
+            </div>
+        </div>
+
+        <button type="button" onclick="editAddress('<%= idx %>')" class="edit-btn" aria-label="Edit address">
+            <!-- <i class="fas fa-edit"></i> Edit -->
+        <a href="/profile" class="fas fa-edit" title="edit address"> Edit </a>
+
+
+        </button>
+    </label>
+<% }) %>
                     </div>
                 <% } else { %>
                     <div class="empty-state" role="status" aria-live="polite" style="padding-top:1rem;">
