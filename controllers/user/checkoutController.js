@@ -3,7 +3,7 @@ const Cart = require('../../models/cartSchema');
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
 
-const Order = require('../../models/orderSchema'); // added
+const Order = require('../../models/orderSchema'); 
 
 const loadCheckout = async (req, res) => {
     try {
@@ -58,98 +58,330 @@ const loadCheckout = async (req, res) => {
 };
 
 
+
+// ========== CART PLACE ORDER ==========
+
+// const placeOrder = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const { addressId, paymentMethod } = req.body;
+
+//     const cart = await Cart.findOne({ userId }).populate('items.productId');
+//     if (!cart || cart.items.length === 0) {
+//       return res.json({ success: false, message: 'Cart is empty' });
+//     }
+
+//     const itemsToOrder = cart.items
+//       .filter(i => i.productId && i.productId.quantity >= i.quantity)
+//       .map(i => ({
+//         product: i.productId._id,
+//         quantity: i.quantity,
+//         price: i.price,
+//         totalPrice: i.totalPrice
+//       }));
+
+//     if (itemsToOrder.length === 0) {
+//       return res.json({ success: false, message: 'Out of stock' });
+//     }
+
+//     const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
+//     const tax = subtotal * 0.18;
+//     const shipping = subtotal >= 1000 ? 0 : 79;
+//     const total = subtotal + tax + shipping;
+
+//     // ATOMIC STOCK DEDUCTION
+//     const stockOk = await atomicDeductStock(itemsToOrder);
+//     if (!stockOk) {
+//       return res.json({ success: false, message: 'Stock changed. Try again.' });
+//     }
+
+//     const user = await User.findById(userId);
+//     const address = user.addresses.find(a => a._id.toString() === addressId) || user.addresses[0];
+
+//     const order = await Order.create({
+//       user: userId,
+//       orderedItems: itemsToOrder.map(i => ({
+//         product: i.product,
+//         name: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productName,
+//         quantity: i.quantity,
+//         price: i.price,
+//         totalPrice: i.totalPrice,
+//         productSnapshot: { image: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productImage[0] }
+//       })),
+//       totalPrice: total,           // REQUIRED FIELD
+//       finalAmount: total,
+//       subtotal,
+//       tax,
+//       shipping,
+//       discount: 0,
+//       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY', // MATCH ENUM
+//       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+//       status: 'pending',
+//       address: {
+//         fullName: address.fullName,
+//         phone: address.phone,
+//         street: address.street,
+//         city: address.city,
+//         state: address.state,
+//         pincode: address.pincode
+//       },
+//       createdOn: new Date()
+//     });
+
+//     await Cart.deleteOne({ userId });
+//     res.redirect(`/order-success/${order._id}`);
+//   } catch (err) {
+//     console.error('Place Order Error:', err);
+//     res.json({ success: false, message: 'Failed to place order' });
+//   }
+// };
+
+// // === DIRECT PLACE ORDER (BUY NOW) ===
+// const directPlaceOrder = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const { productId, quantity = 1, addressId, paymentMethod } = req.body;
+
+//     const product = await Product.findById(productId);
+//     if (!product || product.quantity < quantity) {
+//       return res.json({ success: false, message: 'Out of stock' });
+//     }
+
+//     const qty = parseInt(quantity);
+//     const subtotal = product.salesPrice * qty;
+//     const tax = subtotal * 0.18;
+//     const shipping = subtotal >= 1000 ? 0 : 79;
+//     const total = subtotal + tax + shipping;
+
+//     const itemsToOrder = [{
+//       product: productId,
+//       quantity: qty,
+//       price: product.salesPrice,
+//       totalPrice: subtotal
+//     }];
+
+//     const stockOk = await atomicDeductStock(itemsToOrder);
+//     if (!stockOk) {
+//       return res.json({ success: false, message: 'Stock changed. Try again.' });
+//     }
+
+//     const user = await User.findById(userId);
+//     const address = user.addresses.find(a => a._id.toString() === addressId) || user.addresses[0];
+
+//     const order = await Order.create({
+//       user: userId,
+//       orderedItems: [{
+//         product: productId,
+//         name: product.productName,
+//         quantity: qty,
+//         price: product.salesPrice,
+//         totalPrice: subtotal,
+//         productSnapshot: { image: product.productImage[0] }
+//       }],
+//       totalPrice: total,           
+//       finalAmount: total,
+//       subtotal,
+//       tax,
+//       shipping,
+//       discount: 0,
+//       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY', // MATCH ENUM
+//       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+//       status: 'pending',
+//       address: {
+//         fullName: address.fullName,
+//         phone: address.phone,
+//         street: address.street,
+//         city: address.city,
+//         state: address.state,
+//         pincode: address.pincode
+//       },
+//       createdOn: new Date()
+//     });
+
+//     res.redirect(`/order-success/${order._id}`);
+//   } catch (err) {
+//     console.error('Direct place order error:', err);
+//     res.json({ success: false, message: 'Failed to place order' });
+//   }
+// };
+
+
+
+//----------------------------
+// ========== CART PLACE ORDER (FIXED) ==========
 const placeOrder = async (req, res) => {
-    try {
-        const userId = req.session.user._id;
-        const { addressId, paymentMethod } = req.body;
+  try {
+    const userId = req.session.user._id;
+    const { addressId, paymentMethod } = req.body;
 
-        const user = await User.findById(userId).lean();
-        if (!user) return res.json({ success: false, message: 'User not found' });
-
-        const cart = await Cart.findOne({ userId }).populate('items.productId');
-        if (!cart || !cart.items.length) return res.json({ success: false, message: 'Cart is empty' });
-
-        const validItems = cart.items.filter(item => {
-            const p = item.productId;
-            return p && !p.isBlocked && p.quantity >= item.quantity;
-        });
-
-        if (validItems.length === 0) {
-            return res.json({ success: false, message: 'No valid items in cart' });
-        }
-
-        let address = user.addresses.find(a => a._id.toString() === addressId);
-        if (!address) {
-            address = user.addresses.find(a => a.isDefault) || user.addresses[0];
-        }
-        if (!address) return res.json({ success: false, message: 'No delivery address' });
-
-        const subtotal = validItems.reduce((s, it) => {
-            const price = Number(it.price ?? it.productId?.price ?? 0);
-            const totalPrice = Number(it.totalPrice ?? price * it.quantity);
-            return s + totalPrice;
-        }, 0);
-
-        const tax = subtotal * 0.18;
-        const shipping = subtotal >= 1000 ? 0 : 79;
-        const total = subtotal + tax + shipping;
-
-        if (paymentMethod === 'cod' && total > 2000) {
-            return res.json({ success: false, message: 'COD not available above ₹2000' });
-        }
-
-        const orderItems = validItems.map(it => ({
-            product: it.productId._id,
-            name: it.productId.productName,
-            quantity: it.quantity,
-            price: Number(it.price ?? it.productId.price),
-            totalPrice: Number(it.totalPrice ?? (it.price * it.quantity)),
-            productSnapshot: {
-                image: it.productId.productImage?.[0] || '/images/default-product.jpg'
-            }
-        }));
-
-        const order = await Order.create({
-            user: userId,
-            orderedItems: orderItems,
-            totalPrice: total,
-            discount: 0,
-            finalAmount: total,
-            address: {
-                fullName: address.fullName,
-                phone: address.phone,
-                street: address.street,
-                city: address.city,
-                state: address.state,
-                pincode: address.pincode
-            },
-            paymentMethod: (paymentMethod || 'COD').toUpperCase(),
-            paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-            shipping,
-            subtotal,
-            tax,
-            status: 'pending',  // Valid enum value
-            createdOn: new Date()
-        });
-
-        await Cart.deleteOne({ userId });
-
-        // res.json({ success: true, orderId: order._id });
-                res.redirect(`/order-success/${order._id}`);
-
-    } catch (err) {
-        console.error('Place Order Error:', err);
-        res.json({ success: false, message: 'Failed to place order' });
+    const cart = await Cart.findOne({ userId }).populate('items.productId');
+    if (!cart || cart.items.length === 0) {
+      return res.json({ success: false, message: 'Cart is empty' });
     }
+
+    const itemsToOrder = cart.items
+      .filter(i => i.productId && i.productId.quantity >= i.quantity)
+      .map(i => ({
+        product: i.productId._id,
+        quantity: i.quantity,
+        price: i.price,
+        totalPrice: i.totalPrice
+      }));
+
+    if (itemsToOrder.length === 0) {
+      return res.json({ success: false, message: 'Out of stock' });
+    }
+
+    const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
+    const tax = subtotal * 0.18;
+    const shipping = subtotal >= 1000 ? 0 : 79;
+    const total = subtotal + tax + shipping;
+
+    const stockOk = await atomicDeductStock(itemsToOrder);
+    if (!stockOk) {
+      return res.json({ success: false, message: 'Stock changed. Try again.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: 'User not found' });
+    }
+
+    // SAFELY GET ADDRESS
+    let address;
+    if (addressId) {
+      address = user.addresses.find(a => a._id.toString() === addressId);
+    }
+    if (!address && user.addresses.length > 0) {
+      address = user.addresses.find(a => a.isDefault) || user.addresses[0];
+    }
+    if (!address) {
+      return res.json({ success: false, message: 'No delivery address found. Please add one.' });
+    }
+
+    const order = await Order.create({
+      user: userId,
+      orderedItems: itemsToOrder.map(i => ({
+        product: i.product,
+        name: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productName,
+        quantity: i.quantity,
+        price: i.price,
+        totalPrice: i.totalPrice,
+        productSnapshot: { image: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productImage[0] }
+      })),
+      totalPrice: total,
+      finalAmount: total,
+      subtotal,
+      tax,
+      shipping,
+      discount: 0,
+      paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
+      paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+      status: 'pending',
+      address: {
+        fullName: address.fullName,
+        phone: address.phone,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode
+      },
+      createdOn: new Date()
+    });
+
+    await Cart.deleteOne({ userId });
+    res.redirect(`/order-success/${order._id}`);
+  } catch (err) {
+    console.error('Place Order Error:', err);
+    res.json({ success: false, message: 'Failed to place order' });
+  }
 };
-// // ...existing code...
+
+// === DIRECT PLACE ORDER (BUY NOW) - FIXED ===
+const directPlaceOrder = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const { productId, quantity = 1, addressId, paymentMethod } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product || product.quantity < quantity) {
+      return res.json({ success: false, message: 'Out of stock' });
+    }
+
+    const qty = parseInt(quantity);
+    const subtotal = product.salesPrice * qty;
+    const tax = subtotal * 0.18;
+    const shipping = subtotal >= 1000 ? 0 : 79;
+    const total = subtotal + tax + shipping;
+
+    const itemsToOrder = [{
+      product: productId,
+      quantity: qty,
+      price: product.salesPrice,
+      totalPrice: subtotal
+    }];
+
+    const stockOk = await atomicDeductStock(itemsToOrder);
+    if (!stockOk) {
+      return res.json({ success: false, message: 'Stock changed. Try again.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: 'User not found' });
+    }
+
+    // SAFELY GET ADDRESS
+    let address;
+    if (addressId) {
+      address = user.addresses.find(a => a._id.toString() === addressId);
+    }
+    if (!address && user.addresses.length > 0) {
+      address = user.addresses.find(a => a.isDefault) || user.addresses[0];
+    }
+    if (!address) {
+      return res.json({ success: false, message: 'No delivery address found. Please add one.' });
+    }
+
+    const order = await Order.create({
+      user: userId,
+      orderedItems: [{
+        product: productId,
+        name: product.productName,
+        quantity: qty,
+        price: product.salesPrice,
+        totalPrice: subtotal,
+        productSnapshot: { image: product.productImage[0] }
+      }],
+      totalPrice: total,
+      finalAmount: total,
+      subtotal,
+      tax,
+      shipping,
+      discount: 0,
+      paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
+      paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
+      status: 'pending',
+      address: {
+        fullName: address.fullName,
+        phone: address.phone,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode
+      },
+      createdOn: new Date()
+    });
+
+    res.redirect(`/order-success/${order._id}`);
+  } catch (err) {
+    console.error('Direct place order error:', err);
+    res.json({ success: false, message: 'Failed to place order' });
+  }
+};
 
 
-
-
-
-//---------
-// ...existing code...
+//-------------------------
 const orderSuccess = async (req, res) => {
     try {
         const orderId = req.params.id;
@@ -226,93 +458,26 @@ if (stock < qty) {
   }
 };
 
-const directPlaceOrder = async (req, res) => {
-  try {
-    const userId = req.session.user._id;
-    const { productId, quantity = 1, addressId, paymentMethod } = req.body;
 
-    console.log('Direct order data:', { productId, quantity, addressId, paymentMethod });
 
-    // Get product
-    const product = await Product.findById(productId).lean();
-    if (!product) {
-      return res.json({ success: false, message: 'Product not found' });
+const atomicDeductStock = async (items) => {
+  for (const item of items) {
+    const result = await Product.updateOne(
+      { _id: item.product, quantity: { $gte: item.quantity } },
+      { $inc: { quantity: -item.quantity } }
+    );
+    if (result.modifiedCount === 0) {
+      // Rollback previous deductions
+      for (const prev of items.slice(0, items.indexOf(item))) {
+        await Product.updateOne(
+          { _id: prev.product },
+          { $inc: { quantity: prev.quantity } }
+        );
+      }
+      return false;
     }
-
-    // Safe checks
-    const isBlocked = product.isBlocked === true;
-    const stock = Number(product.quantity) || 0;
-    const qty = parseInt(quantity) || 1;
-
-    if (isBlocked) {
-      return res.json({ success: false, message: 'Product is blocked by admin' });
-    }
-
-    if (stock < qty) {
-      return res.json({ success: false, message: `Only ${stock} left in stock` });
-    }
-
-    // Get user
-    const user = await User.findById(userId).lean();
-    if (!user) return res.json({ success: false, message: 'User not found' });
-
-    // Get address
-    let address = user.addresses?.find(a => a._id.toString() === addressId);
-    if (!address) {
-      address = user.addresses?.find(a => a.isDefault) || user.addresses?.[0];
-    }
-    if (!address) return res.json({ success: false, message: 'No delivery address' });
-
-    // Calculate
-    const price = Number(product.salesPrice) || 0;
-    const subtotal = price * qty;
-    const tax = subtotal * 0.18;
-    const shipping = subtotal >= 1000 ? 0 : 79;
-    const total = subtotal + tax + shipping;
-
-    if (paymentMethod === 'cod' && total > 2000) {
-      return res.json({ success: false, message: 'COD not available above ₹2000' });
-    }
-
-    // Create order
-    const order = await Order.create({
-      user: userId,
-      orderedItems: [{
-        product: product._id,
-        name: product.productName,
-        quantity: qty,
-        price,
-        totalPrice: subtotal,
-        productSnapshot: {
-          image: product.productImage?.[0] || '/images/default-product.jpg'
-        }
-      }],
-      totalPrice: total,
-      discount: 0,
-      finalAmount: total,
-      address: {
-        fullName: address.fullName,
-        phone: address.phone,
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        pincode: address.pincode
-      },
-      paymentMethod: (paymentMethod || 'COD').toUpperCase(),
-      paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-      shipping,
-      subtotal,
-      tax,
-      status: 'pending',
-      createdOn: new Date()
-    });
-
-    res.redirect(`/order-success/${order._id}`);
-
-  } catch (err) {
-    console.error('Direct place order error:', err);
-    res.json({ success: false, message: 'Failed to place order' });
   }
+  return true;
 };
 
 
@@ -321,7 +486,8 @@ module.exports = {
      placeOrder,
       orderSuccess,
         directCheckout,
-          directPlaceOrder  
+          directPlaceOrder,
+          atomicDeductStock
      };
 
 

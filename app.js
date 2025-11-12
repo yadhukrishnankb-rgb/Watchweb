@@ -4,7 +4,7 @@ const app = express();
 const path = require("path");
 require("dotenv").config();
 const session = require("express-session");
-//------------------------------------------------
+
 
 let MongoStore;
 try {
@@ -14,7 +14,7 @@ try {
     MongoStore = null;
 }
 
-//-----------------------------------------------------------
+
 const passport = require("passport"); // Changed from local path to package
  
 
@@ -38,22 +38,6 @@ app.use(express.urlencoded({ extended: true }));
 // --- SESSION (single configuration, persisted to MongoDB) ---
 app.set('trust proxy', 1); // if behind proxy (Heroku/nginx) — keep if needed
 
-//----------------------------------------
-
-// Session configuration
-// app.use(session({
-//     secret: process.env.SESSION_SECRET,
-//     resave: false,
-//     saveUninitialized: false, // Changed from true to false for better security
-//     cookie: { // Fixed typo from cookies to cookie
-//         secure: process.env.NODE_ENV === 'production', // Make secure in production
-//         httpOnly: true,
-//         maxAge: 72 * 60 * 60 * 1000
-//     }
-// }));
-
-
-//---------------------------------------------------------------
 
 // create store (MongoStore if available, otherwise MemoryStore)
 const store = MongoStore

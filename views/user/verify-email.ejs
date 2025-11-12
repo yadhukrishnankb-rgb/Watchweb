@@ -1,7 +1,267 @@
 <%- include('../partials/user/header') %>
-<form action="/profile/verify-email" method="POST">
-  <input type="text" name="otp" placeholder="Enter OTP" required>
-  <button type="submit">Verify</button>
-  <% if (message) { %><div><%= message %></div><% } %>
-</form>
+
+<style>
+    .verify-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .verify-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.5s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .verify-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+    
+    .verify-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        text-align: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .verify-subtitle {
+        font-size: 0.95rem;
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .verify-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .input-group {
+        position: relative;
+    }
+    
+    .input-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    
+    .otp-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: 0.5rem;
+        transition: all 0.3s;
+        background: #f9fafb;
+    }
+    
+    .otp-input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    
+    .otp-input::placeholder {
+        letter-spacing: normal;
+        font-weight: 400;
+    }
+    
+    .verify-button {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .verify-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+    
+    .verify-button:active {
+        transform: translateY(0);
+    }
+    
+    .message {
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .message-success {
+        background: #d1fae5;
+        color: #047857;
+        border: 2px solid #10b981;
+    }
+    
+    .message-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 2px solid #ef4444;
+    }
+    
+    .message-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 2px solid #3b82f6;
+    }
+    
+    .help-text {
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-top: 1.5rem;
+    }
+    
+    .resend-link {
+        color: #667eea;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .resend-link:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+    
+    .security-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .security-icon {
+        font-size: 1rem;
+    }
+    
+    @media (max-width: 640px) {
+        .verify-card {
+            padding: 2rem 1.5rem;
+        }
+        
+        .verify-title {
+            font-size: 1.5rem;
+        }
+        
+        .verify-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="verify-container">
+    <div class="verify-card">
+        <div class="verify-icon">
+            📧
+        </div>
+        
+        <h1 class="verify-title">Verify Your Email</h1>
+        <p class="verify-subtitle">
+            We've sent a verification code to your email address. Please enter the code below to verify your account.
+        </p>
+        
+        <% if (message) { %>
+            <div class="message message-info">
+                <%= message %>
+            </div>
+        <% } %>
+        
+        <form action="/profile/verify-email" method="POST" class="verify-form">
+            <div class="input-group">
+                <label for="otp" class="input-label">Enter Verification Code</label>
+                <input 
+                    type="text" 
+                    id="otp"
+                    name="otp" 
+                    placeholder="Enter OTP" 
+                    class="otp-input"
+                    maxlength="6"
+                    required
+                    autofocus
+                >
+            </div>
+            
+            <button type="submit" class="verify-button">
+                ✓ Verify Email
+            </button>
+        </form>
+        
+        <p class="help-text">
+            Didn't receive the code? <a href="#" class="resend-link">Resend Code</a>
+        </p>
+        
+        <div class="security-badge">
+            <span class="security-icon">🔒</span>
+            <span>Secure verification process</span>
+        </div>
+    </div>
+</div>
+
 <%- include('../partials/user/footer') %>

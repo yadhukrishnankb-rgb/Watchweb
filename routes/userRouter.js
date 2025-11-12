@@ -45,7 +45,6 @@ router.get('/reset-password', profileController.loadResetPassword);
 router.post('/reset-password', profileController.handleResetPassword);
 
 
-
 router.get('/profile', profileController.profilePage);
 router.get('/profile/edit', profileController.editProfilePage);
 router.post('/profile/edit', profileController.updateProfile);
@@ -55,10 +54,23 @@ router.get('/profile/change-password', profileController.changePasswordPage);
 router.post('/profile/change-password', profileController.changePassword);
 router.post('/order/:id/cancel', profileController.cancelOrder);
 
+
+
+
+//---------------------
+router.get('/profile/address', isUser, profileController.addressPage);
+
+//-------------------
+
 // Address Management
 router.post('/profile/address', profileController.manageAddress);
 router.post('/profile/address/:index/edit', profileController.manageAddress);
 router.post('/profile/address/:index/delete', profileController.deleteAddress);
+
+
+
+
+
 
 router.get('/product/:id', productController.getProductDetails);
 // Add this route with your other routes

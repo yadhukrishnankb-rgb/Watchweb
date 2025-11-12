@@ -322,50 +322,30 @@
 
         <!-- Payment Method Selector -->
              <!-- <form id="checkoutForm" action="/checkout/order-success" method="POST"> -->
-                <form id="checkoutForm" 
-      action="<%= isDirect ? '/checkout/direct-order' : '/checkout/order-success' %>" 
+                <form id="checkoutForm"
+      action="<%= isDirect ? '/checkout/direct-order' : '/checkout/order-success' %>"
       method="POST">
-    <input type="hidden" name="addressId" id="selectedAddressId" value="" />
-
-    <% if (isDirect) { %>
+  <input type="hidden" name="addressId" id="selectedAddressId" value="">
+  <% if (isDirect) { %>
     <input type="hidden" name="productId" value="<%= directProductId %>">
     <input type="hidden" name="quantity" value="1">
   <% } %>
 
-    <div class="payment__methods">
-        <h3 class="checkout__title payment__title">Payment Method</h3>
+  <!-- Payment Options -->
+  <div class="payment__methods">
+    <label class="payment__option <%= total > 100000 ? 'disabled' : '' %>">
+  <input type="radio" name="paymentMethod" value="cod" <%= total > 100000 ? 'disabled' : '' %> />
+  <span>Cash on Delivery</span>
+</label>
+    <label class="payment__option">
+  <input type="radio" name="paymentMethod" value="razorpay" checked />
+  <span>Razorpay</span>
+</label>
+  </div>
 
-        <label class="payment__option <%= total <= 2000 ? '' : 'disabled' %>" for="l1">
-            <input type="radio" name="paymentMethod" id="l1" value="wallet" class="payment__input" />
-            <span class="payment__label">
-                <i class="fas fa-wallet"></i> Wallet
-            </span>
-        </label>
-
-        <label class="payment__option <%= total <= 2000 ? '' : 'disabled' %>" for="l2">
-            <input type="radio" name="paymentMethod" id="l2" value="cod" class="payment__input" <%= total <= 2000 ? '' : 'disabled' %> />
-            <span class="payment__label">
-                <i class="fas fa-truck"></i> Cash on Delivery
-            </span>
-        </label>
-
-        <label class="payment__option" for="l3">
-            <input type="radio" name="paymentMethod" id="l3" value="razorpay" class="payment__input" checked />
-            <span class="payment__label">
-                <i class="fab fa-cc-visa"></i> Razorpay
-            </span>
-        </label>
-    </div>
-
-    <!-- COD Warning -->
-    <p id="cod-warning" class="text-red-600 text-xs mt-2 hidden text-center">
-        <i class="fas fa-exclamation-triangle"></i> COD not available for orders above ₹2000
-    </p>
-
-    <button type="submit" id="placeOrderBtn" class="place-order-btn" style="margin-top:1rem;">
-        <i class="fas fa-lock"></i>
-        <span id="payText">Pay ₹<%= total.toLocaleString() %></span>
-    </button>
+  <button type="submit" id="placeOrderBtn" class="place-order-btn">
+    <%= isDirect ? 'Buy Now' : 'Place Order' %> – ₹<%= total.toLocaleString() %>
+  </button>
 </form>
 
         <!-- COD Warning (if total > ₹2000) -->
@@ -392,7 +372,7 @@
 
 <script>
 let selectedPayment = 'razorpay';
-const COD_MAX = 2000;
+const COD_MAX = 100000;
 
 // Sync selected address
 document.addEventListener('change', function(e) {
@@ -430,6 +410,27 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 // Trigger on load
 document.querySelector('input[name="paymentMethod"]:checked').dispatchEvent(new Event('change'));
 
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  const defaultRadio = document.querySelector('input[name="selectedAddress"]:checked');
+  if (defaultRadio) {
+    document.getElementById('selectedAddressId').value = defaultRadio.value;
+  } else if (document.querySelector('input[name="selectedAddress"]')) {
+    // If no default, select first
+    const first = document.querySelector('input[name="selectedAddress"]');
+    first.checked = true;
+    document.getElementById('selectedAddressId').value = first.value;
+  }
+});
+
+// Update hidden input when user changes
+document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    document.getElementById('selectedAddressId').value = this.value;
+  });
+});
 
 
 </script>
