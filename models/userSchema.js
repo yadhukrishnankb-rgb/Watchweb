@@ -23,7 +23,7 @@ const userSchema = new Schema({
   },
 profileImage: {
   type: String,
-  default: "/assets/img/default-user.png"
+  default: null,
 },
 addresses: [
   {

@@ -1,0 +1,133 @@
+<!-- views/admin/request-list.ejs -->
+<%- include('../partials/admin/header') %>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<style>
+  .request-badge { @apply px-3 py-1 text-xs font-medium rounded-full; }
+  .cancel-badge { @apply bg-red-100 text-red-800; }
+  .return-badge { @apply bg-yellow-100 text-yellow-800; }
+</style>
+
+<main class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Cancel/Return Requests</h1>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6 flex gap-3">
+      <a href="/admin/requests" class="px-4 py-2 rounded <%= !requestType ? 'bg-blue-600 text-white' : 'bg-white text-gray-700' %>">All</a>
+      <a href="/admin/requests?type=cancel" class="px-4 py-2 rounded <%= requestType === 'cancel' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700' %>">Cancellations</a>
+      <a href="/admin/requests?type=return" class="px-4 py-2 rounded <%= requestType === 'return' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700' %>">Returns</a>
+    </div>
+
+    <!-- Requests List -->
+  
+    <!-- Requests List -->
+    <div class="space-y-4">
+      <% orders.forEach(order => { %>
+
+        <% if (order.orderedItems && order.orderedItems.length > 0) { %>
+          <% order.orderedItems.forEach(item => { %>
+            <!-- existing item-level card (unchanged) -->
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h3 class="text-lg font-bold">Order #<%= order.orderId %></h3>
+                  <p class="text-gray-600">User: <strong><%= order.user.name %></strong> (<%= order.user.email %>)</p>
+                </div>
+                <span class="request-badge <%= item.status === 'Cancellation Request' ? 'cancel-badge' : 'return-badge' %>">
+                  <%= item.status %>
+                </span>
+              </div>
+
+              <div class="bg-gray-50 p-4 rounded mb-4">
+                <p><strong>Item:</strong> <%= item.name %></p>
+                <p><strong>Qty:</strong> <%= item.quantity %> × ₹<%= item.price %></p>
+                <p><strong>Total:</strong> ₹<%= item.totalPrice %></p>
+                <p class="mt-2"><strong>Reason:</strong> <%= item.cancelReason || item.returnReason || 'Not provided' %></p>
+                <p class="text-sm text-gray-600">Requested: <%= item.requestedAt ? new Date(item.requestedAt).toLocaleString() : 'N/A' %></p>
+              </div>
+
+              <div class="flex gap-3">
+                <button onclick="approveRequest('<%= order._id %>', '<%= item._id %>', 'approve')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">✓ Approve</button>
+                <button onclick="approveRequest('<%= order._id %>', '<%= item._id %>', 'reject')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">✗ Reject</button>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <!-- order-level request (no item-level request) -->
+          <div class="bg-white p-6 rounded-lg shadow">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-lg font-bold">Order #<%= order.orderId %> (Order-level request)</h3>
+                <p class="text-gray-600">User: <strong><%= order.user.name %></strong> (<%= order.user.email %>)</p>
+              </div>
+              <span class="request-badge <%= order.status === 'Cancellation Request' ? 'cancel-badge' : 'return-badge' %>">
+                <%= order.status %>
+              </span>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded mb-4">
+              <p><strong>Items:</strong></p>
+              <% order.orderedItems.forEach(it => { %>
+                <p style="margin-left:8px;"><%= it.name %> — Qty: <%= it.quantity %> — ₹<%= it.totalPrice %></p>
+              <% }) %>
+              <p class="mt-2"><strong>Reason:</strong> <%= order.cancelReason || order.returnReason || 'Not provided' %></p>
+              <p class="text-sm text-gray-600">Requested: <%= order.requestedAt ? new Date(order.requestedAt).toLocaleString() : 'N/A' %></p>
+            </div>
+
+            <div class="flex gap-3">
+              <button onclick="approveRequest('<%= order._id %>', 'ORDER', 'approve')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">✓ Approve</button>
+              <button onclick="approveRequest('<%= order._id %>', 'ORDER', 'reject')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">✗ Reject</button>
+            </div>
+          </div>
+        <% } %>
+
+      <% }) %>
+
+      <% if (orders.length === 0) { %>
+        <div class="bg-white p-8 rounded text-center">
+          <p class="text-gray-600 text-lg">No requests found</p>
+        </div>
+      <% } %>
+    </div>
+
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div class="mt-6 flex justify-center gap-2">
+        <% for(let i=1; i<=totalPages; i++) { %>
+          <a href="/admin/requests?page=<%= i %>&type=<%= requestType %>"
+             class="px-3 py-1 rounded <%= i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200' %>">
+            <%= i %>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</main>
+
+<script>
+async function approveRequest(orderId, itemId, action) {
+  if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+
+  try {
+    const res = await fetch(`/admin/orders/${orderId}/items/${itemId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message);
+      location.reload();
+    } else {
+      alert(data.message || 'Failed');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error processing request');
+  }
+}
+</script>
+
+<%- include('../partials/admin/footer') %>

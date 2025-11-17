@@ -347,7 +347,7 @@
                         
                         <% cart.items.forEach(item => { %>
                             <div class="cart-item cart-item-card" data-product-id="<%= item.productId._id %>">
-                                <button onclick="removeFromCart('<%= item.productId._id %>')" class="remove-btn" title="Remove item">
+                                <button onclick="removeFromCart('<%= item.productId._id %>')" class="remove-btn" title="Remove item">delete
                                     <i class="fas fa-times"></i>
                                 </button>
                                 
@@ -362,11 +362,11 @@
                                         
                                         <div class="quantity-section">
                                             <button onclick="updateQuantity('<%= item.productId._id %>', 'decrease')" class="qty-btn" <%= item.quantity <= 1 ? 'disabled' : '' %>>
-                                                <i class="fas fa-minus"></i>
+                                                <i class="fas fa-minus"></i>-
                                             </button>
                                             <span class="quantity-display qty-display"><%= item.quantity %></span>
                                             <button onclick="updateQuantity('<%= item.productId._id %>', 'increase')" class="qty-btn" <%= item.quantity >= item.productId.quantity ? 'disabled' : '' %>>
-                                                <i class="fas fa-plus"></i>
+                                                <i class="fas fa-plus"></i>+
                                             </button>
                                         </div>
                                         
@@ -378,13 +378,15 @@
                     </div>
                 </div>
                 
+                <!-- ...existing code... -->
+
                 <div>
                     <div class="order-summary">
                         <h3 class="summary-title">Order Summary</h3>
                         
                         <div class="summary-row">
                             <span>Subtotal</span>
-                            <span class="cart-total">₹<%= total.toLocaleString() %></span>
+                            <span class="cart-total" id="cartTotal">₹<%= total.toLocaleString() %></span>
                         </div>
                         
                         <div class="summary-row">
@@ -394,7 +396,7 @@
                         
                         <div class="summary-row total">
                             <span>Total</span>
-                            <span class="total-amount">₹<%= total.toLocaleString() %></span>
+                            <span class="total-amount" id="orderTotal">₹<%= total.toLocaleString() %></span>
                         </div>
                         
                         <button onclick="window.location.href='/checkout'" class="checkout-btn" <%= cart.items.some(item => item.productId.quantity <= 0) ? 'disabled' : '' %>>
@@ -412,6 +414,23 @@
 </div>
 
 <script>
+// Function to calculate and update total
+function updateCartTotal() {
+    let total = 0;
+    const cartItems = document.querySelectorAll('.cart-item');
+    
+    cartItems.forEach(item => {
+        const totalPriceText = item.querySelector('.item-total-price').textContent;
+        // Extract number from "Subtotal: ₹1000" format
+        const price = parseInt(totalPriceText.match(/\d+/g).join('')) || 0;
+        total += price;
+    });
+    
+    // Update both total displays
+    document.getElementById('cartTotal').textContent = '₹' + total.toLocaleString();
+    document.getElementById('orderTotal').textContent = '₹' + total.toLocaleString();
+}
+
 async function updateQuantity(productId, action) {
     try {
         const response = await fetch('/cart/update', {
@@ -427,6 +446,9 @@ async function updateQuantity(productId, action) {
             const item = document.querySelector(`[data-product-id="${productId}"]`);
             item.querySelector('.quantity-display').textContent = data.quantity;
             item.querySelector('.item-total').textContent = `Subtotal: ₹${data.totalPrice.toLocaleString()}`;
+            
+            // UPDATE CART TOTAL AFTER QUANTITY CHANGE
+            updateCartTotal();
         } else {
             alert(data.message);
         }
@@ -446,7 +468,18 @@ async function removeFromCart(productId) {
 
         const data = await response.json();
         if (data.success) {
-            location.reload();
+            // Remove item from DOM
+            const item = document.querySelector(`[data-product-id="${productId}"]`);
+            item.remove();
+            
+            // UPDATE CART TOTAL AFTER REMOVAL
+            updateCartTotal();
+            
+            // Check if cart is now empty
+            const remainingItems = document.querySelectorAll('.cart-item');
+            if (remainingItems.length === 0) {
+                location.reload(); // Reload to show empty cart message
+            }
         } else {
             alert(data.message);
         }

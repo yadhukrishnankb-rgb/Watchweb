@@ -16,6 +16,7 @@ const { cancelOrder } = require('../controllers/user/orderController');
 
 const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
 
+const { profileUpload } = require('../middlewares/multerConfig');
 
 
 
@@ -24,7 +25,7 @@ router.get("/",userController.loadHomepage)
 router.get("/signup",userController.loadSignup)
 router.post("/signup",userController.signup)
 router.post("/verify-otp",userController.verifyOtp)
- router.post("/resend-otp",userController.resendOTP)
+router.post("/resend-otp",userController.resendOTP)
 router.get('/shop', productController.listProducts);
 
 
@@ -54,19 +55,21 @@ router.get('/profile/change-password', profileController.changePasswordPage);
 router.post('/profile/change-password', profileController.changePassword);
 router.post('/order/:id/cancel', profileController.cancelOrder);
 
-
-
-
 //---------------------
 router.get('/profile/address', isUser, profileController.addressPage);
 
 //-------------------
 
+
+router.post('/profile/upload-picture', isUser, profileUpload, profileController.uploadProfilePicture);
+
+
+
+
 // Address Management
 router.post('/profile/address', profileController.manageAddress);
 router.post('/profile/address/:index/edit', profileController.manageAddress);
 router.post('/profile/address/:index/delete', profileController.deleteAddress);
-
 
 
 
@@ -99,8 +102,11 @@ router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
 router.post('/orders/:id/return', isUser, orderController.returnOrder);
 router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
 
+// individual item cancel / return
 
 
+router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
+router.post('/orders/:orderId/items/:itemId/return', isUser, orderController.requestReturnItem);
 
 
 

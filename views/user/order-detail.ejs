@@ -319,6 +319,42 @@
         font-weight: 600;
         color: #047857;
     }
+
+
+.action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    margin-right: 8px;
+    margin-top: 8px;
+}
+
+.btn-cancel {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.btn-cancel:hover {
+    background: #fecaca;
+    transform: translateY(-2px);
+}
+
+.btn-return {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+}
+
+.btn-return:hover {
+    background: #fcd34d;
+    transform: translateY(-2px);
+}
+
     
     @media (max-width: 768px) {
         .order-detail-container {
@@ -370,8 +406,15 @@
                     <span class="card-icon">📦</span>
                     Order Items
                 </h2>
-                <% order.orderedItems.forEach(item => { %>
-                    <div class="order-item">
+                   <% order.orderedItems.forEach(item => { %>
+                    <% 
+                      const itemStatus = (item.status || '').toString().toLowerCase();
+                      const orderStatusLow = (order.status || '').toString().toLowerCase();
+                      const canCancel = !item.status || itemStatus === 'placed' || itemStatus === 'pending';
+                      const canReturn = (itemStatus === 'delivered' || orderStatusLow === 'delivered') 
+                                        && !['return request','returned','cancelled'].includes(itemStatus);
+                    %>
+                    <div class="order-item" data-item-id="<%= item._id %>">
                         <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="item-image">
                         <div class="item-details">
                             <h3 class="item-name"><%= item.name %></h3>
@@ -379,9 +422,42 @@
                                 Quantity: <%= item.quantity %> × ₹<%= item.price.toLocaleString() %>
                             </p>
                             <p class="item-total">Total: ₹<%= item.totalPrice.toLocaleString() %></p>
+
+                            <!-- show item status if present -->
+                            <% if (item.status) { %>
+                              <div style="margin-top:8px;font-weight:700;color:#374151;">Status: <span style="color:#0a5f5f;"><%= item.status %></span></div>
+                            <% } %>
+
+                            <!-- item level actions -->
+                            <div style="margin-top:10px;">
+                            <!-- Replace the action buttons section: -->
+<% if (canCancel && (!item.status || item.status === 'Placed')) { %>
+  <button class="action-btn btn-cancel" onclick="requestCancelItem('<%= order._id %>','<%= item._id %>')">Request Cancel</button>
+<% } %>
+
+<% if (item.status === 'Cancellation Request') { %>
+  <div style="margin-top:8px;font-weight:700;color:#b45309;">⏳ Cancellation Request Pending Admin Approval</div>
+<% } %>
+
+<% if (item.status === 'Cancelled') { %>
+  <div style="margin-top:8px;font-weight:700;color:#10b981;">✓ Cancellation Approved</div>
+<% } %>
+
+<% if (canReturn && item.status === 'Delivered') { %>
+  <button class="action-btn btn-return" onclick="requestReturnItem('<%= order._id %>','<%= item._id %>')">Request Return</button>
+<% } %>
+
+<% if (item.status === 'Return Request') { %>
+  <div style="margin-top:8px;font-weight:700;color:#b45309;">⏳ Return Request Pending Admin Approval</div>
+<% } %>
+
+<% if (item.status === 'Returned') { %>
+  <div style="margin-top:8px;font-weight:700;color:#10b981;">✓ Return Approved</div>
+<% } %>
+                            </div>
                         </div>
                     </div>
-                <% }) %>
+                <% }) %> 
             </div>
 
             <div class="card">
@@ -439,7 +515,8 @@
                 </h2>
                 <div class="amount-row">
                     <span class="amount-label">Subtotal</span>
-                    <span class="amount-value">₹<%= order.subtotal.toLocaleString() %></span>
+                 <span class="amount-value" id="subtotalValue">₹<%= order.subtotal.toLocaleString() %></span>
+
                 </div>
                 <div class="amount-row">
                     <span class="amount-label">Tax</span>
@@ -452,7 +529,7 @@
                 <div class="amount-divider"></div>
                 <div class="amount-total">
                     <span>Total Amount</span>
-                    <span>₹<%= order.finalAmount.toLocaleString() %></span>
+                    <span id="finalAmountValue">₹<%= order.finalAmount.toLocaleString() %></span>
                 </div>
             </div>
 
@@ -464,5 +541,120 @@
         </div>
     </div>
 </div>
+
+
+
+<script>
+    // Replace requestReturnItem and cancelItem with simpler versions:
+
+// async function requestCancelItem(orderId, itemId) {
+//   const reason = prompt('Reason for cancellation (optional):');
+//   if (reason === null) return;
+
+//   try {
+//     const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ reason })
+//     });
+//     const data = await res.json();
+//     if (data.success) {
+//       alert(data.message);
+//       location.reload();
+//     } else {
+//       alert(data.message || 'Failed');
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     alert('Error submitting request');
+//   }
+// }
+
+// async function requestReturnItem(orderId, itemId) {
+//   const reason = prompt('Reason for return (required):');
+//   if (!reason) return alert('Reason required');
+
+//   try {
+//     const res = await fetch(`/orders/${orderId}/items/${itemId}/return`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ reason })
+//     });
+//     const data = await res.json();
+//     if (data.success) {
+//       alert(data.message);
+//       location.reload();
+//     } else {
+//       alert(data.message || 'Failed');
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     alert('Error submitting request');
+//   }
+// }
+
+
+//---------------
+async function requestCancelItem(orderId, itemId, btn) {
+  const reason = prompt('Reason for cancellation (optional):');
+  if (reason === null) return;
+
+  try {
+    if (btn) btn.disabled = true;
+    const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
+      method: 'POST',
+      credentials: 'same-origin',            // ensure cookies/session sent
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { success: res.ok, message: text }; }
+
+    if (res.ok && data.success) {
+      alert(data.message || 'Cancellation requested');
+      location.reload();
+    } else {
+      alert(data.message || `Error (${res.status}): ${text}`);
+    }
+  } catch (err) {
+    console.error('requestCancelItem error', err);
+    alert('Error submitting request');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function requestReturnItem(orderId, itemId, btn) {
+  const reason = prompt('Reason for return (required):');
+  if (!reason) return alert('Reason required');
+
+  try {
+    if (btn) btn.disabled = true;
+    const res = await fetch(`/orders/${orderId}/items/${itemId}/return`, {
+      method: 'POST',
+      credentials: 'same-origin',            // ensure cookies/session sent
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { success: res.ok, message: text }; }
+
+    if (res.ok && data.success) {
+      alert(data.message || 'Return requested');
+      location.reload();
+    } else {
+      alert(data.message || `Error (${res.status}): ${text}`);
+    }
+  } catch (err) {
+    console.error('requestReturnItem error', err);
+    alert('Error submitting request');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+</script>
 
 <%- include('../partials/user/footer') %>

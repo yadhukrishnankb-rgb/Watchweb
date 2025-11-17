@@ -9,11 +9,21 @@
   .shipped { @apply bg-purple-100 text-purple-800; }
   .delivered { @apply bg-green-100 text-green-800; }
   .cancelled { @apply bg-red-100 text-red-800; }
+
+
+  
+
 </style>
 
 <main class="p-6 bg-gray-50 min-h-screen">
   <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">Order Management</h1>
+
+    <div class="mb-4">
+      <a href="/admin/requests" class="inline-block px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700">
+        View Cancel/Return Requests
+      </a>
+    </div>
 
     <form method="GET" class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-3">
       <input name="search" value="<%= search %>" placeholder="Search Order ID / User" class="px-3 py-2 border rounded flex-1 min-w-64">

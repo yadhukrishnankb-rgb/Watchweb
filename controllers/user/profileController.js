@@ -4,6 +4,9 @@ const nodemailer = require("nodemailer");
 const Order = require("../../models/orderSchema");
 const bcrypt = require("bcrypt");
 
+const cloudinary = require('../../config/cloudinary');
+
+
 
 // Helper to generate OTP
 function generateOtp() {
@@ -126,12 +129,26 @@ res.render('user/profile', { user, orders });
 };
 
 
-exports.addressPage = async (req, res) => {
-    const user = await User.findById(req.session.user?._id || req.user?._id).lean();
-    user.addresses = user.addresses || [];
-    res.render('user/profile-address', { user });
-};
+// exports.addressPage = async (req, res) => {
+//     const user = await User.findById(req.session.user?._id || req.user?._id).lean();
+//     user.addresses = user.addresses || [];
+//     res.render('user/profile-address', { user });
+// };
 
+
+exports.addressPage = async (req, res) => {
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.redirect('/login');
+
+  const user = await User.findById(userId).lean();
+  user.addresses = user.addresses || [];
+
+  res.render('user/profile-address', {
+    user,
+    success: req.flash('success')[0] || null,
+    error: req.flash('error')[0] || null
+  });
+};
 
 
 
@@ -195,6 +212,37 @@ user.addresses = [{ line1, city, state, zip, country }];
 await user.save();
 res.redirect('/profile');
 };
+
+
+
+//-----------------
+
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    console.log('uploadProfilePicture called, file present:', !!req.file, 'session user:', req.session.user?._id);
+    const userId = req.session.user?._id || req.user?._id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // optional: delete previous Cloudinary image if stored and has predictable public_id
+    // store new URL
+    user.profileImage = req.file.path; // multer-storage-cloudinary sets `path` to the uploaded URL
+    await user.save();
+
+    return res.json({ success: true, message: 'Profile image updated', profileImage: user.profileImage });
+  } catch (err) {
+    console.error('uploadProfilePicture error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Server error' });
+  }
+};
+
+
 //------------
 // Show verify email page
 exports.verifyEmailPage = (req, res) => {
@@ -228,57 +276,134 @@ return res.render('user/verify-email', { message: 'Invalid OTP' });
 
 
 
+// // Show change password page
+// exports.changePasswordPage = (req, res) => {
+// res.render('user/change-password', { message: null });
+// };
+
+// // Handle password change
+// exports.changePassword = async (req, res) => {
+// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+// if (!userId) return res.redirect('/login');
+// const { oldPassword, newPassword, confirmPassword } = req.body;
+// const user = await User.findById(userId);
+// const match = await bcrypt.compare(oldPassword, user.password);
+// if (!match) {
+// return res.render('user/change-password', { message: 'Old password incorrect' });
+// }
+// if (newPassword !== confirmPassword) {
+// return res.render('user/change-password', { message: 'Passwords do not match' });
+// }
+// user.password = await bcrypt.hash(newPassword, 10);
+// await user.save();
+// res.redirect('/profile');
+// };
+//---------------------------
+
 // Show change password page
 exports.changePasswordPage = (req, res) => {
-res.render('user/change-password', { message: null });
+  // `req.flash('error')` will be used for server errors
+  const errorMsg = req.flash('error')[0];
+  res.render('user/change-password', {
+    message: errorMsg,   // old way (kept for backward compatibility)
+    success: req.flash('success')[0] || null
+  });
 };
 
 // Handle password change
 exports.changePassword = async (req, res) => {
-const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-if (!userId) return res.redirect('/login');
-const { oldPassword, newPassword, confirmPassword } = req.body;
-const user = await User.findById(userId);
-const match = await bcrypt.compare(oldPassword, user.password);
-if (!match) {
-return res.render('user/change-password', { message: 'Old password incorrect' });
-}
-if (newPassword !== confirmPassword) {
-return res.render('user/change-password', { message: 'Passwords do not match' });
-}
-user.password = await bcrypt.hash(newPassword, 10);
-await user.save();
-res.redirect('/profile');
-};
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.redirect('/login');
 
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  const user = await User.findById(userId);
+
+  // ---- validation ----
+  const match = await bcrypt.compare(oldPassword, user.password);
+  if (!match) {
+    req.flash('error', 'Old password incorrect');
+    return res.redirect('/profile/change-password');
+  }
+  if (newPassword !== confirmPassword) {
+    req.flash('error', 'Passwords do not match');
+    return res.redirect('/profile/change-password');
+  }
+
+  // ---- optional extra rules (8 chars, upper, lower, number) ----
+  const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  if (!pwdRegex.test(newPassword)) {
+    req.flash('error', 'Password must be 8+ chars, contain upper, lower case and a number');
+    return res.redirect('/profile/change-password');
+  }
+
+  // ---- success ----
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  req.flash('success', 'Password changed successfully!');
+  res.redirect('/profile/change-password');   // back to same page → flash + Swal
+};
 
 
 //-----------------------------
 
 // Add or Update Address
+// exports.manageAddress = async (req, res) => {
+// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+// if (!userId) return res.redirect('/login');
+
+// const { line1, city, state, zip, country } = req.body;
+// const user = await User.findById(userId);
+
+// user.addresses = user.addresses || [];
+
+// if (req.params.index !== undefined) {
+// // Edit existing
+// const index = parseInt(req.params.index);
+// if (index >= 0 && index < user.addresses.length) {
+// user.addresses[index] = { line1, city, state, zip, country };
+// }
+// } else {
+// // Add new
+// user.addresses.push({ line1, city, state, zip, country });
+// }
+
+// await user.save();
+// res.redirect('/profile');
+// };
+
+
 exports.manageAddress = async (req, res) => {
-const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-if (!userId) return res.redirect('/login');
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.redirect('/login');
 
-const { line1, city, state, zip, country } = req.body;
-const user = await User.findById(userId);
+  const { line1, city, state, zip, country } = req.body;
+  const user = await User.findById(userId);
+  user.addresses = user.addresses || [];
 
-user.addresses = user.addresses || [];
+  try {
+    if (req.params.index !== undefined) {
+      const index = parseInt(req.params.index);
+      if (index >= 0 && index < user.addresses.length) {
+        user.addresses[index] = { line1, city, state, zip, country };
+        req.flash('success', 'Address udpated successfully!');
+      }
+    } else {
+      user.addresses.push({ line1, city, state, zip, country });
+      req.flash('success', 'Address added successfully!');
+    }
+    await user.save();
+  } catch (err) {
+    req.flash('error', 'Failed to save address. Please try again.');
+  }
 
-if (req.params.index !== undefined) {
-// Edit existing
-const index = parseInt(req.params.index);
-if (index >= 0 && index < user.addresses.length) {
-user.addresses[index] = { line1, city, state, zip, country };
-}
-} else {
-// Add new
-user.addresses.push({ line1, city, state, zip, country });
-}
-
-await user.save();
-res.redirect('/profile');
+  res.redirect('/profile/address');
 };
+
+
+
+
+
 
 // Delete Address
 exports.deleteAddress = async (req, res) => {

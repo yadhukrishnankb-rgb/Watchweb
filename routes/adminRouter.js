@@ -94,6 +94,15 @@ router.get('/orders', isAdmin, orderController.getOrders);
 router.get('/orders/:id', isAdmin, orderController.getOrderDetails);
 router.patch('/orders/:id/status', isAdmin, orderController.updateOrderStatus);
 
+
+// NEW: Request management
+router.get('/requests', isAdmin, orderController.getRequests);
+router.post('/orders/:orderId/items/:itemId/approve', isAdmin, orderController.approveRequest);
+
+
+
+
+
 router.get('/inventory', isAdmin, inventoryController.getInventory);
 router.patch('/inventory/:id/stock', isAdmin, inventoryController.updateStock);
 

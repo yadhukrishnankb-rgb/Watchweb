@@ -34,6 +34,9 @@ db();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+
+
 //-----------------------------------------
 // --- SESSION (single configuration, persisted to MongoDB) ---
 app.set('trust proxy', 1); // if behind proxy (Heroku/nginx) — keep if needed

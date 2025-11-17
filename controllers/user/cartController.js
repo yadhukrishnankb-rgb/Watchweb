@@ -28,11 +28,74 @@ exports.viewCart = async (req, res) => {
     }
 };
 
-// Add to Cart
+// // Add to Cart
+// exports.addToCart = async (req, res) => {
+//     try {
+//         const { productId, quantity = 1 } = req.body;
+//         const userId = req.session.user._id;
+
+//         // Validate product
+//         const product = await Product.findById(productId);
+//         if (!product || product.isBlocked || product.quantity <= 0) {
+//             return res.status(400).json({ success: false, message: 'Product is unavailable' });
+//         }
+
+//         // Get or create cart
+//         let cart = await Cart.findOne({ userId });
+//         if (!cart) {
+//             cart = new Cart({ userId, items: [] });
+//         }
+
+//         // Check if product exists in cart
+//         const existingItem = cart.items.find(item => item.productId.toString() === productId);
+//         if (existingItem) {
+//             // Update quantity if already in cart
+//             const newQuantity = existingItem.quantity + parseInt(quantity);
+//             if (newQuantity > MAX_QUANTITY_PER_ITEM) {
+//                 return res.status(400).json({ success: false, message: `Maximum ${MAX_QUANTITY_PER_ITEM} items allowed per product` });
+//             }
+//             if (newQuantity > product.quantity) {
+//                 return res.status(400).json({ success: false, message: 'Not enough stock available' });
+//             }
+//             existingItem.quantity = newQuantity;
+//             existingItem.totalPrice = product.salesPrice * newQuantity;
+//         } else {
+//             // Add new item
+//             cart.items.push({
+//                 productId,
+//                 quantity: parseInt(quantity),
+//                 price: product.salesPrice,
+//                 totalPrice: product.salesPrice * quantity
+//             });
+//         }
+
+//         // Remove from wishlist if exists
+//         await Wishlist.updateOne({ userId }, { $pull: { products: productId } });
+
+//         await cart.save();
+//         res.json({ success: true, message: 'Added to cart successfully' });
+//     } catch (error) {
+//         console.error('Add to cart error:', error);
+//         res.status(500).json({ success: false, message: 'Error adding to cart' });
+//     }
+// };
+
+
+
+// ...existing code...
 exports.addToCart = async (req, res) => {
     try {
         const { productId, quantity = 1 } = req.body;
-        const userId = req.session.user._id;
+
+        // ---- Guard: must be authenticated ----
+        const user = req.session && req.session.user;
+        if (!user || !user._id) {
+            return res.status(401).json({ success: false, message: 'Authentication required' });
+        }
+        const userId = user._id;
+
+        // Validate productId
+        if (!productId) return res.status(400).json({ success: false, message: 'productId required' });
 
         // Validate product
         const product = await Product.findById(productId);
@@ -40,17 +103,25 @@ exports.addToCart = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Product is unavailable' });
         }
 
-        // Get or create cart
-        let cart = await Cart.findOne({ userId });
+        // Use findOneAndUpdate with upsert to avoid duplicate insert race conditions.
+        // Ensure both 'userId' and legacy 'user' are set on insert (handles existing DB index on 'user').
+        let cart = await Cart.findOneAndUpdate(
+            { userId },
+            { $setOnInsert: { userId, user: userId, items: [] } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        ).populate('items.productId');
+
+        // Safety: if upsert didn't return a doc, fetch/create
         if (!cart) {
-            cart = new Cart({ userId, items: [] });
+            cart = await Cart.findOne({ userId }).populate('items.productId');
+            if (!cart) cart = new Cart({ userId, user: userId, items: [] });
         }
 
-        // Check if product exists in cart
-        const existingItem = cart.items.find(item => item.productId.toString() === productId);
+        // Find existing item
+        const existingItem = cart.items.find(item => item.productId.toString() === productId.toString());
+
         if (existingItem) {
-            // Update quantity if already in cart
-            const newQuantity = existingItem.quantity + parseInt(quantity);
+            const newQuantity = existingItem.quantity + parseInt(quantity, 10);
             if (newQuantity > MAX_QUANTITY_PER_ITEM) {
                 return res.status(400).json({ success: false, message: `Maximum ${MAX_QUANTITY_PER_ITEM} items allowed per product` });
             }
@@ -60,25 +131,37 @@ exports.addToCart = async (req, res) => {
             existingItem.quantity = newQuantity;
             existingItem.totalPrice = product.salesPrice * newQuantity;
         } else {
-            // Add new item
+            // Push new item
             cart.items.push({
                 productId,
-                quantity: parseInt(quantity),
+                quantity: parseInt(quantity, 10),
                 price: product.salesPrice,
-                totalPrice: product.salesPrice * quantity
+                totalPrice: product.salesPrice * parseInt(quantity, 10)
             });
         }
 
-        // Remove from wishlist if exists
-        await Wishlist.updateOne({ userId }, { $pull: { products: productId } });
+        // Remove from wishlist if exists (ignore errors)
+        try {
+            await Wishlist.updateOne({ userId }, { $pull: { products: productId } });
+        } catch (e) { /* ignore */ }
 
         await cart.save();
-        res.json({ success: true, message: 'Added to cart successfully' });
+        return res.json({ success: true, message: 'Added to cart successfully' });
     } catch (error) {
         console.error('Add to cart error:', error);
-        res.status(500).json({ success: false, message: 'Error adding to cart' });
+
+        if (error && error.code === 11000) {
+            return res.status(409).json({ success: false, message: 'Cart concurrency error, please try again' });
+        }
+
+        return res.status(500).json({ success: false, message: 'Error adding to cart' });
     }
 };
+// ...existing code...
+
+
+
+
 
 // Update quantity
 exports.updateQuantity = async (req, res) => {
