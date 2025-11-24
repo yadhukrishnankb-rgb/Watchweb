@@ -276,30 +276,6 @@ return res.render('user/verify-email', { message: 'Invalid OTP' });
 
 
 
-// // Show change password page
-// exports.changePasswordPage = (req, res) => {
-// res.render('user/change-password', { message: null });
-// };
-
-// // Handle password change
-// exports.changePassword = async (req, res) => {
-// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-// if (!userId) return res.redirect('/login');
-// const { oldPassword, newPassword, confirmPassword } = req.body;
-// const user = await User.findById(userId);
-// const match = await bcrypt.compare(oldPassword, user.password);
-// if (!match) {
-// return res.render('user/change-password', { message: 'Old password incorrect' });
-// }
-// if (newPassword !== confirmPassword) {
-// return res.render('user/change-password', { message: 'Passwords do not match' });
-// }
-// user.password = await bcrypt.hash(newPassword, 10);
-// await user.save();
-// res.redirect('/profile');
-// };
-//---------------------------
-
 // Show change password page
 exports.changePasswordPage = (req, res) => {
   // `req.flash('error')` will be used for server errors
@@ -345,32 +321,7 @@ exports.changePassword = async (req, res) => {
 };
 
 
-//-----------------------------
 
-// Add or Update Address
-// exports.manageAddress = async (req, res) => {
-// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-// if (!userId) return res.redirect('/login');
-
-// const { line1, city, state, zip, country } = req.body;
-// const user = await User.findById(userId);
-
-// user.addresses = user.addresses || [];
-
-// if (req.params.index !== undefined) {
-// // Edit existing
-// const index = parseInt(req.params.index);
-// if (index >= 0 && index < user.addresses.length) {
-// user.addresses[index] = { line1, city, state, zip, country };
-// }
-// } else {
-// // Add new
-// user.addresses.push({ line1, city, state, zip, country });
-// }
-
-// await user.save();
-// res.redirect('/profile');
-// };
 
 
 exports.manageAddress = async (req, res) => {
@@ -386,7 +337,7 @@ exports.manageAddress = async (req, res) => {
       const index = parseInt(req.params.index);
       if (index >= 0 && index < user.addresses.length) {
         user.addresses[index] = { line1, city, state, zip, country };
-        req.flash('success', 'Address udpated successfully!');
+         req.flash('success', 'Address udpated successfully!');
       }
     } else {
       user.addresses.push({ line1, city, state, zip, country });

@@ -51,9 +51,11 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <% orders.forEach(order => { %>
+        <% orders.forEach(order => { %>
             <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 text-sm font-medium"><%= order.orderId.slice(0,8) %>...</td>
+              <td class="px-6 py-4 text-sm font-medium">
+                <%= (order.orderId || 'N/A').slice(0, 8) %>...
+              </td>
               <td class="px-6 py-4 text-sm text-gray-500"><%= new Date(order.createdOn).toLocaleDateString() %></td>
               <td class="px-6 py-4 text-sm">
                 <%= order.address?.name || 'N/A' %><br>

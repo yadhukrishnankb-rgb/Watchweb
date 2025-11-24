@@ -344,6 +344,8 @@ const directPlaceOrder = async (req, res) => {
     }
 
     const order = await Order.create({
+            orderId: `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`, // <-- ADD THIS
+
       user: userId,
       orderedItems: [{
         product: productId,
@@ -478,6 +480,8 @@ const atomicDeductStock = async (items) => {
     }
   }
   return true;
+
+  
 };
 
 

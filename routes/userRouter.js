@@ -46,30 +46,58 @@ router.get('/reset-password', profileController.loadResetPassword);
 router.post('/reset-password', profileController.handleResetPassword);
 
 
-router.get('/profile', profileController.profilePage);
-router.get('/profile/edit', profileController.editProfilePage);
-router.post('/profile/edit', profileController.updateProfile);
-router.get('/profile/verify-email', profileController.verifyEmailPage);
-router.post('/profile/verify-email', profileController.verifyEmailOtp);
-router.get('/profile/change-password', profileController.changePasswordPage);
-router.post('/profile/change-password', profileController.changePassword);
-router.post('/order/:id/cancel', profileController.cancelOrder);
 
-//---------------------
+//  router.delete('/profile/address/:index/delete', isUser, profileController.deleteAddress);
+// router.get('/profile/edit', profileController.editProfilePage);
+// router.post('/profile/edit', profileController.updateProfile);
+// router.get('/profile/verify-email', profileController.verifyEmailPage);
+// router.post('/profile/verify-email', profileController.verifyEmailOtp);
+// router.get('/profile/change-password', profileController.changePasswordPage);
+// router.post('/profile/change-password', profileController.changePassword);
+// router.post('/order/:id/cancel', profileController.cancelOrder);
+
+// router.post('/profile/address', isUser, profileController.manageAddress);
+//  router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
+
+
+// router.get('/profile', profileController.profilePage);
+
+
+// //---------------------
+// router.get('/profile/address', isUser, profileController.addressPage);
+
+// //-------------------
+
+
+// router.post('/profile/upload-picture', isUser, profileUpload, profileController.uploadProfilePicture);
+
+//-----------
+// === PROFILE & ADDRESS ROUTES - FINAL WORKING ORDER ===
+router.delete('/profile/address/:index/delete', isUser, profileController.deleteAddress);
+
+router.post('/profile/address', isUser, profileController.manageAddress);
+router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
 router.get('/profile/address', isUser, profileController.addressPage);
 
-//-------------------
-
+router.get('/profile/edit', isUser, profileController.editProfilePage);
+router.post('/profile/edit', isUser, profileController.updateProfile);
+router.get('/profile/verify-email', isUser, profileController.verifyEmailPage);
+router.post('/profile/verify-email', isUser, profileController.verifyEmailOtp);
+router.get('/profile/change-password', isUser, profileController.changePasswordPage);
+router.post('/profile/change-password', isUser, profileController.changePassword);
+router.post('/order/:id/cancel', isUser, profileController.cancelOrder);
 
 router.post('/profile/upload-picture', isUser, profileUpload, profileController.uploadProfilePicture);
 
-
+// MOST GENERAL ROUTE - ABSOLUTELY LAST!
+router.get('/profile', isUser, profileController.profilePage);
+//------
 
 
 // Address Management
-router.post('/profile/address', profileController.manageAddress);
-router.post('/profile/address/:index/edit', profileController.manageAddress);
-router.post('/profile/address/:index/delete', profileController.deleteAddress);
+// router.post('/profile/address', profileController.manageAddress);
+// router.post('/profile/address/:index/edit', profileController.manageAddress);
+// router.post('/profile/address/:index/delete', profileController.deleteAddress);
 
 
 
@@ -96,17 +124,43 @@ router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutContr
 router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
 
 // Order Management Routes
-router.get('/orders', isUser, orderController.listOrders);
-router.get('/orders/:id', isUser, orderController.orderDetails);
-router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
-router.post('/orders/:id/return', isUser, orderController.returnOrder);
-router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
-
-// individual item cancel / return
+// router.get('/orders', isUser, orderController.listOrders);
+// router.get('/orders/:id', isUser, orderController.orderDetails);
+// router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
+// router.post('/orders/:id/return', isUser, orderController.returnOrder);
+// router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
 
 
+
+// router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
+
+// // individual item cancel / return
+
+
+// router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
+// router.post('/orders/:orderId/items/:itemId/return', isUser, orderController.requestReturnItem);
+
+
+//-----
+
+// Order Management Routes - FINAL WORKING VERSION
+
+// Individual item actions - HIGHEST PRIORITY
 router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
 router.post('/orders/:orderId/items/:itemId/return', isUser, orderController.requestReturnItem);
+
+
+router.get('/orders', isUser, orderController.listOrders);
+
+// Order-level actions
+router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
+router.post('/orders/:id/return', isUser, orderController.returnOrder);
+
+// Invoice & Details - order matters!
+router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
+router.get('/orders/:id', isUser, orderController.orderDetails); 
+
+
 
 
 
@@ -115,9 +169,6 @@ router.post('/checkout/direct', isUser, checkBlockedStatus, checkoutController.d
 // Direct order (Buy Now → Place Order)
 router.post('/checkout/direct-order', isUser, checkBlockedStatus, checkoutController.directPlaceOrder);
 
-router.post('/profile/address', isUser, profileController.manageAddress);
-router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
-router.post('/profile/address/:index/delete', isUser, profileController.deleteAddress);
 
 
 

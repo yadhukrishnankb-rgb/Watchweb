@@ -4,6 +4,7 @@ const app = express();
 const path = require("path");
 require("dotenv").config();
 const session = require("express-session");
+const flash = require('connect-flash');
 
 
 let MongoStore;
@@ -20,7 +21,9 @@ const passport = require("passport"); // Changed from local path to package
 
 
 
-const flash = require('connect-flash');
+
+
+
 
 
 const db = require("./config/db");
@@ -92,6 +95,7 @@ app.use(session({
     saveUninitialized: true
 }));
 app.use(flash());
+
 
 
 
