@@ -28,61 +28,7 @@ exports.viewCart = async (req, res) => {
     }
 };
 
-// // Add to Cart
-// exports.addToCart = async (req, res) => {
-//     try {
-//         const { productId, quantity = 1 } = req.body;
-//         const userId = req.session.user._id;
 
-//         // Validate product
-//         const product = await Product.findById(productId);
-//         if (!product || product.isBlocked || product.quantity <= 0) {
-//             return res.status(400).json({ success: false, message: 'Product is unavailable' });
-//         }
-
-//         // Get or create cart
-//         let cart = await Cart.findOne({ userId });
-//         if (!cart) {
-//             cart = new Cart({ userId, items: [] });
-//         }
-
-//         // Check if product exists in cart
-//         const existingItem = cart.items.find(item => item.productId.toString() === productId);
-//         if (existingItem) {
-//             // Update quantity if already in cart
-//             const newQuantity = existingItem.quantity + parseInt(quantity);
-//             if (newQuantity > MAX_QUANTITY_PER_ITEM) {
-//                 return res.status(400).json({ success: false, message: `Maximum ${MAX_QUANTITY_PER_ITEM} items allowed per product` });
-//             }
-//             if (newQuantity > product.quantity) {
-//                 return res.status(400).json({ success: false, message: 'Not enough stock available' });
-//             }
-//             existingItem.quantity = newQuantity;
-//             existingItem.totalPrice = product.salesPrice * newQuantity;
-//         } else {
-//             // Add new item
-//             cart.items.push({
-//                 productId,
-//                 quantity: parseInt(quantity),
-//                 price: product.salesPrice,
-//                 totalPrice: product.salesPrice * quantity
-//             });
-//         }
-
-//         // Remove from wishlist if exists
-//         await Wishlist.updateOne({ userId }, { $pull: { products: productId } });
-
-//         await cart.save();
-//         res.json({ success: true, message: 'Added to cart successfully' });
-//     } catch (error) {
-//         console.error('Add to cart error:', error);
-//         res.status(500).json({ success: false, message: 'Error adding to cart' });
-//     }
-// };
-
-
-
-// ...existing code...
 exports.addToCart = async (req, res) => {
     try {
         const { productId, quantity = 1 } = req.body;

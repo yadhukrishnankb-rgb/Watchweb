@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const path = require("path");
 require("dotenv").config();
+process.noDeprecation = true;
 const session = require("express-session");
 const flash = require('connect-flash');
 

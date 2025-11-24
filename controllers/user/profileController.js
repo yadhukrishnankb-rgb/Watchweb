@@ -165,55 +165,158 @@ res.render('user/edit-profile', { user, message: null });
 };
 
 
+// exports.updateProfile = async (req, res) => {
+// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+// if (!userId) return res.redirect('/login');
+// const { name, phone, email, line1, city, state, zip, country } = req.body;
+// const user = await User.findById(userId);
+
+// // Only trigger OTP if email is changed
+// if (email !== user.email) {
+// // Check for duplicate email
+// const existingUser = await User.findOne({ email });
+// if (existingUser) {
+// user.addresses = user.addresses || [];
+// return res.render('user/edit-profile', { user: user.toObject(), message: 'Email already in use.' });
+// }
+// // Generate OTP and store all data in session
+// const otp = Math.floor(100000 + Math.random() * 900000).toString();
+// req.session.emailChange = {
+// email,
+// otp,
+// name,
+// phone,
+// address: { line1, city, state, zip, country }
+// };
+// // Send OTP
+// const transporter = nodemailer.createTransport({
+// service: 'gmail',
+// auth: {
+// user: process.env.NODEMAILER_EMAIL,
+// pass: process.env.NODEMAILER_PASSWORD
+// }
+// });
+// await transporter.sendMail({
+// to: email,
+// from: process.env.NODEMAILER_EMAIL,
+// subject: 'Email Change Verification',
+// html: `<p>Your OTP is <b>${otp}</b></p>`
+// });
+// return res.redirect('/profile/verify-email');
+// }
+
+// // If email not changed, update directly
+// user.name = name;
+// user.phone = phone;
+// user.addresses = [{ line1, city, state, zip, country }];
+// await user.save();
+// res.redirect('/profile');
+// };
+
+//-------------
+
 exports.updateProfile = async (req, res) => {
-const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-if (!userId) return res.redirect('/login');
-const { name, phone, email, line1, city, state, zip, country } = req.body;
-const user = await User.findById(userId);
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.redirect('/login');
 
-// Only trigger OTP if email is changed
-if (email !== user.email) {
-// Check for duplicate email
-const existingUser = await User.findOne({ email });
-if (existingUser) {
-user.addresses = user.addresses || [];
-return res.render('user/edit-profile', { user: user.toObject(), message: 'Email already in use.' });
-}
-// Generate OTP and store all data in session
-const otp = Math.floor(100000 + Math.random() * 900000).toString();
-req.session.emailChange = {
-email,
-otp,
-name,
-phone,
-address: { line1, city, state, zip, country }
+  const { name, phone, email, line1, city, state, zip, country } = req.body;
+  const errors = [];
+
+  // === VALIDATION RULES ===
+  if (!name || name.trim().length < 2) {
+    errors.push("Name must be at least 2 characters");
+  }
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    errors.push("Enter a valid email address");
+  }
+  if (!phone || !/^\d{10}$/.test(phone.trim())) {
+    errors.push("Phone must be exactly 10 digits");
+  }
+
+  // Optional Address Validation (only if any field is filled)
+  const hasAddress = line1 || city || state || zip || country;
+  if (hasAddress) {
+    if (!line1 || line1.trim().length < 5) errors.push("Address Line 1 must be at least 5 characters");
+    if (!city || city.trim().length < 2) errors.push("City must be at least 2 characters");
+    if (!state || state.trim().length < 2) errors.push("State must be at least 2 characters");
+    if (!country || country.trim().length < 2) errors.push("Country must be at least 2 characters");
+    if (!zip || !/^\d{5,6}$/.test(zip.trim())) errors.push("ZIP Code must be 5 or 6 digits");
+  }
+
+  if (errors.length > 0) {
+    const user = await User.findById(userId).lean();
+    return res.render('user/edit-profile', {
+      user,
+      message: errors.join(' | ')
+    });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    // Check if email is being changed
+    if (email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.render('user/edit-profile', {
+          user: user.toObject(),
+          message: 'This email is already registered!'
+        });
+      }
+
+      // Store in session for OTP verification
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      req.session.emailChange = {
+        email: email.trim(),
+        otp,
+        name: name.trim(),
+        phone: phone.trim(),
+        address: hasAddress ? {
+          line1: line1?.trim(),
+          city: city?.trim(),
+          state: state?.trim(),
+          zip: zip?.trim(),
+          country: country?.trim()
+        } : null
+      };
+
+      await transporter.sendMail({
+        to: email,
+        from: process.env.NODEMAILER_EMAIL,
+        subject: 'Verify Your New Email',
+        html: `<p>Your OTP is <b style="font-size:18px">${otp}</b></p><p>Valid for 2 minutes.</p>`
+      });
+
+      return res.redirect('/profile/verify-email');
+    }
+
+    // If no email change → update directly
+    user.name = name.trim();
+    user.phone = phone.trim();
+
+    if (hasAddress) {
+      user.addresses = [{
+        line1: line1.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zip: zip.trim(),
+        country: country.trim()
+      }];
+    }
+
+    await user.save();
+    req.flash('success', 'Profile updated successfully!');
+    res.redirect('/profile');
+
+  } catch (err) {
+    console.error(err);
+    const user = await User.findById(userId).lean();
+    res.render('user/edit-profile', {
+      user,
+      message: 'Server error. Please try again.'
+    });
+  }
 };
-// Send OTP
-const transporter = nodemailer.createTransport({
-service: 'gmail',
-auth: {
-user: process.env.NODEMAILER_EMAIL,
-pass: process.env.NODEMAILER_PASSWORD
-}
-});
-await transporter.sendMail({
-to: email,
-from: process.env.NODEMAILER_EMAIL,
-subject: 'Email Change Verification',
-html: `<p>Your OTP is <b>${otp}</b></p>`
-});
-return res.redirect('/profile/verify-email');
-}
-
-// If email not changed, update directly
-user.name = name;
-user.phone = phone;
-user.addresses = [{ line1, city, state, zip, country }];
-await user.save();
-res.redirect('/profile');
-};
-
-
 
 //-----------------
 
@@ -324,27 +427,93 @@ exports.changePassword = async (req, res) => {
 
 
 
+// exports.manageAddress = async (req, res) => {
+//   const userId = req.session.user?._id || req.user?._id;
+//   if (!userId) return res.redirect('/login');
+
+//   const { line1, city, state, zip, country } = req.body;
+//   const user = await User.findById(userId);
+//   user.addresses = user.addresses || [];
+
+//   try {
+//     if (req.params.index !== undefined) {
+//       const index = parseInt(req.params.index);
+//       if (index >= 0 && index < user.addresses.length) {
+//         user.addresses[index] = { line1, city, state, zip, country };
+//          req.flash('success', 'Address udpated successfully!');
+//       }
+//     } else {
+//       user.addresses.push({ line1, city, state, zip, country });
+//       req.flash('success', 'Address added successfully!');
+//     }
+//     await user.save();
+//   } catch (err) {
+//     req.flash('error', 'Failed to save address. Please try again.');
+//   }
+
+//   res.redirect('/profile/address');
+// };
+
+
 exports.manageAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   if (!userId) return res.redirect('/login');
 
   const { line1, city, state, zip, country } = req.body;
-  const user = await User.findById(userId);
-  user.addresses = user.addresses || [];
+  const errors = [];
+
+  // === VALIDATION RULES ===
+  if (!line1 || line1.trim().length < 5) {
+    errors.push('Address Line 1 must be at least 5 characters');
+  }
+  if (!city || city.trim().length < 2) {
+    errors.push('City must be at least 2 characters');
+  }
+  if (!state || state.trim().length < 2) {
+    errors.push('State must be at least 2 characters');
+  }
+  if (!country || country.trim().length < 2) {
+    errors.push('Country must be at least 2 characters');
+  }
+  if (!zip || !/^\d{5,6}$/.test(zip.trim())) {
+    errors.push('ZIP Code must be 5 or 6 digits');
+  }
+
+  if (errors.length > 0) {
+    req.flash('error', errors.join(' | '));
+    return res.redirect('/profile/address');
+  }
 
   try {
+    const user = await User.findById(userId);
+    user.addresses = user.addresses || [];
+
     if (req.params.index !== undefined) {
       const index = parseInt(req.params.index);
       if (index >= 0 && index < user.addresses.length) {
-        user.addresses[index] = { line1, city, state, zip, country };
-         req.flash('success', 'Address udpated successfully!');
+        user.addresses[index] = {
+          line1: line1.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim(),
+          country: country.trim()
+        };
+        req.flash('success', 'Address updated successfully!');
       }
     } else {
-      user.addresses.push({ line1, city, state, zip, country });
+      user.addresses.push({
+        line1: line1.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zip: zip.trim(),
+        country: country.trim()
+      });
       req.flash('success', 'Address added successfully!');
     }
+
     await user.save();
   } catch (err) {
+    console.error(err);
     req.flash('error', 'Failed to save address. Please try again.');
   }
 
@@ -353,23 +522,52 @@ exports.manageAddress = async (req, res) => {
 
 
 
-
-
-
 // Delete Address
+// exports.deleteAddress = async (req, res) => {
+// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+// if (!userId) return res.redirect('/login');
+
+// const index = parseInt(req.params.index);
+// const user = await User.findById(userId);
+
+// if (user.addresses && index >= 0 && index < user.addresses.length) {
+// user.addresses.splice(index, 1);
+// await user.save();
+// }
+
+// res.redirect('/profile');
+// };
+
 exports.deleteAddress = async (req, res) => {
-const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-if (!userId) return res.redirect('/login');
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
-const index = parseInt(req.params.index);
-const user = await User.findById(userId);
+  try {
+    const index = parseInt(req.params.index);
+    const user = await User.findById(userId);
 
-if (user.addresses && index >= 0 && index < user.addresses.length) {
-user.addresses.splice(index, 1);
-await user.save();
-}
+    if (!user || !user.addresses || index < 0 || index >= user.addresses.length) {
+      return res.status(400).json({ success: false, message: 'Invalid address' });
+    }
 
-res.redirect('/profile');
+    user.addresses.splice(index, 1);
+    await user.save();
+
+    // RETURN JSON FOR AJAX + ALSO SUPPORT NORMAL REDIRECT
+    if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
+      return res.json({ success: true, message: 'Address deleted successfully' });
+    } else {
+      req.flash('success', 'Address deleted successfully');
+      return res.redirect('/profile/address');  // ← FIXED: Go back to address page!
+    }
+  } catch (err) {
+    console.error('Delete address error:', err);
+    if (req.xhr) {
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    req.flash('error', 'Failed to delete address');
+    res.redirect('/profile/address');
+  }
 };
 
 // Cancel order

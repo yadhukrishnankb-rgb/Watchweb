@@ -40,6 +40,24 @@ const listOrders = async (req, res) => {
     }
 };
 
+// const orderDetails = async (req, res) => {
+//     try {
+//         const userId = req.session.user._id;
+//         const orderId = req.params.id;
+
+//         const order = await Order.findOne({ _id: orderId, user: userId })
+//             .populate('orderedItems.product', 'productName price productImage')
+//             .lean();
+
+//         if (!order) return res.status(404).redirect('/orders');
+
+//         res.render('user/order-detail', { order, user: req.session.user });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).render('error', { message: 'Failed to load order details' });
+//     }
+// };
+
 const orderDetails = async (req, res) => {
     try {
         const userId = req.session.user._id;
@@ -47,13 +65,26 @@ const orderDetails = async (req, res) => {
 
         const order = await Order.findOne({ _id: orderId, user: userId })
             .populate('orderedItems.product', 'productName price productImage')
-            .lean();
+            .exec();
 
         if (!order) return res.status(404).redirect('/orders');
 
-        res.render('user/order-detail', { order, user: req.session.user });
+        const plainOrder = order.toObject();
+
+        // THIS IS THE REAL FIX – YOUR ADDRESS IS SAVED AS "address" NOT "shippingAddress"
+        plainOrder.address = plainOrder.address || plainOrder.shippingAddress || {};
+
+        // Optional: Also copy to shippingAddress for invoice consistency
+        if (!plainOrder.shippingAddress && plainOrder.address) {
+            plainOrder.shippingAddress = plainOrder.address;
+        }
+
+        res.render('user/order-detail', { 
+            order: plainOrder, 
+            user: req.session.user 
+        });
     } catch (err) {
-        console.error(err);
+        console.error('Order details error:', err);
         res.status(500).render('error', { message: 'Failed to load order details' });
     }
 };
@@ -117,7 +148,6 @@ const searchOrders = async (req, res) => {
     listOrders(req, res);
 };
 
-
 const downloadInvoice = async (req, res) => {
     try {
         const userId = req.session.user._id;
@@ -135,145 +165,111 @@ const downloadInvoice = async (req, res) => {
 
         doc.pipe(res);
 
-        // ────────────────────── HEADER WITH GRADIENT EFFECT ──────────────────────
-        doc.rect(0, 0, 600, 100).fill('#0a5f5f');
+        // ────────────────────── HEADER WITH BLUE BACKGROUND ──────────────────────
+        doc.rect(0, 0, 600, 140).fill('#0066ff');
         
-        // Company Name
-        doc.font('Helvetica-Bold').fontSize(32).fillColor('#ffffff').text('EVER TIME', 60, 30);
-        doc.fontSize(10).fillColor('#d4f1f1').text('Premium Timepieces', 60, 65);
+        // Invoice Title - Centered
+        doc.font('Helvetica-Bold').fontSize(48).fillColor('#ffffff').text('INVOICE', 50, 40, { align: 'center', width: 500 });
         
-        // Invoice Title
-        doc.font('Helvetica-Bold').fontSize(24).fillColor('#ffffff').text('INVOICE', 420, 35);
-        
-        // Optional Logo (on white background for contrast)
-        const logoPath = 'public/images/logo.png';
-        if (fs.existsSync(logoPath)) {
-            doc.rect(480, 25, 60, 60).fill('#ffffff');
-            doc.image(logoPath, 485, 30, { width: 50 });
-        }
+        // Order Details on Right Side
+        doc.font('Helvetica').fontSize(11).fillColor('#ffffff');
+        doc.text(`Order ID: ${order.orderId}`, 350, 45, { align: 'right', width: 200 });
+        doc.text(`Invoice Date: ${new Date(order.createdOn).toLocaleDateString('en-IN')}`, 350, 65, { align: 'right', width: 200 });
+        doc.text(`Payment: ${order.paymentMethod || 'N/A'}`, 350, 85, { align: 'right', width: 200 });
 
-        // ────────────────────── INFO SECTION WITH CARDS ──────────────────────
-        const infoY = 130;
+        // ────────────────────── COMPANY INFO & BILL TO SECTION ──────────────────────
+        const infoY = 170;
         
-        // Left Card - Order Details
-        doc.rect(50, infoY, 240, 110).lineWidth(1).strokeColor('#e0e0e0').stroke();
-        doc.rect(50, infoY, 240, 30).fill('#f8f9fa');
-        
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#0a5f5f').text('ORDER DETAILS', 60, infoY + 8);
-        
-        doc.font('Helvetica').fontSize(10).fillColor('#666');
-        doc.text('Order ID:', 60, infoY + 45);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`#${order.orderId}`, 140, infoY + 45);
+        // Left Side - Company Info (GoalZone equivalent is EVER TIME)
+        doc.font('Helvetica-Bold').fontSize(20).fillColor('#000000').text('EVER TIME', 50, infoY);
+        doc.font('Helvetica').fontSize(10).fillColor('#333333');
+        doc.text('Premium Timepieces', 50, infoY + 28);
+        doc.text('123 Watch Street, Malappuram', 50, infoY + 44);
+        doc.text('Kerala, India - 679536', 50, infoY + 60);
+        doc.text('GSTIN: 32AAALCG7E567N1ZR', 50, infoY + 76);
 
-        doc.font('Helvetica').fillColor('#666').text('Order Date:', 60, infoY + 62);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`${new Date(order.createdOn).toLocaleDateString('en-IN')}`, 140, infoY + 62);
-
-        doc.font('Helvetica').fillColor('#666').text('Payment:', 60, infoY + 79);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`${order.paymentMethod || 'N/A'}`, 140, infoY + 79);
-
-        doc.font('Helvetica').fillColor('#666').text('Status:', 60, infoY + 96);
-        doc.font('Helvetica-Bold')
-           .fillColor(order.status === 'Delivered' ? '#27ae60' : 
-                     order.status === 'cancelled' ? '#e74c3c' : '#f39c12')
-           .text(`${order.status}`, 140, infoY + 96);
-
-        // Right Card - Billing Information
-        doc.rect(310, infoY, 240, 110).lineWidth(1).strokeColor('#e0e0e0').stroke();
-        doc.rect(310, infoY, 240, 30).fill('#f8f9fa');
-        
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#0a5f5f').text('BILL TO', 320, infoY + 8);
+        // Right Side - Bill To
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('#000000').text('Bill To:', 350, infoY);
         
         const shipping = order.shippingAddress || {};
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#333').text(`${shipping.name || req.session.user.name}`, 320, infoY + 45);
-        doc.font('Helvetica').fontSize(9).fillColor('#666').text(`${shipping.email || req.session.user.email}`, 320, infoY + 62);
-        doc.text(`📞 ${shipping.phone || 'N/A'}`, 320, infoY + 78);
-        if (shipping.address) {
-            doc.text(`${shipping.address.substring(0, 35)}...`, 320, infoY + 94);
-        }
+        doc.font('Helvetica').fontSize(10).fillColor('#333333');
+        doc.text(`${shipping.name || req.session.user.name}`, 350, infoY + 24);
+        doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 40);
+        doc.text(`${shipping.address || 'N/A'}`, 350, infoY + 56, { width: 200 });
+        doc.text(`Phone: ${shipping.phone || 'N/A'}`, 350, infoY + 88);
+        doc.text(`Email:`, 350, infoY + 104);
+        doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 120);
 
-        // ────────────────────── TABLE WITH MODERN DESIGN ──────────────────────
-        const tableTop = infoY + 140;
-        const col1 = 50;   // ITEM #
-        const col2 = 75;   // DESCRIPTION
-        const col3 = 300;  // QTY
-        const col4 = 365;  // PRICE
-        const col5 = 445;  // TOTAL
+        // ────────────────────── TABLE WITH SIMPLE DESIGN ──────────────────────
+        const tableTop = infoY + 160;
+        const col1 = 50;   // Item Description
+        const col2 = 340;  // Price
+        const col3 = 430;  // Qty
+        const col4 = 490;  // Total
 
-        // Table Header with gradient
-        doc.rect(col1, tableTop, 510, 35).fill('#0a5f5f');
-        doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(11);
-        doc.text('#', col1 + 8, tableTop + 12);
-        doc.text('DESCRIPTION', col2 + 8, tableTop + 12);
-        doc.text('QTY', col3 + 8, tableTop + 12, { width: 55, align: 'center' });
-        doc.text('PRICE', col4 + 8, tableTop + 12, { width: 75, align: 'right' });
-        doc.text('TOTAL', col5 + 8, tableTop + 12, { width: 90, align: 'right' });
+        // Table Header
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#000000');
+        doc.text('Item Description', col1, tableTop);
+        doc.text('Price', col2, tableTop);
+        doc.text('Qty', col3, tableTop);
+        doc.text('Total', col4, tableTop);
 
-        // ────────────────────── TABLE ROWS WITH ALTERNATING COLORS ──────────────────────
-        doc.font('Helvetica').fontSize(10).fillColor('#333');
-        let y = tableTop + 35;
+        // Header underline
+        doc.moveTo(50, tableTop + 18).lineTo(560, tableTop + 18).strokeColor('#cccccc').lineWidth(1).stroke();
+
+        // ────────────────────── TABLE ROWS ──────────────────────
+        doc.font('Helvetica').fontSize(10).fillColor('#333333');
+        let y = tableTop + 30;
 
         order.orderedItems.forEach((item, i) => {
-            // Alternating row colors
-            if (i % 2 === 0) {
-                doc.rect(col1, y, 510, 28).fill('#f8f9fa');
-            }
-            
             const name = item.name || (item.product?.productName) || 'Unknown Product';
             const price = item.price ?? item.product?.price ?? 0;
             const total = price * item.quantity;
 
-            doc.fillColor('#333');
-            doc.text(`${i + 1}`, col1 + 8, y + 8);
-            doc.font('Helvetica').text(name, col2 + 8, y + 8, { width: 200, ellipsis: true });
-            doc.text(`${item.quantity}`, col3 + 8, y + 8, { width: 55, align: 'center' });
-            doc.text(`₹${price.toFixed(2)}`, col4 + 8, y + 8, { width: 75, align: 'right' });
-            doc.font('Helvetica-Bold').text(`₹${total.toFixed(2)}`, col5 + 8, y + 8, { width: 90, align: 'right' });
+            doc.text(`${i + 1}. ${name}`, col1, y, { width: 280 });
+            doc.text(`₹${price.toFixed(2)}`, col2, y);
+            doc.text(`${item.quantity}`, col3, y);
+            doc.text(`₹${total.toFixed(2)}`, col4, y);
 
-            y += 28;
+            y += 30;
         });
 
-        // Table border
-        doc.rect(col1, tableTop, 510, y - tableTop).lineWidth(1.5).strokeColor('#0a5f5f').stroke();
+        // Bottom border line
+        doc.moveTo(50, y + 10).lineTo(560, y + 10).strokeColor('#cccccc').lineWidth(1).stroke();
 
-        // ────────────────────── SUMMARY SECTION ──────────────────────
-        const summaryY = y + 25;
-        const labelX = 360;
-        const valueX = 455;
+        // ────────────────────── SUMMARY SECTION WITH LIGHT GRAY BOX ──────────────────────
+        const summaryY = y + 40;
+        const summaryBoxX = 380;
+        const summaryBoxWidth = 180;
+        const summaryBoxHeight = 140;
 
-        // Summary box background
-        doc.rect(labelX - 10, summaryY - 10, 200, 100).lineWidth(1).strokeColor('#e0e0e0').fill('#fafafa').stroke();
+        // Light gray background box
+        doc.rect(summaryBoxX, summaryY, summaryBoxWidth, summaryBoxHeight).fill('#f5f5f5');
 
-        doc.font('Helvetica').fontSize(10).fillColor('#666');
-        doc.text('Subtotal:', labelX, summaryY);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`₹${(order.subtotal || 0).toFixed(2)}`, valueX, summaryY, { width: 85, align: 'right' });
+        // Summary text
+        doc.font('Helvetica').fontSize(10).fillColor('#333333');
+        const labelX = summaryBoxX + 15;
+        const valueX = summaryBoxX + summaryBoxWidth - 15;
 
-        doc.font('Helvetica').fillColor('#666').text('Tax (GST):', labelX, summaryY + 22);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`₹${(order.tax || 0).toFixed(2)}`, valueX, summaryY + 22, { width: 85, align: 'right' });
+        doc.text('Subtotal:', labelX, summaryY + 15);
+        doc.text(`₹${(order.subtotal || 0).toFixed(2)}`, valueX - 80, summaryY + 15, { width: 80, align: 'right' });
 
-        doc.font('Helvetica').fillColor('#666').text('Shipping:', labelX, summaryY + 44);
-        doc.font('Helvetica-Bold').fillColor('#333').text(`₹${(order.shipping || 0).toFixed(2)}`, valueX, summaryY + 44, { width: 85, align: 'right' });
+        doc.text('Discount:', labelX, summaryY + 38);
+        doc.text(`₹${(order.discount || 0).toFixed(2)}`, valueX - 80, summaryY + 38, { width: 80, align: 'right' });
 
-        // ────────────────────── GRAND TOTAL ──────────────────────
-        const totalBoxY = summaryY + 70;
-        doc.rect(labelX - 10, totalBoxY - 5, 200, 35).fill('#0a5f5f');
-        doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(14);
-        doc.text('GRAND TOTAL', labelX, totalBoxY + 5);
-        doc.fontSize(16).text(`₹${(order.finalAmount || 0).toFixed(2)}`, valueX, totalBoxY + 5, { width: 85, align: 'right' });
+        doc.text('GST (18%):', labelX, summaryY + 61);
+        doc.text(`₹${(order.tax || 0).toFixed(2)}`, valueX - 80, summaryY + 61, { width: 80, align: 'right' });
+
+        // Grand Total in GREEN
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#00cc66');
+        doc.text('Grand Total:', labelX, summaryY + 95);
+        doc.fontSize(14).text(`₹${(order.finalAmount || 0).toFixed(2)}`, valueX - 80, summaryY + 95, { width: 80, align: 'right' });
 
         // ────────────────────── FOOTER ──────────────────────
         const footerY = 750;
-        doc.rect(0, footerY, 600, 50).fill('#f8f9fa');
         
-        doc.font('Helvetica-Bold').fontSize(11).fillColor('#0a5f5f');
-        doc.text('Thank you for your business!', 50, footerY + 10, { align: 'center' });
-        
-        doc.font('Helvetica').fontSize(9).fillColor('#666');
-        doc.text('For support: support@evertime.in | +91 98765 43210', 50, footerY + 28, { align: 'center' });
-
-        // ────────────────────── PAGE NUMBER ──────────────────────
-        const pageCount = doc.pageCount;
-        doc.font('Helvetica').fontSize(10).fillColor('#666');
-        doc.text(`Page ${doc.page} of ${pageCount}`, 500, 780, { align: 'right' });
+        doc.font('Helvetica').fontSize(9).fillColor('#666666');
+        doc.text('Thank you for your business! For support: support@evertime.in | +91 98765 43210', 50, footerY, { align: 'center', width: 500 });
 
         doc.end();
     } catch (err) {

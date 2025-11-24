@@ -340,7 +340,7 @@ font-size: 24px;
 </div>
 </div>
 
-<script>
+<!-- <script>
   const wrapper = document.getElementById('profileWrapper');
   const input = document.getElementById('profileImageInput');
 
@@ -376,6 +376,137 @@ font-size: 24px;
       alert('Upload error: ' + err.message);
     } finally {
       input.value = '';
+    }
+  });
+</script> -->
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const form = document.querySelector('form');
+  const inputs = form.querySelectorAll('input');
+
+  // Real-time validation
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      validateField(input);
+    });
+  });
+
+  function validateField(input) {
+    const value = input.value.trim();
+    let valid = true;
+    let message = '';
+
+    switch (input.name) {
+      case 'name':
+        if (value.length < 2) {
+          valid = false;
+          message = 'Name must be at least 2 characters';
+        }
+        break;
+      case 'email':
+        if (!/^\S+@\S+\.\S+$/.test(value)) {
+          valid = false;
+          message = 'Enter a valid email';
+        }
+        break;
+      case 'phone':
+        if (!/^\d{10}$/.test(value)) {
+          valid = false;
+          message = 'Phone must be 10 digits';
+        }
+        break;
+      case 'line1':
+        if (value && value.length < 5) {
+          valid = false;
+          message = 'Address must be at least 5 characters';
+        }
+        break;
+      case 'zip':
+        if (value && !/^\d{5,6}$/.test(value)) {
+          valid = false;
+          message = 'ZIP must be 5 or 6 digits';
+        }
+        break;
+    }
+
+    input.style.borderColor = valid ? '#d4e9e7' : '#e74c3c';
+    if (!valid && message) {
+      showToast(message);
+    }
+  }
+
+  function showToast(msg) {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: msg,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+  }
+
+  form.addEventListener('submit', (e) => {
+    let hasError = false;
+    inputs.forEach(input => {
+      if (!validateField(input)) hasError = true;
+    });
+
+    if (hasError) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Input',
+        text: 'Please fix the errors above',
+        confirmButtonColor: '#1a7b7b'
+      });
+    }
+  });
+
+  // Profile Picture Upload (already good – just improved error handling)
+  const wrapper = document.getElementById('profileWrapper');
+  const input = document.getElementById('profileImageInput');
+
+  wrapper.addEventListener('click', () => input.click());
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      return Swal.fire('Error', 'Please select an image file', 'error');
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return Swal.fire('Error', 'Image must be under 5MB', 'error');
+    }
+
+    const fd = new FormData();
+    fd.append('profileImage', file);
+
+    try {
+      const res = await fetch('/profile/upload-picture', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (res.ok) {
+        const img = document.getElementById('profileImg');
+        if (img.tagName === 'DIV') {
+          const newImg = document.createElement('img');
+          newImg.src = data.profileImage + '?t=' + Date.now();
+          newImg.className = 'profile-image-img';
+          newImg.id = 'profileImg';
+          newImg.alt = 'Profile';
+          img.replaceWith(newImg);
+        } else {
+          img.src = data.profileImage + '?t=' + Date.now();
+        }
+        Swal.fire({ icon: 'success', title: 'Updated!', text: 'Profile picture changed', timer: 1500, showConfirmButton: false });
+      } else {
+        throw new Error(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      Swal.fire('Upload Failed', err.message, 'error');
     }
   });
 </script>
