@@ -1,6 +1,6 @@
 <!-- views/user/order-detail.ejs -->
 <%- include('../partials/user/header') %>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     .order-detail-container {
         max-width: 1400px;
@@ -544,74 +544,150 @@
         </div>
     </div>
 </div>
-
-<!-- Fully Working JavaScript (clean & reliable) -->
- <script>
+<script>
+// Beautiful Cancel/Return Popups - EXACTLY LIKE YOUR PHOTO!
 async function requestCancelItem(orderId, itemId, btn) {
-    const reason = prompt('Reason for cancellation (optional):');
-    if (reason === null) return;
+    const { value: reason } = await Swal.fire({
+        title: 'Cancel Order',
+        html: `
+            <p class="text-gray-600 mb-4">Are you sure you want to cancel this item?<br>
+            <strong>This action cannot be undone.</strong></p>
+            <div class="text-left">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Please tell us why you're cancelling (optional)
+                </label>
+                <textarea id="cancel-reason" class="swal2-textarea" placeholder="e.g. Changed my mind, ordered by mistake..." rows="3"></textarea>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#9ca3af',
+        confirmButtonText: 'Yes, Cancel Order',
+        cancelButtonText: 'Keep Order',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'px-8 py-3 text-lg font-semibold rounded-lg',
+            cancelButton: 'px-8 py-3 text-lg font-semibold rounded-lg'
+        },
+        buttonsStyling: false,
+        preConfirm: () => {
+            return document.getElementById('cancel-reason').value || 'No reason provided';
+        }
+    });
 
+    if (!reason) return; // User clicked cancel
+
+    // Show loading
     btn.disabled = true;
-    btn.textContent = 'Submitting...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
     try {
         const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
             method: 'POST',
-            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason || 'No reason provided' })
+            body: JSON.stringify({ reason })
         });
+
         const data = await res.json();
 
         if (data.success) {
-            alert(data.message || 'Cancellation request sent!');
-            location.reload();
+            Swal.fire({
+                icon: 'success',
+                title: 'Cancellation Requested!',
+                text: 'Admin will review your request shortly.',
+                confirmButtonColor: '#10b981',
+                timer: 3000
+            }).then(() => location.reload());
         } else {
-            alert(data.message || 'Failed to send request');
+            throw new Error(data.message);
         }
     } catch (err) {
-        console.error(err);
-        alert('Network error');
+        Swal.fire({
+            icon: 'error',
+            title: 'Failed',
+            text: err.message || 'Something went wrong. Try again.',
+            confirmButtonColor: '#ef4444'
+        });
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Request Cancel';
+        btn.innerHTML = 'Request Cancel';
     }
 }
 
 async function requestReturnItem(orderId, itemId, btn) {
-    const reason = prompt('Reason for return (required):');
-    if (!reason || reason.trim() === '') return alert('Please provide a reason');
+    const { value: reason } = await Swal.fire({
+        title: 'Return Order',
+        html: `
+            <p class="text-gray-600 mb-4">Want to return this item?<br>
+            <strong>We'll process your refund once received.</strong></p>
+            <div class="text-left">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for return <span class="text-red-500">*</span>
+                </label>
+                <textarea id="return-reason" class="swal2-textarea" placeholder="e.g. Defective product, wrong size, doesn't match description..." rows="3" required></textarea>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#9ca3af',
+        confirmButtonText: 'Yes, Return Item',
+        cancelButtonText: 'Keep Item',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'px-8 py-3 text-lg font-semibold rounded-lg',
+            cancelButton: 'px-8 py-3 text-lg font-semibold rounded-lg'
+        },
+        buttonsStyling: false,
+        preConfirm: () => {
+            const text = document.getElementById('return-reason').value.trim();
+            if (!text) {
+                Swal.showValidationMessage('Please tell us why you want to return');
+            }
+            return text;
+        }
+    });
+
+    if (!reason) return;
 
     btn.disabled = true;
-    btn.textContent = 'Submitting...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
     try {
         const res = await fetch(`/orders/${orderId}/items/${itemId}/return`, {
             method: 'POST',
-            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason.trim() })
+            body: JSON.stringify({ reason })
         });
+
         const data = await res.json();
 
         if (data.success) {
-            alert(data.message || 'Return request sent!');
-            location.reload();
+            Swal.fire({
+                icon: 'success',
+                title: 'Return Requested!',
+                text: 'We’ll send pickup details soon.',
+                confirmButtonColor: '#10b981',
+                timer: 3000
+            }).then(() => location.reload());
         } else {
-            alert(data.message || 'Failed to send request');
+            throw new Error(data.message);
         }
     } catch (err) {
-        console.error(err);
-        alert('Network error');
+        Swal.fire({
+            icon: 'error',
+            title: 'Failed',
+            text: err.message || 'Request failed. Try again.',
+            confirmButtonColor: '#ef4444'
+        });
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Request Return';
+        btn.innerHTML = 'Request Return';
     }
 }
-</script> 
-
-
-
-
+</script>
 
 <%- include('../partials/user/footer') %>

@@ -129,11 +129,7 @@ res.render('user/profile', { user, orders });
 };
 
 
-// exports.addressPage = async (req, res) => {
-//     const user = await User.findById(req.session.user?._id || req.user?._id).lean();
-//     user.addresses = user.addresses || [];
-//     res.render('user/profile-address', { user });
-// };
+
 
 
 exports.addressPage = async (req, res) => {
@@ -165,55 +161,7 @@ res.render('user/edit-profile', { user, message: null });
 };
 
 
-// exports.updateProfile = async (req, res) => {
-// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-// if (!userId) return res.redirect('/login');
-// const { name, phone, email, line1, city, state, zip, country } = req.body;
-// const user = await User.findById(userId);
 
-// // Only trigger OTP if email is changed
-// if (email !== user.email) {
-// // Check for duplicate email
-// const existingUser = await User.findOne({ email });
-// if (existingUser) {
-// user.addresses = user.addresses || [];
-// return res.render('user/edit-profile', { user: user.toObject(), message: 'Email already in use.' });
-// }
-// // Generate OTP and store all data in session
-// const otp = Math.floor(100000 + Math.random() * 900000).toString();
-// req.session.emailChange = {
-// email,
-// otp,
-// name,
-// phone,
-// address: { line1, city, state, zip, country }
-// };
-// // Send OTP
-// const transporter = nodemailer.createTransport({
-// service: 'gmail',
-// auth: {
-// user: process.env.NODEMAILER_EMAIL,
-// pass: process.env.NODEMAILER_PASSWORD
-// }
-// });
-// await transporter.sendMail({
-// to: email,
-// from: process.env.NODEMAILER_EMAIL,
-// subject: 'Email Change Verification',
-// html: `<p>Your OTP is <b>${otp}</b></p>`
-// });
-// return res.redirect('/profile/verify-email');
-// }
-
-// // If email not changed, update directly
-// user.name = name;
-// user.phone = phone;
-// user.addresses = [{ line1, city, state, zip, country }];
-// await user.save();
-// res.redirect('/profile');
-// };
-
-//-------------
 
 exports.updateProfile = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
@@ -427,33 +375,6 @@ exports.changePassword = async (req, res) => {
 
 
 
-// exports.manageAddress = async (req, res) => {
-//   const userId = req.session.user?._id || req.user?._id;
-//   if (!userId) return res.redirect('/login');
-
-//   const { line1, city, state, zip, country } = req.body;
-//   const user = await User.findById(userId);
-//   user.addresses = user.addresses || [];
-
-//   try {
-//     if (req.params.index !== undefined) {
-//       const index = parseInt(req.params.index);
-//       if (index >= 0 && index < user.addresses.length) {
-//         user.addresses[index] = { line1, city, state, zip, country };
-//          req.flash('success', 'Address udpated successfully!');
-//       }
-//     } else {
-//       user.addresses.push({ line1, city, state, zip, country });
-//       req.flash('success', 'Address added successfully!');
-//     }
-//     await user.save();
-//   } catch (err) {
-//     req.flash('error', 'Failed to save address. Please try again.');
-//   }
-
-//   res.redirect('/profile/address');
-// };
-
 
 exports.manageAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
@@ -522,21 +443,6 @@ exports.manageAddress = async (req, res) => {
 
 
 
-// Delete Address
-// exports.deleteAddress = async (req, res) => {
-// const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-// if (!userId) return res.redirect('/login');
-
-// const index = parseInt(req.params.index);
-// const user = await User.findById(userId);
-
-// if (user.addresses && index >= 0 && index < user.addresses.length) {
-// user.addresses.splice(index, 1);
-// await user.save();
-// }
-
-// res.redirect('/profile');
-// };
 
 exports.deleteAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;

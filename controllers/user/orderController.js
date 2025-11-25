@@ -40,23 +40,7 @@ const listOrders = async (req, res) => {
     }
 };
 
-// const orderDetails = async (req, res) => {
-//     try {
-//         const userId = req.session.user._id;
-//         const orderId = req.params.id;
 
-//         const order = await Order.findOne({ _id: orderId, user: userId })
-//             .populate('orderedItems.product', 'productName price productImage')
-//             .lean();
-
-//         if (!order) return res.status(404).redirect('/orders');
-
-//         res.render('user/order-detail', { order, user: req.session.user });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).render('error', { message: 'Failed to load order details' });
-//     }
-// };
 
 const orderDetails = async (req, res) => {
     try {

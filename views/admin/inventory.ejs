@@ -1,7 +1,9 @@
 <!-- views/admin/inventory.ejs -->
 <%- include('../partials/admin/header') %>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <main class="p-6 bg-gray-50 min-h-screen">
   <div class="max-w-7xl mx-auto">
@@ -82,45 +84,82 @@
     <% } %>
   </div>
 </main>
-
 <script>
-$(document).on('click', '.save-stock', function() {
+$(document).on('click', '.save-stock', async function() {
   const btn = $(this);
+  const originalText = btn.html();
   const id = btn.data('id');
   const input = $(`input.stock-input[data-id="${id}"]`);
   const qty = parseInt(input.val());
 
+  // Validation
   if (isNaN(qty) || qty < 0) {
-    alert('Please enter a valid quantity');
+    Swal.fire({
+      icon: 'error',
+      title: 'Invalid Quantity',
+      text: 'Please enter a valid stock number (0 or more)',
+      timer: 2500,
+      showConfirmButton: false
+    });
     return;
   }
 
-  $.ajax({
-    url: `/admin/inventory/${id}/stock`,
-    method: 'PATCH',
-    data: { quantity: qty },
-    success: function(res) {
-      if (res.success) {
-        input.val(res.quantity);
-        const statusCell = $(`.status-cell[data-id="${id}"]`);
-        let statusHtml = '';
-        if (res.quantity === 0) {
-          statusHtml = '<span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">Out of Stock</span>';
-        } else if (res.quantity <= 5) {
-          statusHtml = `<span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Low (${res.quantity})</span>`;
-        } else {
-          statusHtml = '<span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">In Stock</span>';
+  // Show loading on button
+  btn.html('<i class="fas fa-spinner fa-spinner"></i> Saving...').prop('disabled', true);
+
+  try {
+    const response = await $.ajax({
+      url: `/admin/inventory/${id}/stock`,
+      method: 'PATCH',
+      data: { quantity: qty }
+    });
+
+    if (response.success) {
+      // SUCCESS — Clean & Beautiful (No green background!)
+      await Swal.fire({
+        icon: 'success',
+        title: 'Stock Updated!',
+        text: `New quantity: ${response.quantity}`,
+        timer: 1800,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+        background: '#10b981',
+        color: 'white',
+        padding: '1rem',
+        customClass: {
+          popup: 'animated fadeInRight faster'
         }
-        statusCell.html(statusHtml);
-        alert('Stock updated successfully!');
+      });
+
+      // Update UI
+      input.val(response.quantity);
+      const statusCell = $(`.status-cell[data-id="${id}"]`);
+      let statusHtml = '';
+      if (response.quantity === 0) {
+        statusHtml = '<span class="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Out of Stock</span>';
+      } else if (response.quantity <= (response.lowStockThreshold || 5)) {
+        statusHtml = `<span class="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Low Stock (${response.quantity})</span>`;
       } else {
-        alert(res.message || 'Update failed');
+        statusHtml = '<span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">In Stock</span>';
       }
-    },
-    error: function() {
-      alert('Server error. Please try again.');
+      statusCell.html(statusHtml);
+
+    } else {
+      throw new Error(response.message || 'Update failed');
     }
-  });
+
+  } catch (error) {
+    console.error('Stock update error:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Update Failed',
+      text: error.responseJSON?.message || 'Something went wrong',
+      confirmButtonColor: '#dc3545'
+    });
+  } finally {
+    btn.html('Save').prop('disabled', false);
+  }
 });
 </script>
 

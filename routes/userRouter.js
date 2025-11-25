@@ -1,8 +1,8 @@
 const express = require("express")
 const router = express.Router();
 const userController = require("../controllers/user/userController")
-const passport = require("passport")//----------------
-const productController = require("../controllers/user/productController")//========
+const passport = require("passport")
+const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController");
 
 const cartController = require("../controllers/user/cartController")
@@ -47,31 +47,6 @@ router.post('/reset-password', profileController.handleResetPassword);
 
 
 
-//  router.delete('/profile/address/:index/delete', isUser, profileController.deleteAddress);
-// router.get('/profile/edit', profileController.editProfilePage);
-// router.post('/profile/edit', profileController.updateProfile);
-// router.get('/profile/verify-email', profileController.verifyEmailPage);
-// router.post('/profile/verify-email', profileController.verifyEmailOtp);
-// router.get('/profile/change-password', profileController.changePasswordPage);
-// router.post('/profile/change-password', profileController.changePassword);
-// router.post('/order/:id/cancel', profileController.cancelOrder);
-
-// router.post('/profile/address', isUser, profileController.manageAddress);
-//  router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
-
-
-// router.get('/profile', profileController.profilePage);
-
-
-// //---------------------
-// router.get('/profile/address', isUser, profileController.addressPage);
-
-// //-------------------
-
-
-// router.post('/profile/upload-picture', isUser, profileUpload, profileController.uploadProfilePicture);
-
-//-----------
 // === PROFILE & ADDRESS ROUTES - FINAL WORKING ORDER ===
 router.delete('/profile/address/:index/delete', isUser, profileController.deleteAddress);
 
@@ -91,13 +66,8 @@ router.post('/profile/upload-picture', isUser, profileUpload, profileController.
 
 // MOST GENERAL ROUTE - ABSOLUTELY LAST!
 router.get('/profile', isUser, profileController.profilePage);
-//------
 
 
-// Address Management
-// router.post('/profile/address', profileController.manageAddress);
-// router.post('/profile/address/:index/edit', profileController.manageAddress);
-// router.post('/profile/address/:index/delete', profileController.deleteAddress);
 
 
 
@@ -123,27 +93,7 @@ router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheck
 router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutController.placeOrder);
 router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
 
-// Order Management Routes
-// router.get('/orders', isUser, orderController.listOrders);
-// router.get('/orders/:id', isUser, orderController.orderDetails);
-// router.post('/orders/:id/cancel', isUser, orderController.cancelOrder);
-// router.post('/orders/:id/return', isUser, orderController.returnOrder);
-// router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
 
-
-
-// router.get('/orders/:id/invoice', isUser, orderController.downloadInvoice);
-
-// // individual item cancel / return
-
-
-// router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
-// router.post('/orders/:orderId/items/:itemId/return', isUser, orderController.requestReturnItem);
-
-
-//-----
-
-// Order Management Routes - FINAL WORKING VERSION
 
 // Individual item actions - HIGHEST PRIORITY
 router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
@@ -188,4 +138,3 @@ router.get('/auth/google/callback',
 
 module.exports = router;
 
-// // // //----------------------
