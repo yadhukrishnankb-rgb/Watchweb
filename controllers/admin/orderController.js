@@ -77,24 +77,78 @@ exports.getOrderDetails = async (req, res) => {
 };
 
 // PATCH /admin/orders/:id/status
+// exports.updateOrderStatus = async (req, res) => {
+//   try {
+//     const { status } = req.body;
+//     const valid = ['pending', 'Processing', 'Shipped', 'Delivered', 'cancelled', 'Return Request', 'Returned'];
+//     if (!valid.includes(status)) {
+//       return res.status(400).json({ success: false, message: 'Invalid status' });
+//     }
+
+//     const order = await Order.findByIdAndUpdate(
+//       req.params.id,
+//       { status },
+//       { new: true }
+//     );
+
+//     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+//     res.json({ success: true, message: 'Status updated', status: order.status });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
+
+// PATCH /admin/orders/:id/status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const valid = ['pending', 'Processing', 'Shipped', 'Delivered', 'cancelled', 'Return Request', 'Returned'];
-    if (!valid.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
-    }
+    const orderId = req.params.id;
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-
+    const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    res.json({ success: true, message: 'Status updated', status: order.status });
+    const current = order.status.toLowerCase();
+    const next = status.toLowerCase();
+
+    // Define valid transitions
+    const validTransitions = {
+      pending: ['processing', 'cancelled'],
+      processing: ['shipped', 'cancelled'],
+      shipped: ['delivered'],
+      delivered: ['return request', 'returned'],
+      'cancellation request': ['cancelled', 'pending'],     // after user requests
+      'return request': ['returned', 'delivered'],         // after user requests
+      cancelled: [],                                        // terminal
+      returned: [],                                         // terminal
+    };
+
+    const allowed = validTransitions[current] || [];
+    
+    if (!allowed.includes(next)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot change status from "${order.status}" to "${status}"`
+      });
+    }
+
+    // Special case: only allow 'Return Request' → 'Returned' if user requested it
+    if (next === 'returned' && current !== 'return request' && current !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only mark as Returned after Return Request or Delivered'
+      });
+    }
+
+    // Update status
+    order.status = status;
+    await order.save();
+
+    res.json({ success: true, message: 'Status updated successfully', status: order.status });
+
   } catch (err) {
+    console.error('Status update error:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -162,6 +216,86 @@ exports.getRequests = async (req, res) => {
 };
 // ...existing code...
 /// ...existing code...
+// exports.approveRequest = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { action } = req.body; // 'approve' or 'reject'
+
+//     const order = await Order.findById(orderId);
+//     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+//     // If itemId === 'ORDER' or item not found => handle order-level request
+//     let item = null;
+//     if (itemId && itemId !== 'ORDER') {
+//       item = order.orderedItems.id(itemId);
+//       if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+//     }
+
+//     if (!item) {
+//       // Order-level request
+//       const isCancel = order.status === 'Cancellation Request';
+//       const isReturn = order.status === 'Return Request';
+
+//       if (action === 'approve') {
+//         // restore stock for all items
+//         for (const it of order.orderedItems) {
+//           if (it.product) {
+//             await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
+//           }
+//         }
+//         order.status = isCancel ? 'cancelled' : (isReturn ? 'Returned' : order.status);
+//         order.approvedAt = new Date();
+
+//         // adjust totals: set to 0 or subtract all items
+//         const totalToRemove = order.orderedItems.reduce((sum, it) => sum + ((it.totalPrice) || (it.price * it.quantity) || 0), 0);
+//         order.subtotal = Math.max(0, (order.subtotal || 0) - totalToRemove);
+//         order.finalAmount = Math.max(0, (order.finalAmount || 0) - totalToRemove);
+
+//         await order.save();
+//         return res.json({ success: true, message: 'Order request approved', newStatus: order.status });
+//       } else {
+//         // reject -> revert to previous status (simple approach: 'Placed' or 'Delivered' fallback)
+//         order.status = (order.paymentStatus === 'Paid') ? 'Delivered' : 'Placed';
+//         order.requestedAt = null;
+//         await order.save();
+//         return res.json({ success: true, message: 'Order request rejected', newStatus: order.status });
+//       }
+//     }
+
+//     // existing item-level handling (unchanged)
+//     const itemType = item.status; // 'Cancellation Request' or 'Return Request'
+
+//     if (action === 'approve') {
+//       if (item.product) {
+//         await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
+//       }
+//       if (itemType === 'Cancellation Request') item.status = 'Cancelled';
+//       else if (itemType === 'Return Request') item.status = 'Returned';
+//       item.approvedAt = new Date();
+
+//       const priceToRemove = item.totalPrice || (item.price * item.quantity) || 0;
+//       order.subtotal = Math.max(0, (order.subtotal || 0) - priceToRemove);
+//       order.finalAmount = Math.max(0, (order.finalAmount || 0) - priceToRemove);
+//     } else if (action === 'reject') {
+//       if (itemType === 'Cancellation Request') {
+//         item.status = 'Placed';
+//         item.cancelReason = null;
+//       } else if (itemType === 'Return Request') {
+//         item.status = 'Delivered';
+//         item.returnReason = null;
+//       }
+//       item.requestedAt = null;
+//     }
+
+//     await order.save();
+
+//     return res.json({ success: true, message: `Request ${action}ed successfully`, itemId, newStatus: item ? item.status : order.status });
+//   } catch (err) {
+//     console.error('approveRequest error:', err);
+//     return res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
 exports.approveRequest = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
@@ -170,7 +304,6 @@ exports.approveRequest = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    // If itemId === 'ORDER' or item not found => handle order-level request
     let item = null;
     if (itemId && itemId !== 'ORDER') {
       item = order.orderedItems.id(itemId);
@@ -178,12 +311,12 @@ exports.approveRequest = async (req, res) => {
     }
 
     if (!item) {
-      // Order-level request
+      // === FULL ORDER LEVEL REQUEST ===
       const isCancel = order.status === 'Cancellation Request';
       const isReturn = order.status === 'Return Request';
 
       if (action === 'approve') {
-        // restore stock for all items
+        // Restore stock only
         for (const it of order.orderedItems) {
           if (it.product) {
             await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
@@ -192,36 +325,33 @@ exports.approveRequest = async (req, res) => {
         order.status = isCancel ? 'cancelled' : (isReturn ? 'Returned' : order.status);
         order.approvedAt = new Date();
 
-        // adjust totals: set to 0 or subtract all items
-        const totalToRemove = order.orderedItems.reduce((sum, it) => sum + ((it.totalPrice) || (it.price * it.quantity) || 0), 0);
-        order.subtotal = Math.max(0, (order.subtotal || 0) - totalToRemove);
-        order.finalAmount = Math.max(0, (order.finalAmount || 0) - totalToRemove);
-
+        // DO NOT TOUCH finalAmount or subtotal → keep original amount
         await order.save();
-        return res.json({ success: true, message: 'Order request approved', newStatus: order.status });
+        return res.json({ success: true, message: 'Full order request approved', newStatus: order.status });
       } else {
-        // reject -> revert to previous status (simple approach: 'Placed' or 'Delivered' fallback)
-        order.status = (order.paymentStatus === 'Paid') ? 'Delivered' : 'Placed';
+        // Reject → revert status
+        order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Placed';
         order.requestedAt = null;
         await order.save();
-        return res.json({ success: true, message: 'Order request rejected', newStatus: order.status });
+        return res.json({ success: true, message: 'Request rejected', newStatus: order.status });
       }
     }
 
-    // existing item-level handling (unchanged)
-    const itemType = item.status; // 'Cancellation Request' or 'Return Request'
+    // === ITEM-LEVEL REQUEST ===
+    const itemType = item.status;
 
     if (action === 'approve') {
+      // Restore stock
       if (item.product) {
         await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
       }
+
       if (itemType === 'Cancellation Request') item.status = 'Cancelled';
       else if (itemType === 'Return Request') item.status = 'Returned';
+
       item.approvedAt = new Date();
 
-      const priceToRemove = item.totalPrice || (item.price * item.quantity) || 0;
-      order.subtotal = Math.max(0, (order.subtotal || 0) - priceToRemove);
-      order.finalAmount = Math.max(0, (order.finalAmount || 0) - priceToRemove);
+      // DO NOT reduce finalAmount or subtotal → keep original
     } else if (action === 'reject') {
       if (itemType === 'Cancellation Request') {
         item.status = 'Placed';
@@ -235,7 +365,13 @@ exports.approveRequest = async (req, res) => {
 
     await order.save();
 
-    return res.json({ success: true, message: `Request ${action}ed successfully`, itemId, newStatus: item ? item.status : order.status });
+    return res.json({
+      success: true,
+      message: `Item request ${action}ed`,
+      itemId,
+      newStatus: item.status
+    });
+
   } catch (err) {
     console.error('approveRequest error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });

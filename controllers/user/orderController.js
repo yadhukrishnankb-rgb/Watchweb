@@ -11,7 +11,7 @@ const listOrders = async (req, res) => {
         const limit = 10;
         const skip = (page - 1) * limit;
         const search = req.query.search || '';
-
+        
         let query = { user: userId };
         if (search) {
             query.orderId = { $regex: search, $options: 'i' };
@@ -23,7 +23,7 @@ const listOrders = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .lean();
-
+                         
         const totalOrders = await Order.countDocuments(query);
         const totalPages = Math.ceil(totalOrders / limit);
 
@@ -42,38 +42,105 @@ const listOrders = async (req, res) => {
 
 
 
-const orderDetails = async (req, res) => {
-    try {
-        const userId = req.session.user._id;
-        const orderId = req.params.id;
+// const orderDetails = async (req, res) => {
+//     try {
+//         const userId = req.session.user._id;
+//         const orderId = req.params.id;
 
-        const order = await Order.findOne({ _id: orderId, user: userId })
-            .populate('orderedItems.product', 'productName price productImage')
-            .exec();
+//         const order = await Order.findOne({ _id: orderId, user: userId })
+//             .populate('orderedItems.product', 'productName price productImage')
+//             .exec();
 
-        if (!order) return res.status(404).redirect('/orders');
+//         if (!order) return res.status(404).redirect('/orders');
 
-        const plainOrder = order.toObject();
+//         const plainOrder = order.toObject();
 
-        // THIS IS THE REAL FIX – YOUR ADDRESS IS SAVED AS "address" NOT "shippingAddress"
-        plainOrder.address = plainOrder.address || plainOrder.shippingAddress || {};
+       
 
-        // Optional: Also copy to shippingAddress for invoice consistency
-        if (!plainOrder.shippingAddress && plainOrder.address) {
-            plainOrder.shippingAddress = plainOrder.address;
-        }
+//         res.render('user/order-detail', { 
+//             order: plainOrder, 
+//             user: req.session.user 
+//         });
+//     } catch (err) {
+//         console.error('Order details error:', err);
+//         res.status(500).render('error', { message: 'Failed to load order details' });
+//     }
+// };
 
-        res.render('user/order-detail', { 
-            order: plainOrder, 
-            user: req.session.user 
-        });
-    } catch (err) {
-        console.error('Order details error:', err);
-        res.status(500).render('error', { message: 'Failed to load order details' });
-    }
-};
-//--------------
 // ...existing code...
+const orderDetails = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const orderId = req.params.id;
+
+    const order = await Order.findOne({ _id: orderId, user: userId })
+      .populate('orderedItems.product', 'productName price productImage')
+      .exec();
+
+    if (!order) return res.status(404).redirect('/orders');
+
+    const plainOrder = order.toObject();
+
+    // --- NEW: robust address normalization/fallbacks ---
+    const raw = plainOrder.address || plainOrder.shippingAddress || {};
+    const sessionUser = req.session.user || {};
+
+    const fullName =
+      raw.fullName ||
+      raw.name ||
+      raw.recipientName ||
+      ((raw.firstName || raw.lastName) ? `${(raw.firstName||'').trim()} ${(raw.lastName||'').trim()}`.trim() : '') ||
+      `${(sessionUser.firstName||'').trim()} ${(sessionUser.lastName||'').trim()}`.trim() ||
+      sessionUser.name ||
+      'Customer';
+
+    const phone = raw.phone || raw.mobile || raw.phoneNumber || sessionUser.phone || '';
+
+    const street =
+      raw.street ||
+      raw.addressLine1 ||
+      raw.addressLine ||
+      raw.line1 ||
+      raw.house ||
+      raw.address ||
+      '';
+
+    const landmark = raw.landmark || raw.addressLine2 || '';
+    const locality = raw.locality || raw.area || raw.village || '';
+    const city = raw.city || raw.town || raw.district || 'Not Available';
+    const state = raw.state || raw.stateName || 'Not Available';
+    const pincode = raw.pincode || raw.postalCode || raw.zip || raw.pin || 'PIN Missing';
+    const country = raw.country || 'India';
+
+    const normalizedAddress = {
+      fullName,
+      phone,
+      street,
+      landmark,
+      locality,
+      city,
+      state,
+      pincode,
+      country
+    };
+
+    plainOrder.address = normalizedAddress;
+    // keep shippingAddress consistent for invoice/export code
+    plainOrder.shippingAddress = plainOrder.shippingAddress || normalizedAddress;
+    // --- END normalization ---
+
+    res.render('user/order-detail', {
+      order: plainOrder,
+      user: req.session.user
+    });
+  } catch (err) {
+    console.error('Order details error:', err);
+    res.status(500).render('error', { message: 'Failed to load order details' });
+  }
+};
+// ...existing code...
+
+
 const cancelOrder = async (req, res) => {
     try {
         const userId = req.session.user._id;

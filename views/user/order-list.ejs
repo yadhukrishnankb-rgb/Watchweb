@@ -157,6 +157,11 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
                 <div class="info-item">
                   <span class="info-label">Total Amount</span>
                   <span class="info-value">₹<%= order.finalAmount.toLocaleString() %></span>
+<% if (order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() === 'returned') { %>
+  <small class="block text-green-600 font-medium">Full Refund Processed</small>
+<% } else if (order.orderedItems.some(i => i.status === 'Cancelled' || i.status === 'Returned')) { %>
+  <small class="block text-green-600 font-medium">Partial Refund Processed</small>
+<% } %>
                 </div>
               </div>
               
@@ -174,9 +179,22 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
                     Return Order
                   </button>
                 <% } %>
-                <a href="/orders/<%= order._id %>/invoice" class="action-btn btn-invoice">
-                  Download Invoice
-                </a>
+                <% 
+    const orderHasDeliveredItem = order.orderedItems?.some(item => 
+        ['delivered', 'returned'].includes((item.status || '').toLowerCase())
+    );
+    const canShowInvoice = order.status.toLowerCase() === 'delivered' || orderHasDeliveredItem;
+%>
+
+<% if (canShowInvoice) { %>
+    <a href="/orders/<%= order._id %>/invoice" class="action-btn btn-invoice">
+        Download Invoice
+    </a>
+<% } else { %>
+    <!-- <span class="action-btn btn-invoice" style="background:#9ca3af; cursor:not-allowed; opacity:0.7;">
+        Invoice After Delivery
+    </span> -->
+<% } %>
               </div>
             </div>
           </div>

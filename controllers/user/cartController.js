@@ -169,6 +169,8 @@ exports.removeFromCart = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Item not found in cart' });
         }
 
+        
+
         res.json({ success: true, message: 'Item removed from cart' });
     } catch (error) {
         console.error('Remove from cart error:', error);

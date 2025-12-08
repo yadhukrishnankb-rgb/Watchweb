@@ -98,7 +98,6 @@ const [totalCustomers, customers] = await Promise.all([
 };
 
 // Block customer
-// ...existing code...
 exports.blockCustomer = async (req, res) => {
     try {
         const customer = await Customer.findByIdAndUpdate(

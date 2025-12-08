@@ -25,7 +25,7 @@ exports.getCategories = async (req, res) => {
             .sort({createdAt: -1,_id: -1})
             .skip(skip)
             .limit(limit)
-
+            
         ])
 
         res.render('admin/categories', {
@@ -150,6 +150,8 @@ exports.deleteCategory = async (req, res) => {
                 message: 'Category not found or already deleted'
             });
         }
+
+        
 
         res.status(200).json({
             success: true,

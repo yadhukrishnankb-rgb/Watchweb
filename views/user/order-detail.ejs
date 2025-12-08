@@ -479,16 +479,49 @@
 
             </div>
 
-            <!-- Shipping Address (unchanged) -->
-            <div class="card">
-                <h2 class="card-title">Shipping Address</h2>
-                <div class="address-card">
-                    <p class="address-name"><%= order.address.fullName %></p>
-                    <p class="address-line"><%= order.address.street %></p>
-                    <p class="address-line"><%= order.address.city %>, <%= order.address.state %> - <%= order.address.pincode %></p>
-                    <p class="address-line"><%= order.address.phone %></p>
-                </div>
+        <!-- SHIPPING ADDRESS – 100% WORKING -->
+<div class="card">
+    <h2 class="card-title">
+        Shipping Address
+    </h2>
+
+    <div class="address-card">
+        <%
+            // CORRECT: address is saved directly as "address"
+            const addr = order.address || {};
+
+            const fullName = addr.fullName || "Customer";
+            const phone    = addr.phone || "";
+            const street   = addr.street || "Address not provided";
+            const city     = addr.city || "Not Available";
+            const state    = addr.state || "Not Available";
+            const pincode  = addr.pincode || "000000";
+        %>
+
+        <!-- Name + Phone -->
+        <div class="address-name">
+            <strong style="font-size:1.25rem;"><%= fullName %></strong>
+            <% if (phone) { %>
+                <span style="color:#6b7280; margin-left:8px;">• <%= phone %></span>
+            <% } %>
+        </div>
+
+        <!-- Full Address -->
+        <div style="margin-top:12px; line-height:1.75; color:#374151;">
+            <div class="address-line"><%= street %></div>
+            <div class="address-line" style="font-weight:600; color:#1f2937; margin-top:8px;">
+                <%= city %>, <%= state %> - <strong><%= pincode %></strong>
             </div>
+            <div class="address-line" style="color:#4b5563; margin-top:4px;">India</div>
+        </div>
+
+        <% if (!phone) { %>
+            <div style="margin-top:12px; padding:10px; background:#fef3c7; border-radius:8px; color:#92400e; font-size:0.9rem;">
+                Missing Phone Number – Contact number not saved
+            </div>
+        <% } %>
+    </div>
+</div>
         </div>
 
         <!-- Right Column: Status, Payment, Amount, Invoice (100% unchanged) -->
@@ -515,32 +548,65 @@
                 </div>
             </div>
 
-            <div class="card amount-card">
-                <h2 class="card-title">Order Summary</h2>
-                <div class="amount-row">
-                    <span class="amount-label">Subtotal</span>
-                    <span class="amount-value">₹<%= order.subtotal.toLocaleString() %></span>
-                </div>
-                <div class="amount-row">
-                    <span class="amount-label">Tax</span>
-                    <span class="amount-value">₹<%= order.tax.toLocaleString() %></span>
-                </div>
-                <div class="amount-row">
-                    <span class="amount-label">Shipping</span>
-                    <span class="amount-value">₹<%= order.shipping.toLocaleString() %></span>
-                </div>
-                <div class="amount-divider"></div>
-                <div class="amount-total">
-                    <span>Total Amount</span>
-                    <span>₹<%= order.finalAmount.toLocaleString() %></span>
-                </div>
-            </div>
+           <div class="card amount-card">
+    <h2 class="card-title">Order Summary</h2>
+    
+    <div class="amount-row">
+        <span class="amount-label">Subtotal</span>
+        <span class="amount-value">₹<%= order.subtotal.toLocaleString() %></span>
+    </div>
+    <div class="amount-row">
+        <span class="amount-label">Tax</span>
+        <span class="amount-value">₹<%= order.tax.toLocaleString() %></span>
+    </div>
+    <div class="amount-row">
+        <span class="amount-label">Shipping</span>
+        <span class="amount-value">₹<%= order.shipping.toLocaleString() %></span>
+    </div>
+    <div class="amount-divider"></div>
+    
+    <div class="amount-total">
+        <span>Original Amount</span>
+        <span>₹<%= order.finalAmount.toLocaleString() %></span>
+    </div>
+
+    <% 
+        const hasCancelled = order.orderedItems.some(i => i.status === 'Cancelled');
+        const hasReturned = order.orderedItems.some(i => i.status === 'Returned');
+        const fullCancelled = order.status.toLowerCase() === 'cancelled';
+        const fullReturned = order.status.toLowerCase() === 'returned';
+    %>
+
+    <% if (fullCancelled || fullReturned) { %>
+        <div style="margin-top:12px; padding:12px; background:#d1fae5; border-radius:8px; text-align:center; font-weight:600; color:#047857;">
+            Full amount refunded
+        </div>
+    <% } else if (hasCancelled || hasReturned) { %>
+        <div style="margin-top:12px; padding:12px; background:#fef3c7; border-radius:8px; text-align:center; font-weight:600; color:#92400e;">
+            Partial refund processed for cancelled/returned items
+        </div>
+    <% } %>
+</div>
 
             <div class="card">
-                <a href="/orders/<%= order._id %>/invoice" class="btn-invoice">
-                    Download Invoice
-                </a>
-            </div>
+    <% 
+        // Check if ANY item is Delivered OR whole order is Delivered
+        const hasDeliveredItem = order.orderedItems.some(item => 
+            ['delivered', 'returned'].includes((item.status || '').toLowerCase())
+        );
+        const canDownloadInvoice = order.status.toLowerCase() === 'delivered' || hasDeliveredItem;
+    %>
+
+    <% if (canDownloadInvoice) { %>
+        <a href="/orders/<%= order._id %>/invoice" class="btn-invoice">
+            Download Invoice
+        </a>
+    <% } else { %>
+        <div class="btn-invoice" style="background:#9ca3af; cursor:not-allowed; opacity:0.7;">
+            Invoice Available After Delivery
+        </div>
+    <% } %>
+</div>
         </div>
     </div>
 </div>
@@ -584,11 +650,12 @@ async function requestCancelItem(orderId, itemId, btn) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
     try {
-        const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason })
-        });
+       const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
+    method: 'POST',
+    credentials: 'same-origin',  // <-- ADD THIS
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason })
+});
 
         const data = await res.json();
 
@@ -658,10 +725,11 @@ async function requestReturnItem(orderId, itemId, btn) {
 
     try {
         const res = await fetch(`/orders/${orderId}/items/${itemId}/return`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason })
-        });
+    method: 'POST',
+    credentials: 'same-origin',  // <-- ADD THIS
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason })
+});
 
         const data = await res.json();
 

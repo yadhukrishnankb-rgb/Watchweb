@@ -26,16 +26,51 @@
       </div>
 
       <div class="mb-6">
-        <label class="block font-medium mb-2">Update Status</label>
-        <form id="statusForm" class="flex gap-3">
-          <select name="status" class="px-3 py-2 border rounded">
-            <% ['pending','Processing','Shipped','Delivered','cancelled','Return Request','Returned'].forEach(s => { %>
-              <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= s %></option>
-            <% }) %>
-          </select>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
-        </form>
-      </div>
+  <label class="block font-medium mb-2">Update Status</label>
+  <form id="statusForm" class="flex gap-3">
+    <select name="status" class="px-3 py-2 border rounded">
+      <% 
+        const current = (order.status || '').toLowerCase();
+
+        const statusMap = {
+          pending: ['Processing', 'Cancelled'],
+          processing: ['Shipped', 'Cancelled'],
+          shipped: ['Delivered'],
+          delivered: ['Return Request'],
+          'return request': ['Returned', 'Delivered'],
+          'cancellation request': ['Cancelled', 'Pending'],
+          cancelled: [],
+          returned: []
+        };
+
+        const allowedStatuses = statusMap[current] || [];
+        const allStatuses = ['Pending','Processing','Shipped','Delivered','Cancelled','Return Request','Returned'];
+
+        // Always show current status + allowed next ones
+        const displayStatuses = [...new Set([order.status, ...allowedStatuses])];
+      %>
+
+      <% displayStatuses.forEach(s => { %>
+        <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>>
+          <%= s %>
+          <% if (order.status === s) { %> (Current) <% } %>
+        </option>
+      <% }) %>
+
+      <% if (displayStatuses.length === 1 && ['cancelled','returned'].includes(current)) { %>
+        <option disabled>— No further changes allowed —</option>
+      <% } %>
+    </select>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Update Status
+    </button>
+  </form>
+
+  <!-- Optional: Show helpful message -->
+  <% if (['cancelled','returned'].includes(current)) { %>
+    <p class="text-sm text-gray-600 mt-2">This order is in final state. No further changes allowed.</p>
+  <% } %>
+</div>
 
       <div class="mb-6">
         <p><strong>Current Status:</strong>

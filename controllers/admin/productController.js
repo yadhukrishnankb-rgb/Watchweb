@@ -1,7 +1,5 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
-// const fs = require('fs').promises;
-// const path = require('path');
 const mongoose = require('mongoose');
 const cloudinary = require('../../config/cloudinary');
 
@@ -13,6 +11,9 @@ exports.getProducts = async (req, res) => {
         const limit = 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
+
+       
+        
 
         // Remove isBlocked: false from the query to show all products
         const query = {
@@ -57,10 +58,7 @@ exports.getProducts = async (req, res) => {
     }
 };
 
-//--------------------------------------------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------------------------------------
 
 
 // Get product by ID
@@ -253,9 +251,8 @@ exports.deleteProduct = async (req, res) => {
     }
 };
 
-// ... keep other existing functions ...
 
-///------------------------------------
+
 
 
 exports.blockProduct = async (req, res) => {
@@ -281,9 +278,8 @@ exports.blockProduct = async (req, res) => {
     return res.status(500).render('admin/error', { message: 'Error blocking product' });
   }
 };
-// ...apply same pattern for unblockProduct and deleteProduct...
 
-//--------------------------------------------------------------------
+
 
 exports.unblockProduct = async (req, res) => {
     try {
