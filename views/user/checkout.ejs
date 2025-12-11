@@ -362,6 +362,8 @@
     </div>
 </div>
 
+<!-- ...existing code... -->
+
 <script>
 let selectedPayment = 'razorpay';
 const COD_MAX = 100000;
@@ -380,11 +382,8 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         document.querySelectorAll('.payment__option').forEach(opt => opt.classList.remove('selected'));
         this.closest('.payment__option').classList.add('selected');
 
-        const payText = document.getElementById('payText');
         const codWarning = document.getElementById('cod-warning');
-
         if (this.value === 'cod') {
-            payText.textContent = 'Place Order (COD)';
             if (<%= total %> > COD_MAX) {
                 this.disabled = true;
                 this.closest('.payment__option').classList.add('disabled');
@@ -393,7 +392,6 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
                 codWarning.classList.add('hidden');
             }
         } else {
-            payText.textContent = 'Pay ₹<%= total.toLocaleString() %>';
             codWarning.classList.add('hidden');
         }
     });
@@ -402,18 +400,65 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 // Trigger on load
 document.querySelector('input[name="paymentMethod"]:checked').dispatchEvent(new Event('change'));
 
-
-
-
+// Address selection on load
 document.addEventListener('DOMContentLoaded', function() {
   const defaultRadio = document.querySelector('input[name="selectedAddress"]:checked');
   if (defaultRadio) {
     document.getElementById('selectedAddressId').value = defaultRadio.value;
   } else if (document.querySelector('input[name="selectedAddress"]')) {
-    // If no default, select first
     const first = document.querySelector('input[name="selectedAddress"]');
     first.checked = true;
     document.getElementById('selectedAddressId').value = first.value;
+  }
+
+  // INTERCEPT FORM SUBMISSION AND REDIRECT
+  const checkoutForm = document.getElementById('checkoutForm');
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', async function(e) {
+      e.preventDefault(); // prevent default form submission
+
+      // Validate address selected
+      const selectedAddr = document.getElementById('selectedAddressId').value;
+      if (!selectedAddr) {
+        alert('Please select a delivery address');
+        return;
+      }
+
+      // Get form data
+      const formData = new FormData(this);
+
+      // Show loading state
+      const btn = document.getElementById('placeOrderBtn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+      try {
+        // Send via AJAX instead of form submit
+        const response = await fetch(this.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.redirectUrl) {
+          // Redirect to success page
+          window.location.href = data.redirectUrl;
+        } else {
+          alert(data.message || 'Order failed. Please try again.');
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+      } catch (err) {
+        console.error('Checkout error:', err);
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
   }
 });
 
@@ -423,7 +468,6 @@ document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
     document.getElementById('selectedAddressId').value = this.value;
   });
 });
-
 
 </script>
 

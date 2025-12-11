@@ -125,7 +125,12 @@ if (!userId) return res.redirect('/login');
 const user = await User.findById(userId).lean();
 user.addresses = user.addresses || [];
 const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
-res.render('user/profile', { user, orders });
+res.render('user/profile', { 
+  user, 
+  orders,
+  success: req.flash('success')[0] || null,
+  error: req.flash('error')[0] || null
+});
 };
 
 
@@ -243,13 +248,27 @@ exports.updateProfile = async (req, res) => {
     user.phone = phone.trim();
 
     if (hasAddress) {
-      user.addresses = [{
-        line1: line1.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        zip: zip.trim(),
-        country: country.trim()
-      }];
+      user.addresses = user.addresses || [];
+      
+      if (user.addresses.length > 0) {
+        // Update existing first address only
+        user.addresses[0] = {
+          line1: line1.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim(),
+          country: country.trim()
+        };
+      } else {
+        // Add new address only if none exists
+        user.addresses.push({
+          line1: line1.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim(),
+          country: country.trim()
+        });
+      }
     }
 
     await user.save();

@@ -153,6 +153,43 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
             </div>
             
             <div class="order-body">
+              <!-- Product Images -->
+              <div class="order-items-images" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <% order.orderedItems.forEach(item => { %>
+                  <div style="position: relative; text-align: center;">
+                    <img 
+                      src="<%= item.productSnapshot?.image || '/assets/img/placeholder.png' %>" 
+                      alt="<%= item.name %>" 
+                      style="
+                        width: 80px; 
+                        height: 80px; 
+                        object-fit: cover; 
+                        border-radius: 8px; 
+                        border: 2px solid #e5e7eb;
+                        transition: transform 0.3s;
+                      "
+                      onmouseover="this.style.transform='scale(1.1)'"
+                      onmouseout="this.style.transform='scale(1)'"
+                    />
+                    <small style="
+                      display: block; 
+                      margin-top: 0.5rem; 
+                      color: #6b7280; 
+                      font-size: 0.8rem;
+                      word-break: break-word;
+                      max-width: 100px;
+                    "><%= item.name.substring(0, 20) %>...</small>
+                    <small style="
+                      display: block;
+                      color: #3b82f6;
+                      font-weight: 600;
+                      font-size: 0.75rem;
+                      margin-top: 0.25rem;
+                    ">Qty: <%= item.quantity %></small>
+                  </div>
+                <% }) %>
+              </div>
+
               <div class="order-info">
                 <div class="info-item">
                   <span class="info-label">Total Amount</span>

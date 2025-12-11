@@ -639,6 +639,18 @@ font-size: 36px;
 </div>
 
 <div class="content-card">
+<!-- Success/Error Messages -->
+<% if (success) { %>
+  <div style="background:#d4f4dd;color:#1a7b7b;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid #2d9c9c;">
+    <%= success %>
+  </div>
+<% } %>
+<% if (error) { %>
+  <div style="background:#ffe5e5;color:#c62828;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid #e53935;">
+    <%= error %>
+  </div>
+<% } %>
+
 <!-- My Info Tab -->
 <div id="myinfo" class="tab-content active">
 <div style="margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid #e8f4f3;">
@@ -683,8 +695,15 @@ font-size: 36px;
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-
+// Flash messages
+<% if (success) { %>
+  Swal.fire({ icon: 'success', title: 'Success!', text: '<%= success %>', timer: 3000, showConfirmButton: false });
+<% } %>
+<% if (error) { %>
+  Swal.fire({ icon: 'error', title: 'Error', text: '<%= error %>' });
+<% } %>
 
 //Tab Navigation - ONLY for tabs with data-tab
 document.querySelectorAll('.nav-tab[data-tab]').forEach(tab => {
@@ -711,7 +730,6 @@ if (window.location.pathname === '/profile/address') {
     addressTab.classList.add('active');
   }
 }
-
 
 if (window.location.pathname === '/profile/address') {
     document.querySelector('.nav-tab[href="/profile/address"]').classList.add('active');

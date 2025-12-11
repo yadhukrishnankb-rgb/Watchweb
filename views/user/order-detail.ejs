@@ -479,48 +479,45 @@
 
             </div>
 
-        <!-- SHIPPING ADDRESS – 100% WORKING -->
-<div class="card">
-    <h2 class="card-title">
-        Shipping Address
-    </h2>
+       <div class="card">
+  <h2 class="card-title">Shipping Address</h2>
+  <div class="address-card" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0;">
+    <% 
+            const a = order.address || order.shippingAddress || {};
+      const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
+      const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
+      const altPhone = a.altPhone || '';
+      const addr = a.street || a.address || a.line1 || a.addressLine1 || '';
+      const landmark = a.landmark || a.addressLine2 || '';
+      const locality = a.locality || a.area || '';
+      const city = a.city || a.town || 'Not Available';
+      const state = a.state || a.stateName || 'Not Available';
+      const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
+    %>
 
-    <div class="address-card">
-        <%
-            // CORRECT: address is saved directly as "address"
-            const addr = order.address || {};
+    <div style="font-size:0.95rem; line-height:1.9;">
+      <p><strong>Name:</strong> <span style="font-weight:600; color:#1f2937;"><%= name %></span></p>
+      
+      <% if (addr) { %>
+        <p><strong>Address:</strong> <span style="color:#374151;"><%= addr %><%= locality ? ', ' + locality : '' %></span></p>
+      <% } %>
 
-            const fullName = addr.fullName || "Customer";
-            const phone    = addr.phone || "";
-            const street   = addr.street || "Address not provided";
-            const city     = addr.city || "Not Available";
-            const state    = addr.state || "Not Available";
-            const pincode  = addr.pincode || "000000";
-        %>
+      <% if (landmark) { %>
+        <p><strong>Landmark:</strong> <span style="color:#374151;"><%= landmark %></span></p>
+      <% } %>
 
-        <!-- Name + Phone -->
-        <div class="address-name">
-            <strong style="font-size:1.25rem;"><%= fullName %></strong>
-            <% if (phone) { %>
-                <span style="color:#6b7280; margin-left:8px;">• <%= phone %></span>
-            <% } %>
-        </div>
+      <p><strong>City:</strong> <%= city %></p>
+      <p><strong>State:</strong> <%= state %></p>
+      <p><strong>Pincode:</strong> <strong><%= pincode %></strong></p>
+      <p><strong>Mobile:</strong> <span style="color:#059669; font-weight:600;"><%= phone %></span></p>
+      
+      <% if (altPhone) { %>
+        <p><strong>Alt Phone:</strong> <span style="color:#059669;"><%= altPhone %></span></p>
+      <% } %>
 
-        <!-- Full Address -->
-        <div style="margin-top:12px; line-height:1.75; color:#374151;">
-            <div class="address-line"><%= street %></div>
-            <div class="address-line" style="font-weight:600; color:#1f2937; margin-top:8px;">
-                <%= city %>, <%= state %> - <strong><%= pincode %></strong>
-            </div>
-            <div class="address-line" style="color:#4b5563; margin-top:4px;">India</div>
-        </div>
-
-        <% if (!phone) { %>
-            <div style="margin-top:12px; padding:10px; background:#fef3c7; border-radius:8px; color:#92400e; font-size:0.9rem;">
-                Missing Phone Number – Contact number not saved
-            </div>
-        <% } %>
+      <p><strong>Country:</strong> India</p>
     </div>
+  </div>
 </div>
         </div>
 

@@ -46,13 +46,17 @@ const orderSchema = new mongoose.Schema({
   discount: { type: Number, default: 0 },
   finalAmount: { type: Number, required: true },
   address: {
-    fullName: String,
-    phone: String,
-    street: String,
-    city: String,
-    state: String,
-    pincode: String
-  },
+  fullName: { type: String, required: true },
+  phone: { type: String, required: true },
+  altPhone: { type: String, default: '' },
+  address: { type: String },        // House, Flat, Street
+  landmark: { type: String, default: '' },
+  locality: { type: String, default: '' },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  pincode: { type: String, required: true },
+  country: { type: String, default: 'India' }
+},
   paymentMethod: {
     type: String,
     enum: ['COD', 'RAZORPAY', 'WALLET'],
@@ -67,7 +71,7 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['pending', 'Placed', 'Processing', 'Shipped', 'Delivered', 'cancelled', 'Cancellation Request', 'Return Request', 'Returned'],
+    enum: ['pending', 'Placed', 'Processing', 'Shipped','Out for Delivery', 'Delivered', 'cancelled', 'Cancellation Request', 'Return Request', 'Returned'],
     default: 'pending'
   },
   shipping: { type: Number, default: 0 },

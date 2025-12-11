@@ -1,4 +1,3 @@
-// controllers/user/orderController.js (New File - Full Order Management)
 const Order = require('../../models/orderSchema');
 const Product = require('../../models/productSchema');
 const PDFDocument = require('pdfkit');
@@ -42,32 +41,7 @@ const listOrders = async (req, res) => {
 
 
 
-// const orderDetails = async (req, res) => {
-//     try {
-//         const userId = req.session.user._id;
-//         const orderId = req.params.id;
 
-//         const order = await Order.findOne({ _id: orderId, user: userId })
-//             .populate('orderedItems.product', 'productName price productImage')
-//             .exec();
-
-//         if (!order) return res.status(404).redirect('/orders');
-
-//         const plainOrder = order.toObject();
-
-       
-
-//         res.render('user/order-detail', { 
-//             order: plainOrder, 
-//             user: req.session.user 
-//         });
-//     } catch (err) {
-//         console.error('Order details error:', err);
-//         res.status(500).render('error', { message: 'Failed to load order details' });
-//     }
-// };
-
-// ...existing code...
 const orderDetails = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -138,33 +112,59 @@ const orderDetails = async (req, res) => {
     res.status(500).render('error', { message: 'Failed to load order details' });
   }
 };
-// ...existing code...
 
 
 const cancelOrder = async (req, res) => {
-    try {
-        const userId = req.session.user._id;
-        const orderId = req.params.id;
-        const { reason } = req.body;
-
-        const order = await Order.findOne({ _id: orderId, user: userId });
-        if (!order) return res.json({ success: false, message: 'Order not found' });
-
-        if (order.status !== 'pending') {
-            return res.json({ success: false, message: 'Only pending orders can request cancellation' });
-        }
-
-        // Set order-level cancellation request (do NOT restore stock here)
-        order.status = 'Cancellation Request';
-        order.cancelReason = reason?.trim() || 'No reason provided';
-        order.requestedAt = new Date();
-        await order.save();
-
-        res.json({ success: true, message: 'Cancellation request submitted. Awaiting admin approval.' });
-    } catch (err) {
-        console.error('Cancel order error →', err);
-        res.json({ success: false, message: 'Cancellation request failed' });
+  try {
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
     }
+    const userId = req.session.user._id;
+    const orderId = req.params.id;
+    const { reason } = req.body;
+
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) return res.json({ success: false, message: 'Order not found' });
+
+    const current = (order.status || '').toLowerCase();
+    if (['shipped', 'delivered', 'returned', 'cancelled'].includes(current)) {
+      return res.json({ success: false, message: 'Cannot cancel this order at this stage' });
+    }
+
+    // Immediately cancel order (no admin approval)
+    let totalRemoved = 0;
+    for (const it of order.orderedItems) {
+      const istatus = (it.status || '').toLowerCase();
+      if (!['cancelled', 'returned', 'delivered'].includes(istatus)) {
+        // restore stock
+        if (it.product) {
+          await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
+        }
+        // mark item cancelled
+        it.status = 'Cancelled';
+        it.cancelReason = reason || 'No reason provided';
+        it.approvedAt = new Date();
+        it.requestedAt = new Date();
+
+        totalRemoved += it.totalPrice || (it.price * it.quantity) || 0;
+      }
+    }
+
+    order.status = 'cancelled';
+    order.cancelReason = reason || 'No reason provided';
+    order.approvedAt = new Date();
+
+    order.subtotal = Math.max(0, (order.subtotal || 0) - totalRemoved);
+    order.finalAmount = Math.max(0, (order.finalAmount || 0) - totalRemoved);
+
+    await order.save();
+
+    return res.json({ success: true, message: 'Order cancelled successfully', orderId, newStatus: order.status });
+  } catch (err) {
+    console.error('Cancel order error →', err);
+    
+    res.json({ success: false, message: 'Cancellation failed' });
+  }
 };
 
 const returnOrder = async (req, res) => {
@@ -330,17 +330,17 @@ const downloadInvoice = async (req, res) => {
 };
 
 
+
+
+
 const requestCancelItem = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
-      console.warn('requestCancelItem: no session user');
       return res.status(401).json({ success: false, message: 'Authentication required' });
     }
     const userId = req.session.user._id;
     const { orderId, itemId } = req.params;
     const { reason } = req.body;
-
-    console.log('requestCancelItem', { userId, orderId, itemId, reason });
 
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -348,19 +348,38 @@ const requestCancelItem = async (req, res) => {
     const item = order.orderedItems.id(itemId);
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
-    if (item.status === 'Cancellation Request' || item.status === 'Cancelled') {
-      return res.status(400).json({ success: false, message: 'Cancellation already requested or completed' });
+    const status = (item.status || '').toLowerCase();
+    if (status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Item already cancelled' });
+    }
+    if (['delivered', 'returned', 'shipped'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Cannot cancel item after it is shipped/delivered' });
     }
 
-    item.status = 'Cancellation Request';
+    // Immediately cancel item (no admin approval)
+    item.status = 'Cancelled';
     item.cancelReason = reason || 'No reason provided';
+    item.approvedAt = new Date();
     item.requestedAt = new Date();
+
+    // Restore stock for the product
+    if (item.product) {
+      await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
+    }
+
+    // Adjust order totals
+    const priceToRemove = item.totalPrice || (item.price * item.quantity) || 0;
+    order.subtotal = Math.max(0, (order.subtotal || 0) - priceToRemove);
+    order.finalAmount = Math.max(0, (order.finalAmount || 0) - priceToRemove);
+
+    // If all items cancelled -> mark full order cancelled
+    const allCancelled = order.orderedItems.every(it => (it.status || '').toLowerCase() === 'cancelled');
+    if (allCancelled) order.status = 'cancelled';
 
     await order.save();
 
-const updatedItem = order.orderedItems.id(itemId);
-    return res.json({ success: true, message: 'Cancellation request submitted. Awaiting admin approval.', itemId, itemStatus: updatedItem.status });
-
+    const updatedItem = order.orderedItems.id(itemId);
+    return res.json({ success: true, message: 'Item cancelled successfully', itemId, itemStatus: updatedItem.status });
   } catch (err) {
     console.error('requestCancelItem error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });

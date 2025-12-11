@@ -22,23 +22,6 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-// const isAdmin = (req, res, next) => {
-//     if (req.session.admin) {
-//         next();
-//     } else {
-//         // Check if it's an API request
-//         if (req.xhr || req.headers.accept?.includes('application/json')) {
-//             res.status(401).json({
-//                 success: false,
-//                 message: 'Session expired or unauthorized. Please login again.'
-//             });
-//         } else {
-//             res.redirect("/admin/login");
-//         }
-//     }
-// };
-
-
 
 
 
@@ -73,9 +56,7 @@ router.get('/products', isAdmin, productController.getProducts);
 router.put('/products/:id', isAdmin, upload, processImages, productController.editProduct);
 router.delete('/products/:id', isAdmin, productController.deleteProduct);
 router.get('/products/:id', isAdmin, productController.getProductById);
-// Add these new routes while keeping existing routes
-// router.put('/products/:id/block', adminAuth, productController.blockProduct);
-// router.put('/products/:id/unblock', adminAuth, productController.unblockProduct);
+
 router.patch('/products/:id/block', isAdmin, productController.blockProduct);
 router.patch('/products/:id/unblock', isAdmin, productController.unblockProduct);
 
@@ -83,9 +64,6 @@ router.patch('/products/:id/unblock', isAdmin, productController.unblockProduct)
 //------------
 router.post('/products', isAdmin, upload, productController.addProduct);
 
-//  router.post('/admin/products', adminAuth, upload, /*processImages (no-op)*/ productController.addProduct);
-//  router.put('/admin/products/:id', adminAuth, upload, productController.editProduct);
-// //-----------
 
 
 

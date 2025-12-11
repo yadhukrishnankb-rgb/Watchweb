@@ -26,51 +26,61 @@
       </div>
 
       <div class="mb-6">
-  <label class="block font-medium mb-2">Update Status</label>
-  <form id="statusForm" class="flex gap-3">
-    <select name="status" class="px-3 py-2 border rounded">
-      <% 
-        const current = (order.status || '').toLowerCase();
+ <label class="block font-medium mb-2">Update Status</label>
+<form id="statusForm" class="flex gap-3 items-end">
+  <select name="status" id="statusSelect" class="px-4 py-2 border rounded-lg text-sm" required>
+    <%
+      // === NORMALIZE CURRENT STATUS (handles any case/spacing) ===
+      const current = (order.status || 'Pending').trim();
 
-        const statusMap = {
-          pending: ['Processing', 'Cancelled'],
-          processing: ['Shipped', 'Cancelled'],
-          shipped: ['Delivered'],
-          delivered: ['Return Request'],
-          'return request': ['Returned', 'Delivered'],
-          'cancellation request': ['Cancelled', 'Pending'],
-          cancelled: [],
-          returned: []
-        };
+      // === EXACT ALLOWED TRANSITIONS (strict as you wanted) ===
+      const transitions = {
+        'Pending':           ['Processing', 'Cancelled'],
+        'Processing':        ['Shipped', 'Cancelled'],
+        'Shipped':           ['Out for Delivery'],
+        'Out for Delivery': ['Delivered'],
+        'Delivered':         ['Return Request'],
+        'Return Request':    ['Returned'],           // only admin can approve return
+        'Cancelled':         [],
+        'Returned':          []
+      };
 
-        const allowedStatuses = statusMap[current] || [];
-        const allStatuses = ['Pending','Processing','Shipped','Delivered','Cancelled','Return Request','Returned'];
+      // Find the correct key even if stored lowercase or with extra spaces
+      const currentKey = Object.keys(transitions).find(key => 
+        key.toLowerCase() === current.toLowerCase()
+      ) || 'Pending';
 
-        // Always show current status + allowed next ones
-        const displayStatuses = [...new Set([order.status, ...allowedStatuses])];
-      %>
+      let allowed = transitions[currentKey] || [];
 
-      <% displayStatuses.forEach(s => { %>
-        <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>>
-          <%= s %>
-          <% if (order.status === s) { %> (Current) <% } %>
-        </option>
-      <% }) %>
+      // Always include the current status so it's visible and selected
+      if (!allowed.includes(currentKey)) {
+        allowed = [currentKey, ...allowed];
+      }
+    %>
 
-      <% if (displayStatuses.length === 1 && ['cancelled','returned'].includes(current)) { %>
-        <option disabled>— No further changes allowed —</option>
-      <% } %>
-    </select>
-    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-      Update Status
-    </button>
-  </form>
+    <% allowed.forEach(status => { %>
+      <option value="<%= status %>" <%= status === currentKey ? 'selected' : '' %>>
+        <%= status %> <%= status === currentKey ? '(Current)' : '' %>
+      </option>
+    <% }) %>
 
-  <!-- Optional: Show helpful message -->
-  <% if (['cancelled','returned'].includes(current)) { %>
-    <p class="text-sm text-gray-600 mt-2">This order is in final state. No further changes allowed.</p>
-  <% } %>
-</div>
+    <% if (allowed.length === 1 && ['Cancelled', 'Returned'].includes(currentKey)) { %>
+      <option disabled>— This is a final status —</option>
+    <% } %>
+
+    <% if (allowed.length === 0) { %>
+      <option disabled>No actions available</option>
+    <% } %>
+  </select>
+
+  <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+    Update Status
+  </button>
+</form>
+
+<% if (['Cancelled', 'Returned'].includes(currentKey)) { %>
+  <p class="text-sm text-gray-600 mt-2">This order is in a final state. No further changes allowed.</p>
+<% } %>
 
       <div class="mb-6">
         <p><strong>Current Status:</strong>
@@ -112,16 +122,26 @@
   </div>
 </main>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $('#statusForm').on('submit', function(e) {
   e.preventDefault();
-  const status = $(this).find('select').val();
+  
+  const status = $('#statusSelect').val();
+  
   $.ajax({
     url: '/admin/orders/<%= order._id %>/status',
     method: 'PATCH',
-    data: { status },
-    success: () => location.reload(),
-    error: () => alert('Update failed')
+    data: { status: status },
+    success: function(res) {
+      if (res.success) {
+        location.reload(); // refresh page to see new status
+      }
+    },
+    error: function(xhr) {
+      const msg = xhr.responseJSON?.message || 'Update failed';
+      alert(msg);
+    }
   });
 });
 </script>
