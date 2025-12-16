@@ -1,78 +1,549 @@
-
 <%-include("../../views/partials/user/header")%>
+
+<style>
+/* Enhanced Product Grid Styles for Home Page */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Featured Products Section */
+.products.section {
+    padding: 4rem 0;
+    background: rgb(240, 253, 244);
+}
+
+.section__title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #111827;
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.section__title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    border-radius: 2px;
+}
+
+/* Products Grid */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* Enhanced Product Card */
+.product-card {
+    background: white;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(8, 129, 121, 0.08);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(233, 246, 235, 0.5);
+    animation: fadeInUp 0.6s ease-out;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.product-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(8, 129, 121, 0.05), transparent);
+    transition: left 0.5s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.product-card:hover::before {
+    left: 100%;
+}
+
+.product-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(8, 129, 121, 0.15);
+    border-color: rgb(8, 129, 121);
+}
+
+.product-image-container {
+    position: relative;
+    overflow: hidden;
+    height: 20rem;
+    background: linear-gradient(135deg, rgb(233, 246, 235) 0%, rgb(240, 253, 244) 100%);
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.1) rotate(2deg);
+}
+
+.discount-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    z-index: 2;
+}
+
+.product-info {
+    padding: 1.75rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 3.5rem;
+    transition: color 0.3s ease;
+}
+
+.product-card:hover .product-title {
+    color: rgb(8, 129, 121);
+}
+
+.product-category {
+    font-size: 0.875rem;
+    color: rgb(8, 129, 121);
+    margin-bottom: 1.25rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(8, 129, 121, 0.1);
+    border-radius: 0.5rem;
+    width: fit-content;
+}
+
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(8, 129, 121, 0.1);
+}
+
+.price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.current-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: rgb(8, 129, 121);
+    letter-spacing: -0.025em;
+}
+
+.original-price {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.product-card-footer {
+    padding: 0 1.75rem 1.75rem;
+}
+
+.add-to-cart-btn {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.9375rem;
+    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+}
+
+.add-to-cart-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.add-to-cart-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.add-to-cart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(8, 129, 121, 0.35);
+    background: linear-gradient(135deg, #047857, #065f46);
+}
+
+.add-to-cart-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+}
+
+.add-to-cart-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Wishlist button styles */
+.wishlist-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 180ms ease;
+  box-shadow: 0 4px 10px rgba(239,68,68,0.08);
+}
+.wishlist-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  color: #fff;
+  border-color: transparent;
+}
+.wishlist-btn:active { transform: scale(0.98); }
+.wishlist-btn svg { width: 18px; height: 18px; transition: transform 180ms ease, fill 180ms ease; }
+.wishlist-btn:hover svg { transform: scale(1.08); }
+.wishlist-btn .heart-fill { fill: transparent; }
+.wishlist-btn.added { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border-color:transparent; }
+.wishlist-btn.added svg .heart-fill { fill: #fff; }
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: linear-gradient(135deg, rgb(240, 253, 244) 0%, rgb(233, 246, 235) 100%);
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 16px rgba(8, 129, 121, 0.1);
+    border: 2px dashed rgba(8, 129, 121, 0.3);
+    grid-column: 1 / -1;
+}
+
+.empty-state-icon {
+    width: 5rem;
+    height: 5rem;
+    margin: 0 auto 1.5rem;
+    color: rgb(8, 129, 121);
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(8, 129, 121);
+    margin-bottom: 0.75rem;
+}
+
+.empty-state-description {
+    color: #6b7280;
+    font-size: 1.125rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .section__title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+    }
+    .product-info {
+        padding: 1.5rem;
+    }
+    .product-card-footer {
+        padding: 0 1.5rem 1.5rem;
+    }
+    .product-image-container {
+        height: 16rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+    .product-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    .add-to-cart-btn {
+        width: 100%;
+        padding: 1rem;
+    }
+}
+</style>
 
     <!--=============== MAIN ===============-->
     <main class="main">
-      <!--=============== HOME ===============-->
-      <section class="home section--lg">
-        <div class="home__container container grid">
-          <div class="home__content">
-            <span class="home__subtitle">Hot Promotions</span>
-            <h1 class="home__title">
-              Fashion  Trending <span>Great Watch Collection</span>
-            </h1>
-            <p class="home__description">
-              Save more with coupons & up tp 20% off
-            </p>
-            <a href="/shop" class="btn">Shop Now</a>
+      <!--=============== HERO CAROUSEL ===============-->
+      <section class="hero section--lg" aria-label="Featured promotions">
+        <div class="hero-carousel" id="heroCarousel">
+          <div class="hero-slides">
+            <!--
+              To change carousel banners, replace these files in your project:
+              public/assets/img/banner1.jpg
+              public/assets/img/banner2.jpg
+              public/assets/img/banner3.jpg
+              You can keep file names or update the paths below.
+            -->
+            <div class="hero-slide" style="background-image: url('/assets/img/banner.jpg')">
+              <div class="hero-overlay">
+                <span class="hero-sub">Hot Promotions</span>
+                <h2 class="hero-title">Fashion Trending <span>— Great Watch Collection</span></h2>
+                <p class="hero-desc">Save more with coupons & up to 20% off</p>
+                <a class="hero-cta" href="/shop">Shop Now</a>
+              </div>
+            </div>
+            <div class="hero-slide" style="background-image: url('/assets/img/banner.jpg')">
+              <div class="hero-overlay">
+                <span class="hero-sub">Limited Time</span>
+                <h2 class="hero-title">Premium Watches <span>— Elegance Redefined</span></h2>
+                <p class="hero-desc">Curated pieces for every occasion</p>
+                <a class="hero-cta" href="/shop">Explore Collection</a>
+              </div>
+            </div>
+            <div class="hero-slide" style="background-image: url('/assets/img/banner.jpg')">
+              <div class="hero-overlay">
+                <span class="hero-sub">Top Picks</span>
+                <h2 class="hero-title">Best Sellers <span>— Fan Favourite</span></h2>
+                <p class="hero-desc">Fast shipping • Easy returns</p>
+                <a class="hero-cta" href="/shop">Buy Now</a>
+              </div>
+            </div>
           </div>
-          <img src="public/assets/img/watchbanner.png" class="home__img" alt="hats" />
+
+          <button class="hero-nav hero-prev" aria-label="Previous slide">‹</button>
+          <button class="hero-nav hero-next" aria-label="Next slide">›</button>
+
+          <div class="hero-dots" aria-hidden="false"></div>
         </div>
       </section>
+      <style>
+        /* Hero carousel styles */
+        .hero-carousel { max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; border-radius: 14px; }
+        .hero-slides { display: flex; width: 100%; transition: transform 0.7s cubic-bezier(.22,.9,.35,1); }
+        .hero-slide { min-width: 100%; background-size: cover; background-position: center; position: relative; height: 420px; display: flex; align-items: center; }
+        .hero-overlay { max-width: 680px; padding: 32px; margin-left: 6%; background: linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15)); color: #fff; border-radius: 8px; }
+        .hero-sub { display:block; color: #f8fafc; font-weight:700; letter-spacing:0.06em; margin-bottom:8px; font-size:0.95rem; }
+        .hero-title { font-size:2.2rem; margin:0 0 10px; line-height:1.05; font-weight:800; }
+        .hero-title span{ font-weight:600; color:#d1fae5; }
+        .hero-desc { margin-bottom:16px; opacity:0.95; }
+        .hero-cta { display:inline-block; background:linear-gradient(135deg,#10b981,#047857); color:white; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:700; }
 
+        .hero-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:white; border:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; z-index:30; }
+        .hero-prev { left:12px; }
+        .hero-next { right:12px; }
+
+        .hero-dots { position:absolute; left:50%; transform:translateX(-50%); bottom:14px; display:flex; gap:8px; z-index:30; }
+        .hero-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.45); cursor:pointer; border:2px solid rgba(0,0,0,0.08); }
+        .hero-dot.active { background:white; box-shadow: 0 4px 12px rgba(2,6,23,0.15); }
+
+        @media (max-width: 900px) {
+          .hero-overlay { padding:20px; margin-left:4%; }
+          .hero-title { font-size:1.6rem; }
+          .hero-slide { height: 340px; }
+        }
+        @media (max-width: 480px) {
+          .hero-slide { height: 260px; }
+          .hero-overlay { max-width: 88%; padding:14px; margin-left:4%; }
+          .hero-title { font-size:1.15rem; }
+          .hero-nav { width:36px; height:36px; }
+        }
+      </style>
+
+      <script>
+        (function(){
+          const carousel = document.getElementById('heroCarousel');
+          if (!carousel) return;
+          const slidesWrap = carousel.querySelector('.hero-slides');
+          const slides = Array.from(carousel.querySelectorAll('.hero-slide'));
+          const prevBtn = carousel.querySelector('.hero-prev');
+          const nextBtn = carousel.querySelector('.hero-next');
+          const dotsWrap = carousel.querySelector('.hero-dots');
+          let current = 0;
+          let autoplayInterval = null;
+          const AUTOPLAY_MS = 5000;
+
+          function buildDots(){
+            slides.forEach((s, i) => {
+              const d = document.createElement('button');
+              d.className = 'hero-dot';
+              d.setAttribute('aria-label', 'Go to slide ' + (i+1));
+              d.addEventListener('click', () => goTo(i));
+              dotsWrap.appendChild(d);
+            });
+            updateDots();
+          }
+
+          function updateDots(){
+            const dots = Array.from(dotsWrap.children);
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+          }
+
+          function goTo(index){
+            current = (index + slides.length) % slides.length;
+            slidesWrap.style.transform = `translateX(-${current * 100}%)`;
+            updateDots();
+          }
+
+          function next(){ goTo(current + 1); }
+          function prev(){ goTo(current - 1); }
+
+          prevBtn.addEventListener('click', () => { prev(); resetAutoplay(); });
+          nextBtn.addEventListener('click', () => { next(); resetAutoplay(); });
+
+          carousel.addEventListener('mouseenter', pauseAutoplay);
+          carousel.addEventListener('mouseleave', startAutoplay);
+
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prev();
+            if (e.key === 'ArrowRight') next();
+          });
+
+          function startAutoplay(){
+            if (autoplayInterval) return;
+            autoplayInterval = setInterval(next, AUTOPLAY_MS);
+          }
+          function pauseAutoplay(){
+            if (autoplayInterval) { clearInterval(autoplayInterval); autoplayInterval = null; }
+          }
+          function resetAutoplay(){ pauseAutoplay(); startAutoplay(); }
+
+          buildDots();
+          goTo(0);
+          startAutoplay();
+        })();
+      </script>
+
+
+      
     
-<!-- Featured Products Section (copy this into home.ejs) -->
+<!-- Featured Products Section -->
 <section class="products container section">
   <h3 class="section__title">Featured Products</h3>
-  <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+  <div class="products-grid">
     <% if (featuredProducts && featuredProducts.length > 0) { %>
       <% featuredProducts.forEach(product => { %>
-        <div class="product-card bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div class="product-card">
           <a href="/product/<%= product._id %>" class="block">
-            <div class="product-image-container relative">
+            <div class="product-image-container">
               <img src="<%= product.productImage[0] %>"
                    alt="<%= product.productName %>"
-                   class="product-image w-full h-64 object-cover">
+                   class="product-image">
               <% if (product.regularPrice > product.salesPrice) { %>
-                <div class="discount-badge absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-lg text-sm">
+                <div class="discount-badge">
                   <%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
                 </div>
               <% } %>
             </div>
-            <div class="product-info p-5">
-              <div class="mb-3">
-                <h3 class="product-title font-bold text-lg text-gray-800 mb-1 line-clamp-2">
-                  <%= product.productName %>
-                </h3>
-                <p class="product-category text-sm text-gray-500"><%= product.category && product.category.name ? product.category.name : '' %></p>
-              </div>
-              <div class="product-footer flex justify-between items-center">
+              <div class="product-info">
+              <div class="product-category"><%= product.category && product.category.name ? product.category.name : '' %></div>
+              <h3 class="product-title"><%= product.productName %></h3>
+              <div class="product-footer">
                 <div class="price-container">
-                  <p class="current-price text-xl font-bold text-gray-800">₹<%= product.salesPrice.toLocaleString() %></p>
+                  <p class="current-price">₹<%= product.salesPrice.toLocaleString() %></p>
                   <% if (product.regularPrice > product.salesPrice) { %>
-                    <p class="original-price text-sm text-gray-500 line-through">
-                      ₹<%= product.regularPrice.toLocaleString() %>
-                    </p>
+                    <p class="original-price">₹<%= product.regularPrice.toLocaleString() %></p>
                   <% } %>
                 </div>
               </div>
             </div>
           </a>
-          <div class="px-5 pb-5">
-            <button onclick="addToCart('<%= product._id %>', event)" 
-        class="w-full add-to-cart-btn px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-    <i class="fas fa-cart-plus"></i> Add to Cart
-</button>
+          <div class="product-card-footer">
+            <div style="display:flex;gap:8px;width:100%">
+              <button onclick="addToCart('<%= product._id %>', event)" 
+                      class="add-to-cart-btn" style="flex:1">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+              </button>
+              <button title="Add to wishlist" class="wishlist-btn" aria-label="Add to wishlist" onclick="toggleWishlist('<%= product._id %>', this, event)">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path class="heart-fill" d="M12 21s-7-4.35-9-7.09C1.38 11.7 3 8 6 6.5 8.01 5.48 10.18 6 12 7.35 13.82 6 15.99 5.48 18 6.5c3 1.5 4.62 5.2 3 7.41C19 16.65 12 21 12 21z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       <% }); %>
     <% } else { %>
-      <div class="empty-state text-center py-12">
-        <svg class="empty-state-icon mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="empty-state">
+        <svg class="empty-state-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <h3 class="empty-state-title mt-2 text-sm font-medium text-gray-900">No products found</h3>
-        <p class="empty-state-description mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+        <h3 class="empty-state-title">No products found</h3>
+        <p class="empty-state-description">Try adjusting your search or filter criteria</p>
       </div>
     <% } %>
   </div>
@@ -188,7 +659,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 async function addToCart(productId, event) {
-    const button = event.target;
+    const button = event.target.closest('button');
     if (button.disabled) return;
 
     // Save original button content
@@ -266,6 +737,71 @@ async function addToCart(productId, event) {
             timerProgressBar: true
         });
     }
+}
+
+// Add to wishlist from home
+async function addToWishlist(productId, event) {
+  try {
+    const res = await fetch('/wishlist/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Added to wishlist', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      return;
+    }
+    if (data.alreadyInWishlist) {
+      Swal.fire({ icon: 'info', title: 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+      return;
+    }
+    throw new Error(data.message || 'Failed to add to wishlist');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+  }
+}
+
+// Toggle wishlist (add/remove) — updates button UI
+async function toggleWishlist(productId, btn, event) {
+  try {
+    event?.preventDefault?.();
+    btn = btn || (event && event.target.closest && event.target.closest('button'));
+    if (!btn) return;
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    const willRemove = btn.classList.contains('added');
+    const url = willRemove ? '/wishlist/remove' : '/wishlist/add';
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      btn.classList.toggle('added', !willRemove);
+      Swal.fire({
+        icon: willRemove ? 'success' : 'success',
+        title: willRemove ? 'Removed from wishlist' : 'Added to wishlist',
+        toast: true,
+        position: 'top-end',
+        timer: 1400,
+        showConfirmButton: false
+      });
+    } else if (data.alreadyInWishlist) {
+      btn.classList.add('added');
+      Swal.fire({ icon: 'info', title: 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+    } else {
+      throw new Error(data.message || 'Wishlist error');
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+  } finally {
+    try { btn.disabled = false; } catch(e){}
+  }
 }
 </script>
  <%-include("../../views/partials/user/footer")%>

@@ -6,6 +6,7 @@ const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController");
 
 const cartController = require("../controllers/user/cartController")
+const wishlistController = require("../controllers/user/wishlistController")
 
 const checkoutController = require("../controllers/user/checkoutController");
 
@@ -86,6 +87,21 @@ router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
 router.post('/cart/add', isUser, checkBlockedStatus, cartController.addToCart);
 router.post('/cart/update', isUser, checkBlockedStatus, cartController.updateQuantity);
 router.delete('/cart/remove/:productId', isUser, checkBlockedStatus, cartController.removeFromCart);
+
+// Wishlist routes
+router.get('/wishlist', isUser, (req, res, next) => {
+    try { return wishlistController.viewWishlist(req, res, next); }
+    catch (e) { next(e); }
+});
+router.post('/wishlist/add', isUser, (req, res, next) => {
+    try { return wishlistController.addToWishlist(req, res, next); }
+    catch (e) { next(e); }
+});
+router.post('/wishlist/remove', isUser, (req, res, next) => {
+    try { return wishlistController.removeFromWishlist(req, res, next); }
+    catch (e) { next(e); }
+});
+
 
 
 router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheckout);

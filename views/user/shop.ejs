@@ -408,6 +408,34 @@
     box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
 }
 
+/* Wishlist button styles (match home) */
+.wishlist-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 180ms ease;
+    box-shadow: 0 4px 10px rgba(239,68,68,0.08);
+}
+.wishlist-btn:hover {
+    transform: translateY(-3px) scale(1.04);
+    background: linear-gradient(135deg,#ef4444,#dc2626);
+    color: #fff;
+    border-color: transparent;
+}
+.wishlist-btn:active { transform: scale(0.98); }
+.wishlist-btn svg { width: 18px; height: 18px; transition: transform 180ms ease, fill 180ms ease; }
+.wishlist-btn:hover svg { transform: scale(1.08); }
+.wishlist-btn .heart-fill { fill: transparent; }
+.wishlist-btn.added { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border-color:transparent; }
+.wishlist-btn.added svg .heart-fill { fill: #fff; }
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -630,9 +658,19 @@ html { scroll-behavior: smooth; }
                                     </div>
                                 </div>
                             </a>
-                            <div class="product-card-footer">
-                                <button onclick="addToCart('<%= product._id %>')" class="add-to-cart-btn">Add to Cart</button>
-                            </div>
+               <div class="product-card-footer" style="display:flex;gap:8px;align-items:center;">
+                    <button onclick="addToCart('<%= product._id %>', event)" class="add-to-cart-btn">Add to Cart</button>
+                    <button 
+    title="Add to wishlist" 
+    class="wishlist-btn" 
+    aria-label="Add to wishlist" 
+    data-product-id="<%= product._id %>"
+    onclick="toggleWishlist('<%= product._id %>', this, event)">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="heart-fill" d="M12 21s-7-4.35-9-7.09C1.38 11.7 3 8 6 6.5 8.01 5.48 10.18 6 12 7.35 13.82 6 15.99 5.48 18 6.5c3 1.5 4.62 5.2 3 7.41C19 16.65 12 21 12 21z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+    </svg>
+</button>
+                       </div>
                         </div>
                     <% }); %>
                 </div>
@@ -707,16 +745,30 @@ document.querySelectorAll('.add-to-cart-btn').forEach(button => {
     });
 });
 
-async function addToCart(productId) {
+async function addToCart(productId, event) {
+    const button = event?.target?.closest('button');
+    const originalHTML = button ? button.innerHTML : null;
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        button.style.opacity = '0.7';
+    }
+
     try {
         const response = await fetch('/cart/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId })
+            body: JSON.stringify({ productId, quantity: 1 })
         });
+
         const data = await response.json();
 
         if (data.success) {
+            if (button) {
+                button.innerHTML = '<i class="fas fa-check"></i> Added!';
+                button.style.backgroundColor = '#10b981';
+            }
+
             Swal.fire({
                 icon: 'success',
                 title: 'Added to Cart!',
@@ -725,10 +777,50 @@ async function addToCart(productId) {
                 position: 'top-end',
                 toast: true
             });
-        } else {
-            throw new Error(data.message);
+
+            const cartCount = document.querySelector('.cart-count');
+            if (cartCount && data.cartCount !== undefined) {
+                cartCount.textContent = data.cartCount;
+                cartCount.style.display = 'flex';
+            }
+
+            setTimeout(() => {
+                if (button) {
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                    button.style.backgroundColor = '';
+                    button.style.opacity = '1';
+                }
+            }, 1500);
+
+            return;
         }
+
+        if (data.alreadyInCart) {
+            if (button) {
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                button.style.opacity = '1';
+            }
+            Swal.fire({
+                icon: 'info',
+                title: 'Already in cart',
+                text: data.message || 'This product is already in your cart.',
+                position: 'top-end',
+                toast: true,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        throw new Error(data.message || 'Error adding to cart');
     } catch (error) {
+        if (button) {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            button.style.opacity = '1';
+        }
         Swal.fire({
             icon: 'error',
             title: 'Oops...',
@@ -739,6 +831,90 @@ async function addToCart(productId) {
         });
     }
 }
+
+async function toggleWishlist(productId, button, event) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        // Prevent double clicks
+        if (button.disabled) return;
+        button.disabled = true;
+
+        const isAdded = button.classList.contains('added');
+
+        try {
+            let response;
+            if (isAdded) {
+                // Remove from wishlist
+                response = await fetch('/wishlist/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId })
+                });
+            } else {
+                // Add to wishlist
+                response = await fetch('/wishlist/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId })
+                });
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (isAdded) {
+                    // Was added → now removed
+                    button.classList.remove('added');
+                    button.querySelector('.heart-fill').style.fill = 'transparent';
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Removed from wishlist',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    // Was not added → now added
+                    button.classList.add('added');
+                    button.querySelector('.heart-fill').style.fill = '#fff';
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to wishlist!',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            } else if (data.alreadyInWishlist) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Already in wishlist',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Operation failed');
+            }
+        } catch (err) {
+            console.error('Wishlist error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Something went wrong',
+                toast: true,
+                position: 'top-end',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } finally {
+            button.disabled = false;
+        }
+    }
 </script>
 
 <%- include('../partials/user/footer') %>

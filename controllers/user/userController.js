@@ -9,8 +9,6 @@ const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 
 
-
-
  const loadSignup = async (req,res)=>{
     try{
 
@@ -211,12 +209,12 @@ const verifyOtp = async (req,res) => {
             req.session.userOtp = null;
             req.session.userData = null;
 
-            // Set user session
-            req.session.user = saveUserData._id;
+            
+           
 
             return res.json({
                 success: true,
-                redirectUrl: "/"
+                redirectUrl: "/login"
             });
         } else {
             return res.status(400).json({

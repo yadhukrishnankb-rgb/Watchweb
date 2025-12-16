@@ -1,0 +1,101 @@
+<%- include('../partials/user/header') %>
+
+<style>
+  .wishlist-container { max-width: 1100px; margin: 2.5rem auto; padding: 0 1rem; }
+  .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+  .wish-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(2,6,23,0.06); padding: 0.75rem; position: relative; }
+  .wish-image { width: 100%; height: 190px; object-fit: cover; border-radius: 8px; background:#f7faf7; }
+  .wish-body { padding: 0.75rem; }
+  .wish-title { font-weight: 700; font-size: 1rem; margin: 0 0 0.25rem; color:#111827; min-height: 2.6rem; }
+  .wish-price { color:#059669; font-weight:800; font-size:1.05rem; }
+  .wish-actions { display:flex; gap:0.5rem; margin-top:0.75rem; }
+  .btn { flex:1; padding:0.6rem 0.8rem; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+  .btn-add { background:linear-gradient(135deg,#10b981,#047857); color:white; }
+  .btn-remove { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
+  .empty-wishlist { text-align:center; padding:4rem 1rem; background:#fff; border-radius:12px; box-shadow:0 6px 18px rgba(2,6,23,0.04); }
+</style>
+
+<main class="wishlist-container">
+  <h2 style="margin-bottom:1rem; font-size:1.5rem; font-weight:800;">My Wishlist</h2>
+
+  <% if (wishlist && wishlist.products && wishlist.products.length > 0) { %>
+    <div class="wishlist-grid">
+      <% wishlist.products.forEach(item => { const p = item.productId; %>
+        <div class="wish-card" data-product-id="<%= p?._id %>">
+          <img src="<%= (p && p.productImage && p.productImage[0]) ? p.productImage[0] : '/assets/img/smart-watch-realistic-image-black_1284-11873.avif' %>" alt="<%= p ? p.productName : 'Product' %>" class="wish-image">
+          <div class="wish-body">
+            <h3 class="wish-title"><%= p ? p.productName : 'Unknown product' %></h3>
+            <div class="wish-price">₹<%= p ? (p.salesPrice || 0).toLocaleString() : '0' %></div>
+            <div class="wish-actions">
+              <button class="btn btn-add" onclick="addToCartFromWishlist('<%= p ? p._id : '' %>', this)">Add to cart</button>
+              <button class="btn btn-remove" onclick="removeFromWishlist('<%= p ? p._id : '' %>', this)">Remove</button>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-wishlist">
+      <h3 style="margin-bottom:8px;">Your wishlist is empty</h3>
+      <p style="color:#6b7280;">Browse our collection and add items you love.</p>
+      <a href="/shop" class="btn btn-add" style="width:220px; margin-top:16px; display:inline-block; text-align:center;">Shop now</a>
+    </div>
+  <% } %>
+</main>
+
+<script>
+async function addToCartFromWishlist(productId, btn) {
+  if (!productId) return;
+  const original = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = 'Adding...';
+  try {
+    const res = await fetch('/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, quantity: 1 })
+    });
+    const data = await res.json();
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Added to cart', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      // remove card from DOM
+      const card = btn.closest('.wish-card'); if (card) card.remove();
+      return;
+    }
+    if (data.alreadyInCart) {
+      Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || 'This product is already in your cart.', toast: true, position: 'top-end', timer: 1800, showConfirmButton: false });
+      // also remove wishlist entry client-side for consistency
+      const card = btn.closest('.wish-card'); if (card) card.remove();
+      return;
+    }
+    throw new Error(data.message || 'Failed to add to cart');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2500, showConfirmButton: false });
+    btn.disabled = false; btn.innerHTML = original;
+  }
+}
+
+async function removeFromWishlist(productId, btn) {
+  if (!productId) return;
+  const card = btn.closest('.wish-card');
+  const result = await Swal.fire({ title: 'Remove item?', text: 'Remove this item from your wishlist?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, remove' });
+  if (!result.isConfirmed) return;
+  try {
+    const res = await fetch('/wishlist/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (card) card.remove();
+      Swal.fire({ icon: 'success', title: 'Removed', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      return;
+    }
+    throw new Error(data.message || 'Failed to remove');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2500, showConfirmButton: false });
+  }
+}
+</script>
+
+<%- include('../partials/user/footer') %>

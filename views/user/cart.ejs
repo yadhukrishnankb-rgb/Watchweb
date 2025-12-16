@@ -196,6 +196,34 @@
         color: white;
         transform: rotate(90deg);
     }
+   /* Existing out-of-stock styling – keep or replace with this improved version */
+.cart-item-card.out-of-stock {
+    opacity: 0.65;
+    background: #f9fafb;
+    border-color: #fecaca;
+    pointer-events: none; /* Disables all clicks on the card */
+    position: relative;
+}
+
+/* IMPORTANT: Re-enable pointer events ONLY on the remove button */
+.cart-item-card.out-of-stock .remove-btn-new {
+    pointer-events: auto !important; /* Allow clicking remove */
+    opacity: 1 !important;
+    z-index: 10;
+}
+
+/* Optional: Slightly highlight remove button on out-of-stock items */
+.cart-item-card.out-of-stock .remove-btn-new {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.cart-item-card.out-of-stock .remove-btn-new:hover {
+    background: #dc2626 !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
 
     /* BEAUTIFUL MODERN REMOVE BUTTON */
 .remove-btn-new {
@@ -404,45 +432,64 @@
                             <span class="items-count"><%= cart.items.length %> Items</span>
                         </div>
                         
-                        <% cart.items.forEach(item => { %>
-                            <div class="cart-item cart-item-card" data-product-id="<%= item.productId._id %>">
-                                <button 
-    onclick="removeFromCart('<%= item.productId._id %>')" 
+                       <% cart.items.forEach(item => { %>
+    <% 
+        const isOutOfStock = !item.productId || item.productId.isBlocked || item.productId.quantity < item.quantity;
+        const availableStock = item.productId ? item.productId.quantity : 0;
+    %>
+    <div class="cart-item cart-item-card <%= isOutOfStock ? 'out-of-stock' : '' %>" data-product-id="<%= item.productId?._id || '' %>">
+        <button 
+    onclick="removeFromCart('<%= item.productId?._id || '' %>')" 
     class="remove-btn-new" 
     title="Remove from cart"
     aria-label="Remove item from cart">
     <i class="fas fa-trash-alt"></i>
     <span class="remove-text">Remove</span>
 </button>
-                                
-                                <div class="item-content">
-                                    <div class="item-image-wrapper">
-                                        <img src="<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName %>" class="item-image">
-                                    </div>
-                                    
-                                    <div class="item-details">
-                                        <h3 class="item-name"><%= item.productId.productName %></h3>
-                                        <div class="item-price">₹<%= item.price.toLocaleString() %></div>
-                                        
-                                      <div class="quantity-section">
-                  <button onclick="updateQuantity('<%= item.productId._id %>', 'decrease')" class="qty-btn" <%= item.quantity <= 1 ? 'disabled' : '' %>>
-                   <i class="fas fa-minus"></i>-
-                </button>
-             <span class="quantity-display qty-display"><%= item.quantity %></span>
-                <button 
-        onclick="updateQuantity('<%= item.productId._id %>', 'increase')" 
-        class="qty-btn" 
-        data-stock="<%= item.productId.quantity %>"
-        <%= item.quantity >= item.productId.quantity ? 'disabled' : '' %>>
-        <i class="fas fa-plus"></i>+
-    </button>
+        <div class="item-content">
+            <div class="item-image-wrapper <%= isOutOfStock ? 'grayscale' : '' %>">
+                <img src="<%= item.productId?.productImage?.[0] || '/images/placeholder.jpg' %>" alt="<%= item.productId?.productName || 'Product' %>" class="item-image">
+            </div>
+            
+            <div class="item-details">
+                <h3 class="item-name"><%= item.productId?.productName || 'Unknown Product' %></h3>
+                
+                <% if (isOutOfStock) { %>
+                    <div class="out-of-stock-badge" style="background:#dc2626; color:white; padding:0.35rem 0.75rem; border-radius:6px; font-size:0.9rem; font-weight:700; display:inline-block; margin-bottom:0.75rem;">
+                        Out of Stock
+                    </div>
+                <% } else { %>
+                    <div class="item-price">₹<%= item.price.toLocaleString() %></div>
+                <% } %>
+
+                <div class="quantity-section">
+                    <button 
+                        onclick="updateQuantity('<%= item.productId?._id %>', 'decrease')" 
+                        class="qty-btn" 
+                        <%= item.quantity <= 1 || isOutOfStock ? 'disabled' : '' %>>
+                        <i class="fas fa-minus"></i>-
+                    </button>
+                    <span class="quantity-display qty-display"><%= item.quantity %></span>
+                    <button 
+                        onclick="updateQuantity('<%= item.productId?._id %>', 'increase')" 
+                        class="qty-btn" 
+                        data-stock="<%= availableStock %>"
+                        <%= isOutOfStock || item.quantity >= availableStock ? 'disabled' : '' %>>
+                        <i class="fas fa-plus"></i>+
+                    </button>
+                </div>
+
+                <% if (isOutOfStock) { %>
+                    <p class="item-total-price" style="color:#dc2626; margin-top:0.75rem;">
+                        Not included in total
+                    </p>
+                <% } else { %>
+                    <p class="item-total item-total-price">Subtotal: ₹<%= item.totalPrice.toLocaleString() %></p>
+                <% } %>
+            </div>
         </div>
-                                        
-                                        <p class="item-total item-total-price">Subtotal: ₹<%= item.totalPrice.toLocaleString() %></p>
-                                    </div>
-                                </div>
-                            </div>
-                        <% }); %>
+    </div>
+<% }); %>
                     </div>
                 </div>
                 
@@ -467,9 +514,19 @@
                             <span class="total-amount" id="orderTotal">₹<%= total.toLocaleString() %></span>
                         </div>
                         
-                        <button onclick="window.location.href='/checkout'" class="checkout-btn" <%= cart.items.some(item => item.productId.quantity <= 0) ? 'disabled' : '' %>>
-                            <i class="fas fa-lock"></i> Proceed to Checkout
-                        </button>
+                        <button 
+    onclick="window.location.href='/checkout'" 
+    class="checkout-btn" 
+    <%= cart.items.some(item => !item.productId || item.productId.isBlocked || item.productId.quantity < item.quantity) ? 'disabled' : '' %>
+    <%= cart.items.some(item => !item.productId || item.productId.isBlocked || item.productId.quantity < item.quantity) ? 'title="Remove out-of-stock items to proceed"' : '' %>>
+    <i class="fas fa-lock"></i> Proceed to Checkout
+</button>
+<% if (cart.items.some(item => !item.productId || item.productId.isBlocked || item.productId.quantity < item.quantity)) { %>
+    <p style="color:#dc2626; text-align:center; margin-top:1rem; font-weight:600;">
+        <i class="fas fa-exclamation-triangle"></i>
+        Remove out-of-stock items to proceed to checkout
+    </p>
+<% } %>
                         
                         <a href="/shop" class="continue-shopping">
                             <i class="fas fa-arrow-left"></i> Continue Shopping

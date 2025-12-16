@@ -375,10 +375,16 @@ async function addToCartWithQty(productId) {
 
     if (data.success) {
       Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
-    } else {
-      if (data.redirect) location.href = '/shop';
-      else throw new Error(data.message || 'Unknown error');
+      return;
     }
+
+    if (data.alreadyInCart) {
+      Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || 'This product is already in your cart.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+      return;
+    }
+
+    if (data.redirect) location.href = '/shop';
+    else throw new Error(data.message || 'Unknown error');
   } catch (err) {
     Swal.fire({ icon: 'error', title: 'Oops…', text: err.message, toast: true, position: 'top-end', timer: 3000 });
   }
