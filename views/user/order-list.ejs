@@ -142,14 +142,30 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
       <div class="orders-grid">
         <% orders.forEach(order => { %>
           <div class="order-card">
-            <div class="order-header">
+              <div class="order-header">
               <div>
                 <div class="order-id">#<%= order.orderId %></div>
                 <div class="order-date">
                   <%= new Date(order.createdOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                 </div>
               </div>
-              <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
+              <% 
+                // Prefer a derived status from item-level states when all items share the same final state
+                const rawStatus = (order.status || order.orderStatus || order.currentStatus || order.state || '').toString().trim().toLowerCase();
+                const itemStatuses = (order.orderedItems || []).map(i => ((i.status||'').toString().trim().toLowerCase())).filter(Boolean);
+
+                let derivedStatus = rawStatus || '';
+                if (itemStatuses.length > 0) {
+                  if (itemStatuses.every(s => s === 'returned')) derivedStatus = 'returned';
+                  else if (itemStatuses.every(s => s === 'cancelled')) derivedStatus = 'cancelled';
+                  else if (itemStatuses.every(s => s === 'return request' || s === 'returned')) derivedStatus = derivedStatus || 'return request';
+                  else if (!derivedStatus) derivedStatus = itemStatuses.find(Boolean) || 'pending';
+                }
+
+                const statusClass = (derivedStatus || 'pending').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+                const statusDisplay = (derivedStatus || 'pending').split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
+              %>
+              <span class="status-badge status-<%= statusClass %>"><%= statusDisplay %></span>
             </div>
             
             <div class="order-body">
@@ -194,9 +210,13 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
                 <div class="info-item">
                   <span class="info-label">Total Amount</span>
                   <span class="info-value">₹<%= order.finalAmount.toLocaleString() %></span>
-<% if (order.status.toLowerCase() === 'cancelled' || order.status.toLowerCase() === 'returned') { %>
+<% 
+  const orderStatusLC = ((order.status||'').toString().trim().toLowerCase());
+  const hasItemRefund = order.orderedItems.some(i => ['cancelled','returned'].includes(((i.status||'').toString().toLowerCase())));
+%>
+<% if (orderStatusLC === 'cancelled' || orderStatusLC === 'returned') { %>
   <small class="block text-green-600 font-medium">Full Refund Processed</small>
-<% } else if (order.orderedItems.some(i => i.status === 'Cancelled' || i.status === 'Returned')) { %>
+<% } else if (hasItemRefund) { %>
   <small class="block text-green-600 font-medium">Partial Refund Processed</small>
 <% } %>
                 </div>
@@ -206,21 +226,23 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
                 <a href="/orders/<%= order._id %>" class="action-btn btn-view">
                   View Details
                 </a>
-                <% if (order.status === 'pending') { %>
+                <% if (orderStatusLC === 'pending') { %>
                   <button onclick="cancelOrder('<%= order._id %>')" class="action-btn btn-cancel">
                     Cancel Order
                   </button>
                 <% } %>
-                <% if (order.status === 'Delivered') { %>
+                <% 
+                  // Hide order-level return button if all items are already returned/cancelled
+                  const allReturnedOrCancelled = order.orderedItems && order.orderedItems.every(item => ['returned','cancelled'].includes(((item.status||'').toString().toLowerCase())));
+                %>
+                <% if (orderStatusLC === 'delivered' && !allReturnedOrCancelled) { %>
                   <button onclick="returnOrder('<%= order._id %>')" class="action-btn btn-return">
                     Return Order
                   </button>
                 <% } %>
                 <% 
-    const orderHasDeliveredItem = order.orderedItems?.some(item => 
-        ['delivered', 'returned'].includes((item.status || '').toLowerCase())
-    );
-    const canShowInvoice = order.status.toLowerCase() === 'delivered' || orderHasDeliveredItem;
+    const orderHasDeliveredItem = order.orderedItems?.some(item => ['delivered','returned'].includes(((item.status||'').toString().toLowerCase())));
+    const canShowInvoice = (orderStatusLC === 'delivered') || orderHasDeliveredItem;
 %>
 
 <% if (canShowInvoice) { %>

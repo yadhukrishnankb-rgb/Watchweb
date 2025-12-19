@@ -35,7 +35,7 @@ exports.viewCart = async (req, res) => {
         const cart = await Cart.findOne({ userId }).populate('items.productId');
 
         if (!cart || cart.items.length === 0) {
-            return res.render('user/cart', { cart: { items: [] }, total: 0 });
+            return res.render('user/cart', { cart: { items: [] }, total: 0, user: req.session.user });
         }
 
         // DO NOT filter out out-of-stock or blocked items anymore
@@ -49,10 +49,10 @@ exports.viewCart = async (req, res) => {
             return sum;
         }, 0);
 
-        res.render('user/cart', { cart, total });
+        res.render('user/cart', { cart, total, user: req.session.user });
     } catch (error) {
         console.error('View cart error:', error);
-        res.status(500).render('error', { message: 'Error loading cart' });
+        res.status(500).render('error', { message: 'Error loading cart', user: req.session.user });
     }
 };
 

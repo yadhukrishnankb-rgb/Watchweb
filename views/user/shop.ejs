@@ -546,6 +546,66 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-track { background: rgb(233, 246, 235); }
 ::-webkit-scrollbar-thumb { background: rgb(8, 129, 121); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #047857; }
+
+/* Styles taken from search-results grid to match home UI */
+.products__container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+.product__item {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+.product__item:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.08); }
+.product__banner { position: relative; overflow: hidden; }
+.product__images { display: block; position: relative; }
+.product__img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.product__img.hover { position: absolute; inset: 0; top: 0; left: 0; opacity: 0; transition: opacity 220ms ease; }
+.product__item:hover .product__img.hover { opacity: 1; }
+.product__actions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 10px;
+    z-index: 6;
+    justify-content: center;
+    align-items: center;
+}
+.action__btn {
+    background: rgba(255,255,255,0.95);
+    border: 0;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(2,6,23,0.06);
+    transition: transform 0.15s ease;
+}
+.action__btn:hover { transform: translateY(-4px); }
+.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
+.product__content { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.product__category { font-size: 0.75rem; color: #047857; font-weight: 700; text-transform: uppercase; }
+.product__title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; line-height: 1.25; }
+.product__price { display: flex; align-items: center; gap: 8px; }
+.new__price { font-weight: 800; color: #047857; }
+.old__price { color: #9ca3af; text-decoration: line-through; font-weight: 500; }
+
+@media (max-width: 900px) {
+    .product__img { height: 180px; }
+}
 </style>
 
 <main class="bg-gray-50 min-h-screen py-8">
@@ -554,7 +614,7 @@ html { scroll-behavior: smooth; }
         <div class="page-header mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Our Products</h1>
             <p class="text-gray-600">Discover our amazing collection</p>
-        </div>
+        </div> 
 
         <!-- Main Shop Layout -->
         <div class="shop-layout">
@@ -631,60 +691,59 @@ html { scroll-behavior: smooth; }
                 </form>
             </aside>
 
-            <!-- Products Grid -->
-            <section>
-                <div class="products-grid">
-                    <% products.forEach(product => { %>
-                        <div class="product-card">
-                            <a href="/product/<%= product._id %>" class="block">
-                                <div class="product-image-container">
-                                    <img src="<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
-                                    <% if (product.regularPrice > product.salesPrice) { %>
-                                        <div class="discount-badge">
-                                            <%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
-                                        </div>
-                                    <% } %>
-                                </div>
-                                <div class="product-info">
-                                    <div class="product-category"><%= product.category.name %></div>
-                                    <h3 class="product-title"><%= product.productName %></h3>
-                                    <div class="product-footer">
-                                        <div class="price-container">
-                                            <p class="current-price">₹<%= product.salesPrice.toLocaleString() %></p>
-                                            <% if (product.regularPrice > product.salesPrice) { %>
-                                                <p class="original-price">₹<%= product.regularPrice.toLocaleString() %></p>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-               <div class="product-card-footer" style="display:flex;gap:8px;align-items:center;">
-                    <button onclick="addToCart('<%= product._id %>', event)" class="add-to-cart-btn">Add to Cart</button>
-                    <button 
-    title="Add to wishlist" 
-    class="wishlist-btn" 
-    aria-label="Add to wishlist" 
-    data-product-id="<%= product._id %>"
-    onclick="toggleWishlist('<%= product._id %>', this, event)">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path class="heart-fill" d="M12 21s-7-4.35-9-7.09C1.38 11.7 3 8 6 6.5 8.01 5.48 10.18 6 12 7.35 13.82 6 15.99 5.48 18 6.5c3 1.5 4.62 5.2 3 7.41C19 16.65 12 21 12 21z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
-    </svg>
-</button>
-                       </div>
-                        </div>
-                    <% }); %>
-                </div>
+                        <!-- Products Grid (search-results style) -->
+                        <section>
+    <% if (products && products.length > 0) { %>
+        <div class="products__container grid">
+            <% products.forEach(product => { %>
+                <div class="product__item" data-product-id="<%= product._id %>">
+                    <div class="product__banner">
+                        <a href="/product/<%= product._id %>" class="product__images">
+                            <img src="<%= product.productImage[0] %>" alt="" class="product__img default">
+                            <img src="<%= product.productImage[1] || product.productImage[0] %>" alt="" class="product__img hover">
+                        </a>
 
-                <!-- No Products -->
-                <% if (products.length === 0) { %>
-                    <div class="empty-state">
-                        <svg class="empty-state-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 class="empty-state-title">No products found</h3>
-                        <p class="empty-state-description">Try adjusting your search or filter criteria</p>
+                        <div class="product__actions">
+                            <button onclick="toggleWishlist('<%= product._id %>', this, event)" class="action__btn" aria-label="Toggle Wishlist">
+                                <i class="fi fi-rs-heart"></i>
+                            </button>
+
+                            <button onclick="addToCart('<%= product._id %>', event)" class="action__btn" aria-label="Add to Cart">
+                                <i class="fi fi-rs-shopping-cart"></i>
+                            </button>
+                        </div>
+
+                        <% if (product.regularPrice > product.salesPrice) { %>
+                            <div class="product__badge">
+                                <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
+                            </div>
+                        <% } %>
                     </div>
-                <% } %>
+
+                    <div class="product__content">
+                        <span class="product__category"><%= product.category && product.category.name ? product.category.name : '' %></span>
+                        <a href="/product/<%= product._id %>">
+                            <h3 class="product__title"><%= product.productName %></h3>
+                        </a>
+                        <div class="product__price flex">
+                            <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
+                            <% if (product.regularPrice > product.salesPrice) { %>
+                                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    <% } else { %>
+        <div class="empty-state">
+            <svg class="empty-state-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="empty-state-title">No products found</h3>
+            <p class="empty-state-description">Try adjusting your search or filter criteria</p>
+        </div>
+    <% } %>
 
                 <!-- Pagination -->
                 <% if (totalPages > 1) { %>
@@ -832,89 +891,59 @@ async function addToCart(productId, event) {
     }
 }
 
-async function toggleWishlist(productId, button, event) {
-        event.stopPropagation();
-        event.preventDefault();
+// Toggle wishlist (add/remove) — updated to match home.ejs behavior
+async function toggleWishlist(productId, btn, event) {
+    try {
+        event?.preventDefault?.();
+        btn = btn || (event && event.target.closest && event.target.closest('button'));
+        if (!btn) return;
+        if (btn.disabled) return;
+        btn.disabled = true;
 
-        // Prevent double clicks
-        if (button.disabled) return;
-        button.disabled = true;
+        const willRemove = btn.classList.contains('added');
+        const url = willRemove ? '/wishlist/remove' : '/wishlist/add';
 
-        const isAdded = button.classList.contains('added');
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        });
+        const data = await res.json();
 
-        try {
-            let response;
-            if (isAdded) {
-                // Remove from wishlist
-                response = await fetch('/wishlist/remove', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId })
-                });
-            } else {
-                // Add to wishlist
-                response = await fetch('/wishlist/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId })
-                });
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
-                if (isAdded) {
-                    // Was added → now removed
-                    button.classList.remove('added');
-                    button.querySelector('.heart-fill').style.fill = 'transparent';
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Removed from wishlist',
-                        toast: true,
-                        position: 'top-end',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                } else {
-                    // Was not added → now added
-                    button.classList.add('added');
-                    button.querySelector('.heart-fill').style.fill = '#fff';
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Added to wishlist!',
-                        toast: true,
-                        position: 'top-end',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                }
-            } else if (data.alreadyInWishlist) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Already in wishlist',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            } else {
-                throw new Error(data.message || 'Operation failed');
-            }
-        } catch (err) {
-            console.error('Wishlist error:', err);
+        if (data.success) {
+            btn.classList.toggle('added', !willRemove);
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Something went wrong',
+                icon: 'success',
+                title: willRemove ? 'Removed from wishlist' : 'Added to wishlist',
                 toast: true,
                 position: 'top-end',
-                timer: 2000,
+                timer: 1400,
                 showConfirmButton: false
             });
-        } finally {
-            button.disabled = false;
+
+            if (willRemove) {
+                try {
+                    const selector = `[data-product-id="${productId}"]`;
+                    const cards = Array.from(document.querySelectorAll(selector));
+                    cards.forEach(c => c.remove());
+                    const gridCards = Array.from(document.querySelectorAll(`.product__item[data-product-id="${productId}"]`));
+                    gridCards.forEach(c => c.remove());
+                } catch (err) {
+                    console.warn('Wishlist DOM cleanup failed', err);
+                }
+            }
+        } else if (data.alreadyInWishlist) {
+            btn.classList.add('added');
+            Swal.fire({ icon: 'info', title: 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+        } else {
+            throw new Error(data.message || 'Wishlist error');
         }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+    } finally {
+        try { btn.disabled = false; } catch(e){}
     }
+}
 </script>
 
 <%- include('../partials/user/footer') %>

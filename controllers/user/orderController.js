@@ -127,8 +127,9 @@ const cancelOrder = async (req, res) => {
     if (!order) return res.json({ success: false, message: 'Order not found' });
 
     const current = (order.status || '').toLowerCase();
-    if (['shipped', 'delivered', 'returned', 'cancelled'].includes(current)) {
-      return res.json({ success: false, message: 'Cannot cancel this order at this stage' });
+    // Only allow full-order cancellation when order is in 'pending' state
+    if (current !== 'pending') {
+      return res.json({ success: false, message: 'Only pending orders can be cancelled' });
     }
 
     // Immediately cancel order (no admin approval)
@@ -176,9 +177,14 @@ const returnOrder = async (req, res) => {
         if (!reason) return res.json({ success: false, message: 'Return reason is required' });
 
         const order = await Order.findOne({ _id: orderId, user: userId });
-        if (!order || order.status !== 'Delivered') {
-            return res.json({ success: false, message: 'Cannot request return for this order' });
-        }
+    if (!order) {
+      return res.json({ success: false, message: 'Order not found' });
+    }
+
+    const orderStatusLC = ((order.status || '').toString().trim().toLowerCase());
+    if (orderStatusLC !== 'delivered') {
+      return res.json({ success: false, message: 'Cannot request return for this order' });
+    }
 
         // Create order-level return request (do NOT update stock here)
         order.status = 'Return Request';
@@ -348,6 +354,11 @@ const requestCancelItem = async (req, res) => {
     const item = order.orderedItems.id(itemId);
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
+    // Ensure parent order is still pending before allowing item cancel
+    if ((order.status || '').toLowerCase() !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Order cannot be cancelled at this stage' });
+    }
+
     const status = (item.status || '').toLowerCase();
     if (status === 'cancelled') {
       return res.status(400).json({ success: false, message: 'Item already cancelled' });
@@ -404,13 +415,24 @@ const requestReturnItem = async (req, res) => {
     const item = order.orderedItems.id(itemId);
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
-    if (item.status && item.status !== 'Delivered') {
-      return res.status(400).json({ success: false, message: 'Only delivered items can be returned' });
-    }
-    if (item.status === 'Return Request' || item.status === 'Returned') {
-      return res.status(400).json({ success: false, message: 'Return already requested' });
+    const itemStatusLC = ((item.status || '').toString().trim().toLowerCase());
+    const orderStatusLC = ((order.status || '').toString().trim().toLowerCase());
+
+    // Prefer item-level status when meaningful; otherwise fall back to parent order status
+    let effectiveStatus = itemStatusLC;
+    if (!effectiveStatus || effectiveStatus === 'placed') {
+      effectiveStatus = orderStatusLC;
     }
 
+    if (effectiveStatus === 'return request' || effectiveStatus === 'returned') {
+      return res.status(400).json({ success: false, message: 'Return already requested or completed for this item' });
+    }
+
+    if (effectiveStatus !== 'delivered') {
+      return res.status(400).json({ success: false, message: 'Only delivered items can be returned' });
+    }
+
+    // Mark item-level return request (admin approval required)
     item.status = 'Return Request';
     item.returnReason = reason || 'No reason provided';
     item.requestedAt = new Date();

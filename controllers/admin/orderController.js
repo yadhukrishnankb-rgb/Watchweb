@@ -220,13 +220,11 @@ exports.getRequests = async (req, res) => {
     const skip = (page - 1) * limit;
     const requestType = req.query.type || ''; // 'cancel' or 'return'
 
-    // Find orders that either have item-level requests OR the whole order is a request
+    // Find orders that have RETURN requests only. Cancellations are handled immediately
     const combinedQuery = {
       $or: [
-        { 'orderedItems.status': 'Cancellation Request' },
-        { 'orderedItems.status': 'Return Request' },
-        { status: 'Cancellation Request' },
-        { status: 'Return Request' }
+        { 'orderedItems.status': { $regex: 'return request', $options: 'i' } },
+        { status: { $regex: 'return request', $options: 'i' } }
       ]
     };
 
@@ -240,9 +238,8 @@ exports.getRequests = async (req, res) => {
     // If filtering by type, keep only matching items/orders
     orders = orders.map(order => {
       const filteredItems = order.orderedItems.filter(item => {
-        if (requestType === 'cancel') return item.status === 'Cancellation Request';
-        if (requestType === 'return') return item.status === 'Return Request';
-        return item.status === 'Cancellation Request' || item.status === 'Return Request';
+        if (requestType === 'return') return /return request/i.test(item.status || '');
+        return /return request/i.test(item.status || '');
       });
 
       // keep order-level requests (no matching items) by leaving filteredItems empty but mark order

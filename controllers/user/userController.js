@@ -9,6 +9,8 @@ const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 
 
+
+
  const loadSignup = async (req,res)=>{
     try{
 
@@ -42,21 +44,21 @@ const loadHomepage = async (req, res) => {
         const featuredProducts = await Product.find({ isBlocked: false })
             .populate('category')
             .sort({ createdAt: -1 })
-            .limit(8)
+            .limit(10)
             .lean();
 
         // Fetch popular products (you can modify this based on your criteria)
         const popularProducts = await Product.find({ isBlocked: false })
             .populate('category')
             .sort({ salesCount: -1 })
-            .limit(8)
+            .limit(10)
             .lean();
 
         // Fetch new arrivals
         const newArrivals = await Product.find({ isBlocked: false })
             .populate('category')
             .sort({ createdAt: -1 })
-            .limit(8)
+            .limit(10)
             .lean();
 
         // Fetch categories for the filter

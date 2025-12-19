@@ -389,6 +389,22 @@
 </style>
 
 <div class="order-detail-container">
+    <% 
+        // Top-level normalized order status (simple, robust fallback)
+        const rawFromOrder = (order && (order.status || order.orderStatus || order.currentStatus || order.state) || '').toString().trim().toLowerCase();
+        // derive from item statuses when appropriate
+        const itemStatuses = (order.orderedItems || []).map(i => ((i.status||'').toString().trim().toLowerCase())).filter(Boolean);
+        let derivedOrderStatus = rawFromOrder || '';
+        if (itemStatuses.length > 0) {
+          if (itemStatuses.every(s => s === 'returned')) derivedOrderStatus = 'returned';
+          else if (itemStatuses.every(s => s === 'cancelled')) derivedOrderStatus = 'cancelled';
+          else if (itemStatuses.every(s => s === 'delivered')) derivedOrderStatus = derivedOrderStatus || 'delivered';
+          else if (itemStatuses.some(s => s === 'return request')) derivedOrderStatus = derivedOrderStatus || 'return request';
+        }
+        const orderRaw = (derivedOrderStatus || rawFromOrder || 'pending').toString().trim();
+        const orderStatusClass = (orderRaw || 'pending').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+        const orderStatusDisplay = orderRaw ? orderRaw.split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ') : 'Pending';
+    %>
     <a href="/orders" class="back-link">Back to Orders</a>
 
     <div class="page-header">
@@ -404,13 +420,16 @@
 
                 <!-- ONLY THIS PART IS REPLACED — REST OF YOUR CODE IS EXACTLY SAME -->
                 <% order.orderedItems.forEach(item => { %>
-                    <% 
-                        const itemStatus = (item.status || 'Placed').toLowerCase();
-                        const canCancel = ['placed', 'pending', 'processing'].includes(itemStatus) 
-                                          && !['cancellation request', 'cancelled'].includes(itemStatus);
-                        const canReturn = itemStatus === 'delivered' 
-                                          && !['return request', 'returned'].includes(itemStatus);
-                    %>
+                                                                <% 
+                                                                    // Inline per-item normalization (fall back to orderRaw)
+                                                                    const itemRaw = (item && (item.status || item.itemStatus || item.state) || '').toString().trim();
+                                                                    const itemStatus = (itemRaw || '').toLowerCase();
+                                                                    // Prefer order status when item status is empty or is the generic 'Placed'
+                                                                    const rawForDisplay = (itemRaw && itemRaw.toLowerCase() !== 'placed') ? itemRaw : (orderRaw || 'Pending');
+                                                                    const displayStatus = rawForDisplay.toString().split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
+                                                                    const canCancel = orderStatusClass === 'pending' && itemStatus !== 'cancelled';
+                                                                    const canReturn = itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered';
+                                                                %>
 
                     <div class="order-item" data-item-id="<%= item._id %>">
                         <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="item-image">
@@ -423,10 +442,10 @@
                             <p class="item-total">Total: ₹<%= (item.price * item.quantity).toLocaleString() %></p>
 
                             <!-- Item Status -->
-                            <div style="margin-top:8px; font-weight:700; color:#374151;">
+                                <div style="margin-top:8px; font-weight:700; color:#374151;">
                                 Status: 
                                 <span style="color:#0a5f5f; text-transform:capitalize;">
-                                    <%= item.status || 'Placed' %>
+                                    <%= displayStatus %>
                                 </span>
                             </div>
 
@@ -447,27 +466,27 @@
                                     </button>
                                 <% } %>
 
-                                <% if (itemStatus === 'cancellation request') { %>
+                                <% if (itemStatus.includes('cancellation') || itemStatus.includes('cancel request')) { %>
                                     <div style="margin-top:8px; color:#b45309; font-weight:700;">
-                                        Cancellation Request Pending Admin Approval
+                                        Cancellation request pending admin approval
                                     </div>
                                 <% } %>
 
-                                <% if (itemStatus === 'return request') { %>
+                                <% if (itemStatus.includes('return')) { %>
                                     <div style="margin-top:8px; color:#b45309; font-weight:700;">
-                                        Return Request Pending Admin Approval
+                                        Return request pending admin approval
                                     </div>
                                 <% } %>
 
                                 <% if (itemStatus === 'cancelled') { %>
                                     <div style="margin-top:8px; color:#10b981; font-weight:700;">
-                                        Cancellation Approved
+                                        Cancellation approved
                                     </div>
                                 <% } %>
 
                                 <% if (itemStatus === 'returned') { %>
                                     <div style="margin-top:8px; color:#10b981; font-weight:700;">
-                                        Return Approved
+                                        Return approved
                                     </div>
                                 <% } %>
 
@@ -525,7 +544,11 @@
         <div>
             <div class="card status-card">
                 <h2 class="card-title">Order Status</h2>
-                <span class="status-badge status-<%= order.status.toLowerCase() %>"><%= order.status %></span>
+                <% 
+                    const statusClass = orderStatusClass;
+                    const statusDisplay = orderStatusDisplay;
+                %>
+                <span class="status-badge status-<%= statusClass %>"><%= statusDisplay %></span>
                 <p class="status-date">
                     <%= new Date(order.createdOn).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                 </p>
@@ -566,13 +589,32 @@
         <span>Original Amount</span>
         <span>₹<%= order.finalAmount.toLocaleString() %></span>
     </div>
-
     <% 
-        const hasCancelled = order.orderedItems.some(i => i.status === 'Cancelled');
-        const hasReturned = order.orderedItems.some(i => i.status === 'Returned');
-        const fullCancelled = order.status.toLowerCase() === 'cancelled';
-        const fullReturned = order.status.toLowerCase() === 'returned';
+        // Calculate refunded amount from cancelled/returned items and show final paid amount
+        const refunded = (order.orderedItems || []).reduce((acc, it) => {
+            const st = ((it.status||'').toString().toLowerCase());
+            if (['cancelled','returned'].includes(st)) {
+                return acc + (it.totalPrice || (it.price * it.quantity) || 0);
+            }
+            return acc;
+        }, 0);
+        const finalPaid = Math.max(0, (order.finalAmount || 0) - refunded);
+        const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
+        const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
+        const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
+        const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 'returned');
     %>
+
+    <div style="margin-top:10px">
+        <div class="amount-row">
+            <span class="amount-label">Refunded Amount</span>
+            <span class="amount-value">₹<%= refunded.toLocaleString() %></span>
+        </div>
+        <div class="amount-row">
+            <span class="amount-label">Final Paid Amount</span>
+            <span class="amount-value">₹<%= finalPaid.toLocaleString() %></span>
+        </div>
+    </div>
 
     <% if (fullCancelled || fullReturned) { %>
         <div style="margin-top:12px; padding:12px; background:#d1fae5; border-radius:8px; text-align:center; font-weight:600; color:#047857;">
@@ -588,10 +630,8 @@
             <div class="card">
     <% 
         // Check if ANY item is Delivered OR whole order is Delivered
-        const hasDeliveredItem = order.orderedItems.some(item => 
-            ['delivered', 'returned'].includes((item.status || '').toLowerCase())
-        );
-        const canDownloadInvoice = order.status.toLowerCase() === 'delivered' || hasDeliveredItem;
+        const hasDeliveredItem = order.orderedItems.some(item => ['delivered', 'returned'].includes(((item.status||'').toString().toLowerCase())));
+        const canDownloadInvoice = ((order.status||'').toString().trim().toLowerCase() === 'delivered') || hasDeliveredItem;
     %>
 
     <% if (canDownloadInvoice) { %>
@@ -659,13 +699,12 @@ async function requestCancelItem(orderId, itemId, btn) {
         if (data.success) {
             Swal.fire({
                 icon: 'success',
-                title: 'Cancellation Requested!',
-                text: 'Admin will review your request shortly.',
-                confirmButtonColor: '#10b981',
-                timer: 3000
+                title: data.message || 'Cancelled',
+                showConfirmButton: false,
+                timer: 1800
             }).then(() => location.reload());
         } else {
-            throw new Error(data.message);
+            throw new Error(data.message || 'Failed to cancel');
         }
     } catch (err) {
         Swal.fire({
