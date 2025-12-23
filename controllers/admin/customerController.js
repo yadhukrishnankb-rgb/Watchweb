@@ -1,4 +1,6 @@
 const Customer = require('../../models/userSchema');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 // Get all customers
 exports.getCustomers = async (req, res) => {
@@ -41,7 +43,7 @@ exports.getCustomers = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching customers:', err);
-        res.status(500).render('error', { message: 'Error loading customers' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.CUSTOMERS_LOAD_ERROR });
     }
 };
 
@@ -93,7 +95,7 @@ const [totalCustomers, customers] = await Promise.all([
         });
     } catch (err) {
         console.error('Error searching customers:', err);
-        res.status(500).render('error', { message: 'Error searching customers' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.CUSTOMER_SEARCH_ERROR });
     }
 };
 
@@ -107,7 +109,7 @@ exports.blockCustomer = async (req, res) => {
         );
 
         if (!customer) {
-            return res.status(404).json({ success: false, message: 'Customer not found' });
+            return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.CUSTOMER_NOT_FOUND });
         }
 
         // preserve page and search query when redirecting if provided
@@ -116,7 +118,7 @@ exports.blockCustomer = async (req, res) => {
         res.redirect('/admin/customers' + redirectPage + (req.query.search ? `&search=${encodeURIComponent(req.query.search)}` : ''));
     } catch (err) {
         console.error('Error blocking customer:', err);
-        res.status(500).render('error', { message: 'Error blocking customer' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.CUSTOMER_BLOCK_ERROR });
     }
 };
 
@@ -130,13 +132,13 @@ exports.unblockCustomer = async (req, res) => {
         );
 
         if (!customer) {
-            return res.status(404).json({ success: false, message: 'Customer not found' });
+            return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.CUSTOMER_NOT_FOUND });
         }
 
         const redirectPage = req.query.page ? `?page=${req.query.page}` : '';
         res.redirect('/admin/customers' + redirectPage + (req.query.search ? `&search=${encodeURIComponent(req.query.search)}` : ''));
     } catch (err) {
         console.error('Error unblocking customer:', err);
-        res.status(500).render('error', { message: 'Error unblocking customer' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.CUSTOMER_UNBLOCK_ERROR });
     }
 };

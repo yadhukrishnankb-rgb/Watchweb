@@ -1,8 +1,12 @@
+
 const mongoose = require('mongoose')
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
 const Review = require('../../models/reviewSchema');
 const Discount = require('../../models/discountSchema');
+const Wishlist = require('../../models/wishlistSchema');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 
 exports.listProducts = async (req, res) => {
@@ -106,10 +110,10 @@ exports.listProducts = async (req, res) => {
             priceRange: priceRange[0] || { minPrice: 0, maxPrice: 0 },
             user: req.session.user
         });
-
+        
     } catch (error) {
         console.error('Product listing error:', error);
-        res.status(500).render('error', { message: 'Error loading products' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.PRODUCTS_LOAD_ERROR });
     }
 };
 
@@ -169,6 +173,17 @@ exports.getProductDetails = async (req, res) => {
             isActive: true
         }).lean() || [];
 
+            // Check if current user has this product in wishlist (for rendering wishlist button state)
+            let isInWishlist = false;
+            try {
+                if (req.session && req.session.user && req.session.user._id) {
+                    const wl = await Wishlist.findOne({ userId: req.session.user._id }).select('products').lean();
+                    if (wl && Array.isArray(wl.products)) {
+                        isInWishlist = wl.products.some(p => (p.productId && p.productId.toString()) === id.toString());
+                    }
+                }
+            } catch (e) { /* ignore wishlist errors */ }
+
         // Generate breadcrumbs
         const breadcrumbs = [
             { name: 'Home', url: '/' },
@@ -187,6 +202,7 @@ exports.getProductDetails = async (req, res) => {
             discounts, // Pass discounts to the view
             breadcrumbs,
             user: req.session.user,
+            isInWishlist,
             // Add additional data for better error handling
             isAvailable: ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus),
             stockMessage: getStockMessage(stockStatus, product.quantity)
@@ -278,8 +294,8 @@ exports.searchProducts = async (req, res) => {
 
     } catch (error) {
         console.error('Search error:', error);
-        res.status(500).render('error', { 
-            message: 'Error performing search',
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { 
+            message: messages.PRODUCT_SEARCH_ERROR,
             user: req.session.user
         });
     }

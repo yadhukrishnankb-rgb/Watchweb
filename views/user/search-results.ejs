@@ -42,7 +42,9 @@
                 </button>
               </div>
 
-              <% if (product.regularPrice > product.salesPrice) { %>
+              <% if (product.productOffer && product.productOffer > 0) { %>
+                <div class="product__badge"><%= product.productOffer %>% OFF</div>
+              <% } else if (product.regularPrice > product.salesPrice) { %>
                 <div class="product__badge">
                   <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
                 </div>
@@ -56,7 +58,9 @@
               </a>
               <div class="product__price flex">
                 <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-                <% if (product.regularPrice > product.salesPrice) { %>
+                <% if (product.productOffer && product.productOffer > 0) { %>
+                  <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                <% } else if (product.regularPrice > product.salesPrice) { %>
                   <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
                 <% } %>
               </div>

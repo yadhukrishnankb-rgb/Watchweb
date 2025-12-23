@@ -1,9 +1,40 @@
+
 // controllers/user/checkoutController.js
 const Cart = require('../../models/cartSchema');
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
 
 const Order = require('../../models/orderSchema'); 
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
+
+// --- Safe address helpers --------------------------------------------------
+function _safeAddresses(user) {
+  if (!user) return [];
+  if (Array.isArray(user.addresses)) return user.addresses.filter(Boolean);
+  return [];
+}
+
+function safeDefaultAddress(user) {
+  const addrs = _safeAddresses(user);
+  return addrs.find(a => a && a.isDefault) || addrs[0] || null;
+}
+
+function getAddressById(user, addressId) {
+  if (!addressId) return null;
+  const addrs = _safeAddresses(user);
+  // If Mongoose array with .id exists, try that first
+  try {
+    if (user && user.addresses && typeof user.addresses.id === 'function') {
+      const found = user.addresses.id(addressId);
+      if (found) return found;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return addrs.find(a => a && a._id && a._id.toString() === addressId) || null;
+}
+// ---------------------------------------------------------------------------
 
 const loadCheckout = async (req, res) => {
     try {
@@ -37,7 +68,7 @@ const loadCheckout = async (req, res) => {
         const shipping = subtotal >= 1000 ? 0 : 79;
         const total = subtotal + tax + shipping - discount;
 
-        const defaultAddress = user.addresses?.find(a => a.isDefault) || user.addresses?.[0] || null;
+        const defaultAddress = safeDefaultAddress(user);
 
         res.render('user/checkout', {
             user,
@@ -52,198 +83,14 @@ const loadCheckout = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Checkout error:', err);
-        res.status(500).render('error', { message: 'Failed to load checkout' });
+      console.error('Checkout error:', err);
+      // Avoid rendering a non-existent generic error view — redirect to cart
+      try { res.status(statusCodes.INTERNAL_ERROR).redirect('/cart'); } catch (e) { res.redirect('/cart'); }
     }
 };
 
 
 
-
-// // // ========== CART PLACE ORDER (FIXED) ==========
-// const placeOrder = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const { addressId, paymentMethod } = req.body;
-
-//     const cart = await Cart.findOne({ userId }).populate('items.productId');
-//     if (!cart || cart.items.length === 0) {
-//       return res.json({ success: false, message: 'Cart is empty' });
-//     }
-
-//     const itemsToOrder = cart.items
-//       .filter(i => i.productId && i.productId.quantity >= i.quantity)
-//       .map(i => ({
-//         product: i.productId._id,
-//         quantity: i.quantity,
-//         price: i.price,
-//         totalPrice: i.totalPrice
-//       }));
-
-//     if (itemsToOrder.length === 0) {
-//       return res.json({ success: false, message: 'Out of stock' });
-//     }
-
-//     const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
-//     const tax = subtotal * 0.18;
-//     const shipping = subtotal >= 1000 ? 0 : 79;
-//     const total = subtotal + tax + shipping;
-
-//     const stockOk = await atomicDeductStock(itemsToOrder);
-//     if (!stockOk) {
-//       return res.json({ success: false, message: 'Stock changed. Try again.' });
-//     }
-
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return res.json({ success: false, message: 'User not found' });
-//     }
-
-//     // SAFELY GET ADDRESS
-//     let address;
-//     if (addressId) {
-//       address = user.addresses.find(a => a._id.toString() === addressId);
-//     }
-//     if (!address && user.addresses.length > 0) {
-//       address = user.addresses.find(a => a.isDefault) || user.addresses[0];
-//     }
-//     if (!address) {
-//       return res.json({ success: false, message: 'No delivery address found. Please add one.' });
-//     }
-
-//     const order = await Order.create({
-//       user: userId,
-//       orderedItems: itemsToOrder.map(i => ({
-//         product: i.product,
-//         name: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productName,
-//         quantity: i.quantity,
-//         price: i.price,
-//         totalPrice: i.totalPrice,
-//         productSnapshot: { image: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productImage[0] }
-//       })),
-//       totalPrice: total,
-//       finalAmount: total,
-//       subtotal,
-//       tax,
-//       shipping,
-//       discount: 0,
-//       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
-//       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-//       status: 'pending',
-//        address: {
-//         fullName: (address.fullName || address.name || `${(user.firstName||'').trim()} ${(user.lastName||'').trim()}`).trim() || 'Customer',
-//         phone: address.phone || address.mobile || user.phone || '',
-//         altPhone: address.altPhone || address.mobile2 || '',
-//         street: address.street || address.house || address.address || '',
-//         landmark: address.landmark || address.addressLine2 || '',
-//         locality: address.locality || address.area || '',
-//         city: address.city || '',
-//         state: address.state || '',
-//         pincode: address.pincode || address.postalCode || address.zip || '',
-//         country: address.country || 'India'
-//       },
-//       createdOn: new Date()
-//     });
-
-//     await Cart.deleteOne({ userId });
-//     res.redirect(`/order-success/${order._id}`);
-//   } catch (err) {
-//     console.error('Place Order Error:', err);
-//     res.json({ success: false, message: 'Failed to place order' });
-//   }
-// };
-
-// // === DIRECT PLACE ORDER (BUY NOW) - FIXED ===
-// const directPlaceOrder = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const { productId, quantity = 1, addressId, paymentMethod } = req.body;
-
-//     const product = await Product.findById(productId);
-//     if (!product || product.quantity < quantity) {
-//       return res.json({ success: false, message: 'Out of stock' });
-//     }
-
-//     const qty = parseInt(quantity);
-//     const subtotal = product.salesPrice * qty;
-//     const tax = subtotal * 0.18;
-//     const shipping = subtotal >= 1000 ? 0 : 79;
-//     const total = subtotal + tax + shipping;
-
-//     const itemsToOrder = [{
-//       product: productId,
-//       quantity: qty,
-//       price: product.salesPrice,
-//       totalPrice: subtotal
-//     }];
-
-//     const stockOk = await atomicDeductStock(itemsToOrder);
-//     if (!stockOk) {
-//       return res.json({ success: false, message: 'Stock changed. Try again.' });
-//     }
-
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return res.json({ success: false, message: 'User not found' });
-//     }
-
-//     // SAFELY GET ADDRESS
-//     let address;
-//     if (addressId) {
-//       address = user.addresses.find(a => a._id.toString() === addressId);
-//     }
-//     if (!address && user.addresses.length > 0) {
-//       address = user.addresses.find(a => a.isDefault) || user.addresses[0];
-//     }
-//     if (!address) {
-//       return res.json({ success: false, message: 'No delivery address found. Please add one.' });
-//     }
-
-//     const order = await Order.create({
-//             orderId: `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`, // <-- ADD THIS
-
-//       user: userId,
-//       orderedItems: [{
-//         product: productId,
-//         name: product.productName,
-//         quantity: qty,
-//         price: product.salesPrice,
-//         totalPrice: subtotal,
-//         productSnapshot: { image: product.productImage[0] }
-//       }],
-//       totalPrice: total,
-//       finalAmount: total,
-//       subtotal,
-//       tax,
-//       shipping,
-//       discount: 0,
-//       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
-//       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-//       status: 'pending',
-//      address: {
-//         fullName: (address.fullName || address.name || `${(user.firstName||'').trim()} ${(user.lastName||'').trim()}`).trim() || 'Customer',
-//         phone: address.phone || address.mobile || user.phone || '',
-//         altPhone: address.altPhone || address.mobile2 || '',
-//         street: address.street || address.house || address.address || '',
-//         landmark: address.landmark || address.addressLine2 || '',
-//         locality: address.locality || address.area || '',
-//         city: address.city || '',
-//         state: address.state || '',
-//         pincode: address.pincode || address.postalCode || address.zip || '',
-//         country: address.country || 'India'
-//      },
-//       createdOn: new Date()
-//     });
-
-//     res.redirect(`/order-success/${order._id}`);
-//   } catch (err) {
-//     console.error('Direct place order error:', err);
-//     res.json({ success: false, message: 'Failed to place order' });
-//   }
-// };
-
-//-----------
-// ...existing code...
 
 const placeOrder = async (req, res) => {
   try {
@@ -252,7 +99,7 @@ const placeOrder = async (req, res) => {
 
     const cart = await Cart.findOne({ userId }).populate('items.productId');
     if (!cart || cart.items.length === 0) {
-      return res.json({ success: false, message: 'Cart is empty' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CART_EMPTY });
     }
 
     const itemsToOrder = cart.items
@@ -265,7 +112,7 @@ const placeOrder = async (req, res) => {
       }));
 
     if (itemsToOrder.length === 0) {
-      return res.json({ success: false, message: 'Out of stock' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.OUT_OF_STOCK });
     }
 
     const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
@@ -275,21 +122,21 @@ const placeOrder = async (req, res) => {
 
     const stockOk = await atomicDeductStock(itemsToOrder);
     if (!stockOk) {
-      return res.json({ success: false, message: 'Stock changed. Try again.' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.json({ success: false, message: 'User not found' });
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.USER_NOT_FOUND });
     }
 
-    // Get address
-    let selectedAddress = user.addresses.id(addressId);
-    if (!selectedAddress && user.addresses.length > 0) {
-      selectedAddress = user.addresses.find(a => a.isDefault) || user.addresses[0];
+    // Get address safely
+    let selectedAddress = getAddressById(user, addressId);
+    if (!selectedAddress) {
+      selectedAddress = safeDefaultAddress(user);
     }
     if (!selectedAddress) {
-      return res.json({ success: false, message: 'Please add a delivery address' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
     }
 
     // BUILD ADDRESS OBJECT WITH PROPER FALLBACKS
@@ -338,7 +185,7 @@ const placeOrder = async (req, res) => {
 
   } catch (err) {
     console.error('Place Order Error:', err);
-    res.json({ success: false, message: 'Order failed. Try again.' });
+    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.ORDER_FAILED });
   }
 };
 
@@ -349,7 +196,7 @@ const directPlaceOrder = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product || product.quantity < quantity) {
-      return res.json({ success: false, message: 'Out of stock' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.OUT_OF_STOCK });
     }
 
     const qty = parseInt(quantity);
@@ -367,21 +214,21 @@ const directPlaceOrder = async (req, res) => {
 
     const stockOk = await atomicDeductStock(itemsToOrder);
     if (!stockOk) {
-      return res.json({ success: false, message: 'Stock changed. Try again.' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.json({ success: false, message: 'User not found' });
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.USER_NOT_FOUND });
     }
 
-    // Get address
-    let selectedAddress = user.addresses.id(addressId);
-    if (!selectedAddress && user.addresses.length > 0) {
-      selectedAddress = user.addresses.find(a => a.isDefault) || user.addresses[0];
+    // Get address safely
+    let selectedAddress = getAddressById(user, addressId);
+    if (!selectedAddress) {
+      selectedAddress = safeDefaultAddress(user);
     }
     if (!selectedAddress) {
-      return res.json({ success: false, message: 'Please add a delivery address' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
     }
 
     // BUILD ADDRESS OBJECT WITH PROPER FALLBACKS
@@ -428,7 +275,7 @@ const directPlaceOrder = async (req, res) => {
     res.json({ success: true, redirectUrl: `/order-success/${order._id}` });
   } catch (err) {
     console.error('Direct place order error:', err);
-    res.json({ success: false, message: 'Failed to place order' });
+    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.ORDER_PLACE_FAILED });
   }
 };
 
@@ -490,7 +337,7 @@ if (stock < qty) {
     const total = subtotal + tax + shipping;
 
     const user = await User.findById(userId).lean();
-    const defaultAddress = user.addresses?.find(a => a.isDefault) || user.addresses?.[0] || null;
+    const defaultAddress = safeDefaultAddress(user);
 
     res.render('user/checkout', {
       user,
@@ -507,7 +354,7 @@ if (stock < qty) {
 
   } catch (err) {
     console.error('Direct checkout error:', err);
-    req.flash('error', 'Failed to load checkout');
+    req.flash('error', messages.CHECKOUT_LOAD_ERROR);
     res.redirect('/shop');
   }
 };
@@ -545,6 +392,14 @@ module.exports = {
           directPlaceOrder,
           atomicDeductStock
      };
+
+
+
+
+
+
+
+
 
 
 

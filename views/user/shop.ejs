@@ -713,7 +713,9 @@ html { scroll-behavior: smooth; }
                             </button>
                         </div>
 
-                        <% if (product.regularPrice > product.salesPrice) { %>
+                        <% if (product.productOffer && product.productOffer > 0) { %>
+                            <div class="product__badge"><%= product.productOffer %>% OFF</div>
+                        <% } else if (product.regularPrice > product.salesPrice) { %>
                             <div class="product__badge">
                                 <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
                             </div>
@@ -727,7 +729,9 @@ html { scroll-behavior: smooth; }
                         </a>
                         <div class="product__price flex">
                             <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-                            <% if (product.regularPrice > product.salesPrice) { %>
+                            <% if (product.productOffer && product.productOffer > 0) { %>
+                                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                            <% } else if (product.regularPrice > product.salesPrice) { %>
                                 <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
                             <% } %>
                         </div>
@@ -842,6 +846,11 @@ async function addToCart(productId, event) {
                 cartCount.textContent = data.cartCount;
                 cartCount.style.display = 'flex';
             }
+            // update wishlist badge if server returned it (add-to-cart removes from wishlist)
+            const wishlistCount = document.querySelector('.wishlist-count');
+            if (wishlistCount && data.wishlistCount !== undefined) {
+                wishlistCount.textContent = data.wishlistCount;
+            }
 
             setTimeout(() => {
                 if (button) {
@@ -931,6 +940,11 @@ async function toggleWishlist(productId, btn, event) {
                 } catch (err) {
                     console.warn('Wishlist DOM cleanup failed', err);
                 }
+            }
+            // update header wishlist count if provided
+            const wishlistBadge = document.querySelector('.wishlist-count');
+            if (wishlistBadge && data.wishlistCount !== undefined) {
+                wishlistBadge.textContent = data.wishlistCount;
             }
         } else if (data.alreadyInWishlist) {
             btn.classList.add('added');

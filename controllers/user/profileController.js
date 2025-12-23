@@ -1,10 +1,14 @@
 
+
+
 const User = require("../../models/userSchema");
 const nodemailer = require("nodemailer");
 const Order = require("../../models/orderSchema");
 const bcrypt = require("bcrypt");
 
 const cloudinary = require('../../config/cloudinary');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 
 
@@ -32,7 +36,7 @@ exports.sendForgotPasswordOtp = async (req, res) => {
 const { email } = req.body;
 const user = await User.findOne({ email });
 if (!user) {
-return res.render('user/forgot-password', { message: 'No account with that email found.' });
+  return res.render('user/forgot-password', { message: messages.NO_ACCOUNT_FOUND });
 }
 const otp = generateOtp();
 req.session.resetEmail = email;
@@ -63,13 +67,13 @@ exports.verifyForgotPasswordOtp = (req, res) => {
 const { otp } = req.body;
 if (!req.session.resetEmail) return res.redirect('/forgot-password');
 if (!req.session.otp || !req.session.otpExpires) {
-return res.render('user/forgot-password-otp', { message: 'Session expired. Please try again.', timer: 0 });
+  return res.render('user/forgot-password-otp', { message: messages.FORGOT_PASSWORD_SESSION_EXPIRED, timer: 0 });
 }
 if (req.session.otp !== otp) {
-return res.render('user/forgot-password-otp', { message: 'Invalid OTP', timer: Math.max(0, Math.floor((req.session.otpExpires - Date.now())/1000)) });
+  return res.render('user/forgot-password-otp', { message: messages.INVALID_OTP, timer: Math.max(0, Math.floor((req.session.otpExpires - Date.now())/1000)) });
 }
 if (req.session.otpExpires < Date.now()) {
-return res.render('user/forgot-password-otp', { message: 'OTP expired. Please resend.', timer: 0 });
+  return res.render('user/forgot-password-otp', { message: messages.OTP_EXPIRED, timer: 0 });
 }
 req.session.otp = null;
 req.session.otpExpires = null;
@@ -89,7 +93,7 @@ from: process.env.NODEMAILER_EMAIL,
 subject: 'Your OTP for Password Reset',
 html: `<p>Your new OTP is <b>${otp}</b>. It is valid for 2 minutes.</p>`
 });
-res.render('user/forgot-password-otp', { message: 'OTP resent!', timer: 120 });
+res.render('user/forgot-password-otp', { message: messages.OTP_RESENT, timer: 120 });
 };
 
 // 6. Show reset password form
@@ -103,7 +107,7 @@ exports.handleResetPassword = async (req, res) => {
 if (!req.session.otpVerified) return res.redirect('/forgot-password');
 const { password, confirmpassword } = req.body;
 if (password !== confirmpassword) {
-return res.render('user/reset-password', { message: 'Passwords do not match.' });
+  return res.render('user/reset-password', { message: messages.PASSWORD_MISMATCH });
 }
 const user = await User.findOne({ email: req.session.resetEmail });
 user.password = await require('bcrypt').hash(password, 10);
@@ -213,7 +217,7 @@ exports.updateProfile = async (req, res) => {
       if (existingUser) {
         return res.render('user/edit-profile', {
           user: user.toObject(),
-          message: 'This email is already registered!'
+          message: messages.EMAIL_ALREADY_REGISTERED
         });
       }
 
@@ -272,7 +276,7 @@ exports.updateProfile = async (req, res) => {
     }
 
     await user.save();
-    req.flash('success', 'Profile updated successfully!');
+    req.flash('success', messages.PROFILE_UPDATE_SUCCESS);
     res.redirect('/profile');
 
   } catch (err) {
@@ -280,7 +284,7 @@ exports.updateProfile = async (req, res) => {
     const user = await User.findById(userId).lean();
     res.render('user/edit-profile', {
       user,
-      message: 'Server error. Please try again.'
+      message: messages.SERVER_ERROR
     });
   }
 };
@@ -291,24 +295,24 @@ exports.uploadProfilePicture = async (req, res) => {
   try {
     console.log('uploadProfilePicture called, file present:', !!req.file, 'session user:', req.session.user?._id);
     const userId = req.session.user?._id || req.user?._id;
-    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+    if (!userId) return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.NOT_AUTHENTICATED });
 
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.NO_FILE_UPLOADED });
     }
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.USER_NOT_FOUND });
 
     // optional: delete previous Cloudinary image if stored and has predictable public_id
     // store new URL
     user.profileImage = req.file.path; // multer-storage-cloudinary sets `path` to the uploaded URL
     await user.save();
 
-    return res.json({ success: true, message: 'Profile image updated', profileImage: user.profileImage });
+    return res.json({ success: true, message: messages.PROFILE_IMAGE_UPDATED, profileImage: user.profileImage });
   } catch (err) {
     console.error('uploadProfilePicture error:', err);
-    return res.status(500).json({ success: false, message: err.message || 'Server error' });
+    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: err.message || messages.SERVER_ERROR });
   }
 };
 
@@ -339,7 +343,7 @@ await user.save();
 req.session.emailChange = null;
 return res.redirect('/profile');
 } else {
-return res.render('user/verify-email', { message: 'Invalid OTP' });
+  return res.render('user/verify-email', { message: messages.INVALID_OTP });
 }
 };
 //--------------

@@ -1,8 +1,13 @@
+
+
 const User = require("../../models/userSchema"); 
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
+
+const messages = require("../../constants/messages");
+const statusCodes = require("../../constants/statusCodes");
 
 
 const Product = require("../../models/productSchema");
@@ -144,16 +149,16 @@ const signup = async (req,res)=>{
 
         // Validate all required fields
         if(!name || !email || !phone || !password || !confirmpassword) {
-            return res.render('signup', {message: "All fields are required"});
+            return res.render('signup', {message: messages.ALL_FIELDS_REQUIRED});
         }
 
         if(password !== confirmpassword) {
-            return res.render('signup', {message: "Password do not match"});
+            return res.render('signup', {message: messages.PASSWORD_MISMATCH});
         }
 
         const findUser = await User.findOne({email});
         if(findUser) {
-            return res.render('signup', {message: "User with this email already exists"});
+            return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
         }
 
         // Generate and send OTP
@@ -161,7 +166,7 @@ const signup = async (req,res)=>{
         const emailSend = await sendVerficationEmail(email, otp);
 
         if(!emailSend) {
-            return res.render('signup', {message: "Error sending email"});
+            return res.render('signup', {message: messages.ERROR_SENDING_EMAIL});
         }
 
         // Store OTP and user data in session
@@ -187,9 +192,9 @@ const verifyOtp = async (req,res) => {
 
         // Check if session data exists
         if(!req.session.userOtp || !req.session.userData) {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: "Session expired. Please signup again"
+                message: messages.SESSION_EXPIRED
             });
         }
 
@@ -219,16 +224,16 @@ const verifyOtp = async (req,res) => {
                 redirectUrl: "/login"
             });
         } else {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: "Invalid OTP, please try again"
+                message: messages.INVALID_OTP
             });
         }
     } catch(error) {
         console.error("Error verifying OTP:", error);
-        return res.status(500).json({
+        return res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: "An error occurred during verification"
+            message: messages.VERIFY_ERROR
         });
     }
 }
@@ -239,9 +244,9 @@ const verifyOtp = async (req,res) => {
 const resendOTP = async (req, res) => {
     try {
         if (!req.session.userData) {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: "Session expired. Please signup again"
+                message: messages.SESSION_EXPIRED
             });
         }
 
@@ -250,9 +255,9 @@ const resendOTP = async (req, res) => {
         const emailSent = await sendVerficationEmail(email, newOTP);
 
         if (!emailSent) {
-            return res.status(500).json({
+            return res.status(statusCodes.INTERNAL_ERROR).json({
                 success: false,
-                message: "Failed to send OTP"
+                message: messages.OTP_RESEND_FAILED
             });
         }
 
@@ -260,13 +265,13 @@ const resendOTP = async (req, res) => {
         console.log("resent otp", newOTP);
         return res.json({
             success: true,
-            message: "OTP resent successfully"
+            message: messages.OTP_RESENT_SUCCESS
         });
     } catch (error) {
         console.error("Resend OTP error:", error);
-        return res.status(500).json({
+        return res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: "Failed to resend OTP"
+            message: messages.OTP_RESEND_FAILED
         });
     }
 };
@@ -282,7 +287,7 @@ const loadLogin = async (req, res) => {
         res.render('login');
     } catch (error) {
         console.error('Load Login Error:', error);
-        res.status(500).render('error', { message: 'Internal Server Error' });
+        res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.SERVER_ERROR });
     }
 };
 
@@ -295,33 +300,33 @@ const login = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(401).json({
+            return res.status(statusCodes.UNAUTHORIZED).json({
                 success: false,
-                message: 'Invalid email or password'
+                message: messages.INVALID_CREDENTIALS
             });
         }
 
         // Check if user is blocked
         if (user.isBlocked) {
-            return res.status(403).json({
+            return res.status(statusCodes.FORBIDDEN).json({
                 success: false,
-                message: 'Your account has been blocked. Please contact administrator.'
+                message: messages.ACCOUNT_BLOCKED
             });
         }
 
         // Check if user has a password (if not, it's a Google account)
         if (!user.password) {
-            return res.status(401).json({
+            return res.status(statusCodes.UNAUTHORIZED).json({
                 success: false,
-                message: 'This account was created with Google. Please login with Google.'
+                message: messages.GOOGLE_ACCOUNT
             });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({
+            return res.status(statusCodes.UNAUTHORIZED).json({
                 success: false,
-                message: 'Invalid email or password'
+                message: messages.INVALID_CREDENTIALS
             });
         }
 
@@ -336,9 +341,9 @@ const login = async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({
+        res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: 'An error occurred during login'
+            message: messages.LOGIN_ERROR
         });
     }
 };
@@ -351,12 +356,12 @@ const logout = async (req, res) => {
         // Destroy the session
         req.session.destroy((err) => {
             if (err) {
-                console.error('Logout Error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error during logout'
-                });
-            }
+                    console.error('Logout Error:', err);
+                    return res.status(statusCodes.INTERNAL_ERROR).json({
+                        success: false,
+                        message: messages.LOGOUT_ERROR
+                    });
+                }
             // Redirect to login page
             res.redirect('/login');
         });

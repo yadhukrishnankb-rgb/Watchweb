@@ -164,9 +164,12 @@ fill="currentColor" viewBox="0 0 20 20">
 <div class="price-section space-y-2">
 <div class="flex items-baseline gap-2">
 <span class="text-3xl font-bold text-gray-900">₹<%= product.salesPrice.toLocaleString() %></span>
-<% if (product.regularPrice > product.salesPrice) { %>
-<span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
-<span class="discount-tag text-sm font-medium"><%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF</span>
+<% if (product.productOffer && product.productOffer > 0) { %>
+  <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
+  <span class="discount-tag text-sm font-medium"><%= product.productOffer %>% OFF</span>
+<% } else if (product.regularPrice > product.salesPrice) { %>
+  <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
+  <span class="discount-tag text-sm font-medium"><%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF</span>
 <% } %>
 </div>
 
@@ -205,6 +208,17 @@ default: %> Currently Unavailable <% } %>
 class="add-to-cart-btn w-full py-3 px-8 text-white font-medium <%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'opacity-50 cursor-not-allowed' %>"
 <%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'disabled' %>>
 Add to Cart
+</button>
+
+<!-- Wishlist Button -->
+<button id="wishlistBtn" type="button"
+  class="w-full mt-2 py-3 px-8 border border-gray-300 rounded-md text-gray-700 font-medium flex items-center justify-center gap-2"
+  data-state="<%= isInWishlist ? 'remove' : 'add' %>"
+  onclick="toggleWishlist('<%= product._id %>')">
+  <svg id="wishlistIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.657 0L10 6.343l1.172-1.171a4 4 0 115.657 5.657L10 18.657l-6.829-7.828a4 4 0 010-5.657z" clip-rule="evenodd" />
+  </svg>
+  <span id="wishlistBtnText"><%= isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' %></span>
 </button>
 
 <!-- Buy Now → Direct Checkout -->
@@ -375,6 +389,20 @@ async function addToCartWithQty(productId) {
 
     if (data.success) {
       Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      // update header badges if server returned counts
+      const cartBadge = document.querySelector('.cart-count');
+      if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
+      const wishlistBadge = document.querySelector('.wishlist-count');
+      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
+      // If the product was in wishlist, ensure button updates to 'Add to Wishlist'
+      try {
+        const wlBtn = document.getElementById('wishlistBtn');
+        const wlText = document.getElementById('wishlistBtnText');
+        if (wlBtn) {
+          wlBtn.setAttribute('data-state', 'add');
+          if (wlText) wlText.textContent = 'Add to Wishlist';
+        }
+      } catch(e) { /* ignore */ }
       return;
     }
 
@@ -398,3 +426,60 @@ async function addToCartWithQty(productId) {
 </script>
 
 <%- include('../partials/user/footer') %>
+
+<!-- Wishlist Toggle Script -->
+<script>
+async function toggleWishlist(productId) {
+  const btn = document.getElementById('wishlistBtn');
+  const text = document.getElementById('wishlistBtnText');
+  const state = btn ? btn.getAttribute('data-state') : 'add';
+
+  try {
+    if (state === 'add') {
+      const res = await fetch('/wishlist/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+      });
+      if (res.status === 401) return window.location.href = '/login';
+      const data = await res.json();
+      if (data.success) {
+        if (btn) btn.setAttribute('data-state', 'remove');
+        if (text) text.textContent = 'Remove from Wishlist';
+        if (data.wishlistCount !== undefined) {
+          const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
+        }
+        Swal.fire({ icon: 'success', title: data.message || 'Added to wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+        return;
+      }
+      if (data.alreadyInWishlist) {
+        if (btn) btn.setAttribute('data-state', 'remove');
+        if (text) text.textContent = 'Remove from Wishlist';
+        Swal.fire({ icon: 'info', title: data.message || 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+        return;
+      }
+      throw new Error(data.message || 'Unable to add to wishlist');
+    } else {
+      const res = await fetch('/wishlist/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+      });
+      if (res.status === 401) return window.location.href = '/login';
+      const data = await res.json();
+      if (data.success) {
+        if (btn) btn.setAttribute('data-state', 'add');
+        if (text) text.textContent = 'Add to Wishlist';
+        if (data.wishlistCount !== undefined) {
+          const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
+        }
+        Swal.fire({ icon: 'success', title: data.message || 'Removed from wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+        return;
+      }
+      throw new Error(data.message || 'Unable to remove from wishlist');
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000 });
+  }
+}
+</script>

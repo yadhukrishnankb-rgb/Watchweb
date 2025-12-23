@@ -1,5 +1,7 @@
 // controllers/admin/inventoryController.js
 const Product = require('../../models/productSchema');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 exports.getInventory = async (req, res) => {
   try {
@@ -39,7 +41,7 @@ exports.getInventory = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('admin/error', { message: 'Failed to load inventory' });
+    res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.INVENTORY_LOAD_ERROR });
   }
 };
 
@@ -50,7 +52,7 @@ exports.updateStock = async (req, res) => {
     const qty = parseInt(quantity);
 
     if (isNaN(qty) || qty < 0) {
-      return res.status(400).json({ success: false, message: 'Invalid quantity' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.INVENTORY_INVALID_QUANTITY });
     }
 
     const product = await Product.findByIdAndUpdate(
@@ -63,11 +65,12 @@ exports.updateStock = async (req, res) => {
     ).select('quantity status');
 
     if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
     }
 
-    res.json({ success: true, quantity: product.quantity, status: product.status });
+    res.status(statusCodes.OK).json({ success: true, message: messages.INVENTORY_UPDATE_SUCCESS, quantity: product.quantity, status: product.status });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Update failed' });
+    console.error('inventory update error:', err);
+    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.INVENTORY_UPDATE_FAILED });
   }
 };

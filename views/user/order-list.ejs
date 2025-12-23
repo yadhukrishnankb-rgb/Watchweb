@@ -207,18 +207,49 @@ body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-
               </div>
 
               <div class="order-info">
+                <% 
+                  const orderStatusLC = ((order.status||'').toString().trim().toLowerCase());
+                  const subtotal = Number(order.subtotal || 0);
+                  const totalTax = Number(order.tax || 0);
+                  const totalDiscount = Number(order.discount || 0);
+
+                  const refundedVal = (() => {
+                    if (order.refunded != null && !isNaN(Number(order.refunded)) && Number(order.refunded) > 0) return Number(order.refunded);
+                    return (order.orderedItems || []).reduce((a, it) => {
+                      const st = ((it.status||'').toString().toLowerCase());
+                      if (['cancelled','returned'].includes(st)) {
+                        if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return a + Number(it.refundAmount);
+                        const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+                        const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
+                        const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+                        return a + (itemSubtotal + taxShare - discountShare);
+                      }
+                      return a;
+                    }, 0);
+                  })();
+
+                  const roundedRefunded = Math.round((refundedVal + Number.EPSILON) * 100) / 100;
+                  const cappedRefunded = Math.min(roundedRefunded, Number(order.finalAmount || 0));
+                  const finalPaid = Math.max(0, Math.round(((order.finalAmount || 0) - cappedRefunded + Number.EPSILON) * 100) / 100);
+                  const hasItemRefund = cappedRefunded > 0;
+                %>
+
                 <div class="info-item">
                   <span class="info-label">Total Amount</span>
                   <span class="info-value">₹<%= order.finalAmount.toLocaleString() %></span>
-<% 
-  const orderStatusLC = ((order.status||'').toString().trim().toLowerCase());
-  const hasItemRefund = order.orderedItems.some(i => ['cancelled','returned'].includes(((i.status||'').toString().toLowerCase())));
-%>
-<% if (orderStatusLC === 'cancelled' || orderStatusLC === 'returned') { %>
-  <small class="block text-green-600 font-medium">Full Refund Processed</small>
-<% } else if (hasItemRefund) { %>
-  <small class="block text-green-600 font-medium">Partial Refund Processed</small>
-<% } %>
+
+                  <% if (orderStatusLC === 'cancelled' || orderStatusLC === 'returned') { %>
+                    <small class="block text-green-600 font-medium">Full Refund Processed</small>
+                  <% } else if (hasItemRefund) { %>
+                    <small class="block text-green-600 font-medium">Partial Refund Processed</small>
+                  <% } %>
+
+                  <% if (hasItemRefund) { %>
+                    <div style="margin-top:6px; color:#059669; font-weight:700;">
+                      Refunded: ₹<%= cappedRefunded.toLocaleString() %>
+                      &nbsp;&middot;&nbsp; Paid: ₹<%= finalPaid.toLocaleString() %>
+                    </div>
+                  <% } %>
                 </div>
               </div>
               

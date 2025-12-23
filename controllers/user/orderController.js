@@ -1,7 +1,10 @@
+
 const Order = require('../../models/orderSchema');
 const Product = require('../../models/productSchema');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 const listOrders = async (req, res) => {
     try {
@@ -34,8 +37,8 @@ const listOrders = async (req, res) => {
             user: req.session.user
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).render('error', { message: 'Failed to load orders' });
+      console.error(err);
+      res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.ORDERS_LOAD_ERROR });
     }
 };
 
@@ -51,7 +54,7 @@ const orderDetails = async (req, res) => {
       .populate('orderedItems.product', 'productName price productImage')
       .exec();
 
-    if (!order) return res.status(404).redirect('/orders');
+    if (!order) return res.status(statusCodes.NOT_FOUND).redirect('/orders');
 
     const plainOrder = order.toObject();
 
@@ -103,13 +106,43 @@ const orderDetails = async (req, res) => {
     plainOrder.shippingAddress = plainOrder.shippingAddress || normalizedAddress;
     // --- END normalization ---
 
+    // Compute refunded and finalPaid server-side (prefer persisted values)
+    (plainOrder.orderedItems || []).forEach(it => {
+      if (it.refundAmount != null) it.refundAmount = Number(it.refundAmount);
+    });
+
+    const subtotal = Number(plainOrder.subtotal || 0);
+    const totalTax = Number(plainOrder.tax || 0);
+    const totalDiscount = Number(plainOrder.discount || 0);
+
+    const refundedComputed = (() => {
+      if (plainOrder.refunded != null && !isNaN(Number(plainOrder.refunded)) && Number(plainOrder.refunded) > 0) return Number(plainOrder.refunded);
+      return (plainOrder.orderedItems || []).reduce((acc, it) => {
+        const st = ((it.status||'').toString().toLowerCase());
+        if (['cancelled','returned'].includes(st)) {
+          if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return acc + Number(it.refundAmount);
+          const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+          const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
+          const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+          return acc + (itemSubtotal + taxShare - discountShare);
+        }
+        return acc;
+      }, 0);
+    })();
+
+    const roundedRefunded = Math.round((refundedComputed + Number.EPSILON) * 100) / 100;
+    const cappedRefunded = Math.min(roundedRefunded, Number(plainOrder.finalAmount || 0));
+    const finalPaid = Math.max(0, Math.round(((plainOrder.finalAmount || 0) - cappedRefunded + Number.EPSILON) * 100) / 100);
+
     res.render('user/order-detail', {
       order: plainOrder,
-      user: req.session.user
+      user: req.session.user,
+      cappedRefunded,
+      finalPaid
     });
   } catch (err) {
     console.error('Order details error:', err);
-    res.status(500).render('error', { message: 'Failed to load order details' });
+    res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.ORDER_DETAILS_LOAD_ERROR });
   }
 };
 
@@ -117,19 +150,19 @@ const orderDetails = async (req, res) => {
 const cancelOrder = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.AUTH_REQUIRED });
     }
     const userId = req.session.user._id;
     const orderId = req.params.id;
     const { reason } = req.body;
 
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.json({ success: false, message: 'Order not found' });
+    if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const current = (order.status || '').toLowerCase();
     // Only allow full-order cancellation when order is in 'pending' state
     if (current !== 'pending') {
-      return res.json({ success: false, message: 'Only pending orders can be cancelled' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANCEL_ONLY_PENDING });
     }
 
     // Immediately cancel order (no admin approval)
@@ -160,11 +193,11 @@ const cancelOrder = async (req, res) => {
 
     await order.save();
 
-    return res.json({ success: true, message: 'Order cancelled successfully', orderId, newStatus: order.status });
+    return res.json({ success: true, message: messages.ORDER_CANCELLED_SUCCESS, orderId, newStatus: order.status });
   } catch (err) {
     console.error('Cancel order error →', err);
     
-    res.json({ success: false, message: 'Cancellation failed' });
+    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.CANCELLATION_FAILED });
   }
 };
 
@@ -174,16 +207,16 @@ const returnOrder = async (req, res) => {
         const orderId = req.params.id;
         const { reason } = req.body;
 
-        if (!reason) return res.json({ success: false, message: 'Return reason is required' });
+        if (!reason) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_REASON_REQUIRED });
 
         const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) {
-      return res.json({ success: false, message: 'Order not found' });
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
     }
 
     const orderStatusLC = ((order.status || '').toString().trim().toLowerCase());
     if (orderStatusLC !== 'delivered') {
-      return res.json({ success: false, message: 'Cannot request return for this order' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_NOT_ALLOWED });
     }
 
         // Create order-level return request (do NOT update stock here)
@@ -192,10 +225,10 @@ const returnOrder = async (req, res) => {
         order.requestedAt = new Date();
         await order.save();
 
-        res.json({ success: true, message: 'Return request submitted. Awaiting admin approval.' });
+        res.json({ success: true, message: messages.RETURN_REQUEST_SUBMITTED });
     } catch (err) {
         console.error(err);
-        res.json({ success: false, message: 'Return request failed' });
+        res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.RETURN_REQUEST_FAILED });
     }
 };
 
@@ -330,8 +363,8 @@ const downloadInvoice = async (req, res) => {
 
         doc.end();
     } catch (err) {
-        console.error('Invoice generation error:', err);
-        res.status(500).send('Failed to generate invoice');
+      console.error('Invoice generation error:', err);
+      res.status(statusCodes.INTERNAL_ERROR).send(messages.INVOICE_GENERATION_FAILED);
     }
 };
 
@@ -342,29 +375,29 @@ const downloadInvoice = async (req, res) => {
 const requestCancelItem = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.AUTH_REQUIRED });
     }
     const userId = req.session.user._id;
     const { orderId, itemId } = req.params;
     const { reason } = req.body;
 
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const item = order.orderedItems.id(itemId);
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+    if (!item) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
 
     // Ensure parent order is still pending before allowing item cancel
     if ((order.status || '').toLowerCase() !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Order cannot be cancelled at this stage' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ORDER_CANNOT_CANCEL_STAGE });
     }
 
     const status = (item.status || '').toLowerCase();
     if (status === 'cancelled') {
-      return res.status(400).json({ success: false, message: 'Item already cancelled' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ITEM_ALREADY_CANCELLED });
     }
     if (['delivered', 'returned', 'shipped'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Cannot cancel item after it is shipped/delivered' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANNOT_CANCEL_AFTER_SHIPPED });
     }
 
     // Immediately cancel item (no admin approval)
@@ -390,10 +423,10 @@ const requestCancelItem = async (req, res) => {
     await order.save();
 
     const updatedItem = order.orderedItems.id(itemId);
-    return res.json({ success: true, message: 'Item cancelled successfully', itemId, itemStatus: updatedItem.status });
+    return res.json({ success: true, message: messages.ITEM_CANCELLED_SUCCESS, itemId, itemStatus: updatedItem.status });
   } catch (err) {
     console.error('requestCancelItem error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
   }
 };
 
@@ -401,7 +434,7 @@ const requestReturnItem = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       console.warn('requestReturnItem: no session user');
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.AUTH_REQUIRED });
     }
     const userId = req.session.user._id;
     const { orderId, itemId } = req.params;
@@ -410,10 +443,10 @@ const requestReturnItem = async (req, res) => {
     console.log('requestReturnItem', { userId, orderId, itemId, reason });
 
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const item = order.orderedItems.id(itemId);
-    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+    if (!item) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
 
     const itemStatusLC = ((item.status || '').toString().trim().toLowerCase());
     const orderStatusLC = ((order.status || '').toString().trim().toLowerCase());
@@ -425,11 +458,11 @@ const requestReturnItem = async (req, res) => {
     }
 
     if (effectiveStatus === 'return request' || effectiveStatus === 'returned') {
-      return res.status(400).json({ success: false, message: 'Return already requested or completed for this item' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_ALREADY_REQUESTED });
     }
 
     if (effectiveStatus !== 'delivered') {
-      return res.status(400).json({ success: false, message: 'Only delivered items can be returned' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ONLY_DELIVERED_CAN_RETURN });
     }
 
     // Mark item-level return request (admin approval required)
@@ -439,10 +472,10 @@ const requestReturnItem = async (req, res) => {
 
     await order.save();
 
-    return res.json({ success: true, message: 'Return request submitted. Awaiting admin approval.', itemId });
+    return res.json({ success: true, message: messages.RETURN_REQUEST_SUBMITTED, itemId });
   } catch (err) {
     console.error('requestReturnItem error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
   }
 };
 

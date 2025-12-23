@@ -58,8 +58,7 @@
               </td>
               <td class="px-6 py-4 text-sm text-gray-500"><%= new Date(order.createdOn).toLocaleDateString() %></td>
               <td class="px-6 py-4 text-sm">
-                <%= order.address?.name || 'N/A' %><br>
-                <small class="text-gray-500"><%= order.address?.email %></small>
+                <%= (order.user?.name) ? order.user.name : (order.address?.fullName || order.address?.name || 'N/A') %>
               </td>
               <td class="px-6 py-4 text-sm font-bold">₹<%= order.finalAmount.toLocaleString() %></td>
               <td class="px-6 py-4">

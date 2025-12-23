@@ -64,6 +64,7 @@
 
     .admin-logo-text { display:flex; flex-direction:column; line-height:1; }
 
+  <script src="/js/debounce-search.js"></script>
     .admin-logo-text-main { font-size:1.25rem; font-weight:800; color:white; letter-spacing:-0.5px; font-family:'Arial',sans-serif; }
 
     .admin-logo-text-main .text-accent { color:#10b981; }
@@ -213,7 +214,7 @@
 
           <div class="relative mx-4">
 
-            <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" name="search" data-debounce-target="location" data-debounce="400" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
 
             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
 

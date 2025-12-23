@@ -41,6 +41,8 @@ const orderSchema = new mongoose.Schema({
     returnReason: { type: String },
     requestedAt: { type: Date },
     approvedAt: { type: Date }
+    ,
+    refundAmount: { type: Number, default: 0 }
   }],
   totalPrice: { type: Number, required: true },
   discount: { type: Number, default: 0 },
@@ -77,6 +79,7 @@ const orderSchema = new mongoose.Schema({
   shipping: { type: Number, default: 0 },
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },
+  refunded: { type: Number, default: 0 },
   createdOn: { type: Date, default: Date.now, required: true },
   couponApplied: { type: Boolean, default: false },
   cancelReason: { type: String },

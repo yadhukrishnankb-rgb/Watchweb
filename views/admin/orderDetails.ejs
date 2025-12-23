@@ -14,14 +14,16 @@
       <div class="grid md:grid-cols-2 gap-8 mb-6">
         <div>
           <h3 class="font-bold mb-2">Customer</h3>
-          <p><%= order.address?.name %></p>
-          <p><%= order.address?.email %></p>
-          <p><%= order.address?.phone %></p>
+          <p><%= order.user?.name || order.address?.fullName || order.address?.name || 'N/A' %></p>
+          <% if (order.user?.email || order.address?.email) { %>
+            <p><%= order.user?.email || order.address?.email %></p>
+          <% } %>
+          <p><%= order.user?.phone || order.address?.phone || order.address?.altPhone || 'Not provided' %></p>
         </div>
         <div>
           <h3 class="font-bold mb-2">Delivery Address</h3>
-          <p><%= order.address?.street %>, <%= order.address?.city %></p>
-          <p><%= order.address?.state %> - <%= order.address?.pincode %></p>
+          <p><%= [order.address?.address, order.address?.locality].filter(Boolean).join(', ') %></p>
+          <p><%= order.address?.city %> <% if (order.address?.state) { %>, <%= order.address.state %><% } %> - <%= order.address?.pincode || '' %></p>
         </div>
       </div>
 

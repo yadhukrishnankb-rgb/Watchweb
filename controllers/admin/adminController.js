@@ -4,6 +4,8 @@ require('dotenv').config();
 const User   = require('../../models/userSchema');
 const Product = require('../../models/productSchema');   
 const Order   = require('../../models/orderSchema');    
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 
 const loadLogin = async (req, res) => {
@@ -13,7 +15,7 @@ const loadLogin = async (req, res) => {
     res.render('admin-login', { message: null });
   } catch (error) {
     console.error('Login page error:', error);
-    res.render('admin-login', { message: 'Server error' });
+    res.render('admin-login', { message: messages.SERVER_ERROR });
   }
 };
 
@@ -26,10 +28,10 @@ const login = async (req, res) => {
       return res.redirect('/admin/dashboard');
     }
 
-    res.render('admin-login', { message: 'Invalid credentials' });
+    res.render('admin-login', { message: messages.INVALID_CREDENTIALS });
   } catch (error) {
     console.error('Login error:', error);
-    res.render('admin-login', { message: 'Server error' });
+    res.render('admin-login', { message: messages.SERVER_ERROR });
   }
 };
 
@@ -96,7 +98,7 @@ const loadDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('Dashboard error:', error);
-    res.status(500).render('admin/error', { message: 'Failed to load dashboard' });
+    res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.DASHBOARD_LOAD_ERROR });
   }
 };
 

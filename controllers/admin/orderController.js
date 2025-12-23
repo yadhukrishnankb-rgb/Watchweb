@@ -4,6 +4,8 @@ const Product = require('../../models/productSchema')
 const User = require('../../models/userSchema');
 const Address = require('../../models/addressSchema'); 
 const mongoose = require('mongoose');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 // GET /admin/orders
 exports.getOrders = async (req, res) => {
@@ -25,7 +27,7 @@ exports.getOrders = async (req, res) => {
 
     const [orders, total] = await Promise.all([
       Order.find(query)
-        .populate('address', 'name email phone')
+        .populate('user', 'name email')
         .sort({ createdOn: -1 })
         .skip(skip)
         .limit(limit)
@@ -55,7 +57,7 @@ exports.getOrders = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('admin/error', { message: 'Error loading orders' });
+    res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.ORDERS_LOAD_ERROR });
   }
 };
 
@@ -64,15 +66,15 @@ exports.getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('orderedItems.product', 'productName productImage')
-      .populate('address', 'name email phone street city state pincode')
+      .populate('user', 'name email phone')
       .lean();
 
-    if (!order) return res.status(404).render('admin/error', { message: 'Order not found' });
+    if (!order) return res.status(statusCodes.NOT_FOUND).render('admin/error', { message: messages.ORDER_NOT_FOUND });
 
     res.render('admin/orderDetails', { order });
   } catch (err) {
     console.error(err);
-    res.status(500).render('admin/error', { message: 'Error loading order' });
+    res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.ORDER_DETAILS_LOAD_ERROR });
   }
 };
 
@@ -139,16 +141,25 @@ exports.updateOrderStatus = async (req, res) => {
     const orderId = req.params.id;
 
     if (!status) {
-      return res.status(400).json({ success: false, message: 'Status is required' });
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.STATUS_REQUIRED });
     }
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
     }
 
     const currentStatus = order.status.trim(); // e.g., "Pending"
     const newStatus = status.trim();
+
+    // Normalize requested status to a schema-allowed enum value (case-insensitive)
+    const statusEnum = Order.schema.path('status').enumValues || [];
+    const normalizeStatus = (s) => {
+      if (!s) return s;
+      const found = statusEnum.find(ev => ev.toString().toLowerCase() === s.toString().toLowerCase());
+      return found || s;
+    };
+    const newStatusNormalized = normalizeStatus(newStatus);
 
     // === STRICT TRANSITION RULES (EXACTLY AS YOU SPECIFIED) ===
     const validTransitions = {
@@ -168,46 +179,46 @@ exports.updateOrderStatus = async (req, res) => {
     );
 
     if (!currentKey) {
-      return res.status(400).json({
+      return res.status(statusCodes.BAD_REQUEST).json({
         success: false,
-        message: `Invalid current status: "${currentStatus}"`
+        message: `${messages.INVALID_CURRENT_STATUS}: "${currentStatus}"`
       });
     }
 
     const allowedNext = validTransitions[currentKey];
 
     const isAllowed = allowedNext.some(
-      s => s.toLowerCase() === newStatus.toLowerCase()
+      s => s.toLowerCase() === newStatusNormalized.toLowerCase()
     );
 
     if (!isAllowed) {
-      return res.status(400).json({
+      return res.status(statusCodes.BAD_REQUEST).json({
         success: false,
-        message: `Invalid transition: "${currentStatus}" → "${newStatus}" is not allowed.`
+        message: `${messages.INVALID_TRANSITION}: "${currentStatus}" → "${newStatus}" is not allowed.`
       });
     }
 
     // Special Rule: Only allow 'Return Request' → 'Returned' via admin approval
-    if (newStatus === 'Returned' && currentStatus !== 'Return Request') {
-      return res.status(400).json({
+    if (newStatusNormalized === 'Returned' && currentStatus !== 'Return Request') {
+      return res.status(statusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Can only mark as Returned after a Return Request is made.'
+        message: messages.RETURN_ONLY_AFTER_REQUEST
       });
     }
 
     // All checks passed → update status
-    order.status = newStatus;
+    order.status = newStatusNormalized;
     await order.save();
 
-    return res.json({
+    return res.status(statusCodes.OK).json({
       success: true,
-      message: 'Status updated successfully',
+      message: messages.STATUS_UPDATE_SUCCESS,
       status: order.status
     });
 
   } catch (err) {
     console.error('Status update error:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
   }
 };
 
@@ -266,7 +277,7 @@ exports.getRequests = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('admin/error', { message: 'Error loading requests' });
+    res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.REQUESTS_LOAD_ERROR });
   }
 };
 
@@ -277,12 +288,12 @@ exports.approveRequest = async (req, res) => {
     const { action } = req.body; // 'approve' or 'reject'
 
     const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     let item = null;
     if (itemId && itemId !== 'ORDER') {
       item = order.orderedItems.id(itemId);
-      if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+      if (!item) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
     }
 
     if (!item) {
@@ -291,24 +302,42 @@ exports.approveRequest = async (req, res) => {
       const isReturn = order.status === 'Return Request';
 
       if (action === 'approve') {
-        // Restore stock only
+        // Restore stock for all items
         for (const it of order.orderedItems) {
           if (it.product) {
             await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
           }
         }
+
+        // Compute and persist refunds per item and aggregate order.refunded
+        const subtotal = Number(order.subtotal || 0);
+        const totalTax = Number(order.tax || 0);
+        const totalDiscount = Number(order.discount || 0);
+        let totalRefund = 0;
+
+        for (const it of order.orderedItems) {
+          const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+          const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
+          const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+          const refundForItem = Math.round((itemSubtotal + taxShare - discountShare + Number.EPSILON) * 100) / 100;
+          it.refundAmount = refundForItem;
+          totalRefund += refundForItem;
+        }
+
+        order.refunded = Math.round(((Number(order.refunded || 0) + totalRefund) + Number.EPSILON) * 100) / 100;
+
         order.status = isCancel ? 'cancelled' : (isReturn ? 'Returned' : order.status);
         order.approvedAt = new Date();
 
-        // DO NOT TOUCH finalAmount or subtotal → keep original amount
+        // Persist refund info; keep finalAmount/subtotal unchanged for audit
         await order.save();
-        return res.json({ success: true, message: 'Full order request approved', newStatus: order.status });
+        return res.status(statusCodes.OK).json({ success: true, message: messages.FULL_ORDER_REQUEST_APPROVED, newStatus: order.status });
       } else {
         // Reject → revert status
         order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Placed';
         order.requestedAt = null;
         await order.save();
-        return res.json({ success: true, message: 'Request rejected', newStatus: order.status });
+        return res.status(statusCodes.OK).json({ success: true, message: messages.REQUEST_REJECTED, newStatus: order.status });
       }
     }
 
@@ -326,6 +355,17 @@ exports.approveRequest = async (req, res) => {
 
       item.approvedAt = new Date();
 
+      // Calculate and persist refund for this item and update order.refunded
+      const subtotal = Number(order.subtotal || 0);
+      const totalTax = Number(order.tax || 0);
+      const totalDiscount = Number(order.discount || 0);
+      const itemSubtotal = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
+      const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
+      const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+      const refundForItem = Math.round((itemSubtotal + taxShare - discountShare + Number.EPSILON) * 100) / 100;
+      item.refundAmount = refundForItem;
+      order.refunded = Math.round(((Number(order.refunded || 0) + refundForItem) + Number.EPSILON) * 100) / 100;
+
       // DO NOT reduce finalAmount or subtotal → keep original
     } else if (action === 'reject') {
       if (itemType === 'Cancellation Request') {
@@ -340,15 +380,16 @@ exports.approveRequest = async (req, res) => {
 
     await order.save();
 
-    return res.json({
+    const itemMessage = action === 'approve' ? messages.ITEM_REQUEST_APPROVED : messages.ITEM_REQUEST_REJECTED;
+    return res.status(statusCodes.OK).json({
       success: true,
-      message: `Item request ${action}ed`,
+      message: itemMessage,
       itemId,
       newStatus: item.status
     });
 
   } catch (err) {
     console.error('approveRequest error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
   }
 };

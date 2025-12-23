@@ -59,6 +59,11 @@ async function addToCartFromWishlist(productId, btn) {
       Swal.fire({ icon: 'success', title: 'Added to cart', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
       // remove card from DOM
       const card = btn.closest('.wish-card'); if (card) card.remove();
+      // update header badges if server returned counts
+      const cartBadge = document.querySelector('.cart-count');
+      if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
+      const wishlistBadge = document.querySelector('.wishlist-count');
+      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
       return;
     }
     if (data.alreadyInCart) {
@@ -89,6 +94,9 @@ async function removeFromWishlist(productId, btn) {
     if (data.success) {
       if (card) card.remove();
       Swal.fire({ icon: 'success', title: 'Removed', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      // update header wishlist badge
+      const wishlistBadge = document.querySelector('.wishlist-count');
+      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
       return;
     }
     throw new Error(data.message || 'Failed to remove');

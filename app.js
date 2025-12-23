@@ -24,6 +24,8 @@ const passport = require("passport"); // Changed from local path to package
 const db = require("./config/db");
 const userRouter = require("./routes/userRouter");
 const adminRouter = require('./routes/adminRouter');
+const Cart = require('./models/cartSchema');
+const Wishlist = require('./models/wishlistSchema');
 
 // Initialize database
 db();
@@ -57,11 +59,8 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'change-this-secret',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/project',
-        collectionName: 'sessions',
-        ttl: 14 * 24 * 60 * 60 // 14 days
-    }),
+    store,
+    rolling: true, // refresh cookie expiration on activity
     cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // set true in production with HTTPS
@@ -82,13 +81,39 @@ app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store'); // Fixed casing
     next();
 });
-
-app.use(session({
-    secret: 'your-secret-key',
-    resave: false,
-    saveUninitialized: true
-}));
+// Use flash for one-time messages
 app.use(flash());
+
+// Populate template-local `user` so EJS views (header etc.) can access
+// the logged-in user whether using session-based auth or Passport (OAuth).
+app.use((req, res, next) => {
+    res.locals.user = req.session && req.session.user ? req.session.user : (req.user || null);
+    next();
+});
+
+// Populate cart and wishlist counts for the header badges
+app.use(async (req, res, next) => {
+    try {
+        const user = req.session && req.session.user ? req.session.user : (req.user || null);
+        if (!user || !user._id) {
+            res.locals.cartCount = 0;
+            res.locals.wishlistCount = 0;
+            return next();
+        }
+
+        const userId = user._id;
+        const cart = await Cart.findOne({ userId }).select('items').lean();
+        const wishlist = await Wishlist.findOne({ userId }).select('products').lean();
+
+        res.locals.cartCount = (cart && Array.isArray(cart.items)) ? cart.items.length : 0;
+        res.locals.wishlistCount = (wishlist && Array.isArray(wishlist.products)) ? wishlist.products.length : 0;
+        return next();
+    } catch (err) {
+        res.locals.cartCount = res.locals.cartCount || 0;
+        res.locals.wishlistCount = res.locals.wishlistCount || 0;
+        return next();
+    }
+});
 
 
 

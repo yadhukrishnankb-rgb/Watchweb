@@ -103,11 +103,12 @@
 
       <!-- Address List -->
       <% if (user.addresses && user.addresses.length) { %>
-        <% user.addresses.forEach((addr, i) => { %>
+        <% user.addresses.filter(a => a).forEach((addr, i) => { %>
+          <% const _line1 = addr.line1 || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
           <div class="address-item">
-            <div><%= addr.line1 %>, <%= addr.city %>, <%= addr.state %>, <%= addr.zip %>, <%= addr.country %></div>
+            <div><%= [_line1, _city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
             <div class="address-actions">
-              <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= addr.line1 %>`, `<%= addr.city %>`, `<%= addr.state %>`, `<%= addr.zip %>`, `<%= addr.country %>`)">
+              <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
                 Edit
               </button>
               <button class="btn-delete" onclick="deleteAddress(<%= i %>)">

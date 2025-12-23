@@ -393,7 +393,7 @@
   transition: transform 0.15s ease;
 }
 .action__btn:hover { transform: translateY(-4px); }
-.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
+.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
 .product__content { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .product__category { font-size: 0.75rem; color: #047857; font-weight: 700; text-transform: uppercase; }
 .product__title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; line-height: 1.25; }
@@ -575,7 +575,9 @@
               </button>
             </div>
 
-            <% if (product.regularPrice > product.salesPrice) { %>
+            <% if (product.productOffer && product.productOffer > 0) { %>
+              <div class="product__badge"><%= product.productOffer %>% OFF</div>
+            <% } else if (product.regularPrice > product.salesPrice) { %>
               <div class="product__badge">
                 <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
               </div>
@@ -589,7 +591,9 @@
             </a>
             <div class="product__price flex">
               <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-              <% if (product.regularPrice > product.salesPrice) { %>
+              <% if (product.productOffer && product.productOffer > 0) { %>
+                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+              <% } else if (product.regularPrice > product.salesPrice) { %>
                 <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
               <% } %>
             </div>

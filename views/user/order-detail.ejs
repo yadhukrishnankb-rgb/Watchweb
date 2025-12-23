@@ -590,15 +590,35 @@
         <span>₹<%= order.finalAmount.toLocaleString() %></span>
     </div>
     <% 
-        // Calculate refunded amount from cancelled/returned items and show final paid amount
-        const refunded = (order.orderedItems || []).reduce((acc, it) => {
-            const st = ((it.status||'').toString().toLowerCase());
-            if (['cancelled','returned'].includes(st)) {
-                return acc + (it.totalPrice || (it.price * it.quantity) || 0);
-            }
-            return acc;
-        }, 0);
-        const finalPaid = Math.max(0, (order.finalAmount || 0) - refunded);
+        // If controller passed cappedRefunded/finalPaid, prefer them (ensures server-side persistence is used).
+        let _cappedRefunded = (typeof cappedRefunded !== 'undefined') ? Number(cappedRefunded) : null;
+        let _finalPaid = (typeof finalPaid !== 'undefined') ? Number(finalPaid) : null;
+
+        if (_cappedRefunded == null || isNaN(_cappedRefunded)) {
+            const subtotal = Number(order.subtotal || 0);
+            const totalTax = Number(order.tax || 0);
+            const totalDiscount = Number(order.discount || 0);
+
+            const refundedComputed = (() => {
+                if (order.refunded != null && !isNaN(Number(order.refunded)) && Number(order.refunded) > 0) return Number(order.refunded);
+                return (order.orderedItems || []).reduce((acc, it) => {
+                    const st = ((it.status||'').toString().toLowerCase());
+                    if (['cancelled','returned'].includes(st)) {
+                        if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return acc + Number(it.refundAmount);
+                        const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+                        const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
+                        const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+                        return acc + (itemSubtotal + taxShare - discountShare);
+                    }
+                    return acc;
+                }, 0);
+            })();
+
+            const roundedRefunded = Math.round((refundedComputed + Number.EPSILON) * 100) / 100;
+            _cappedRefunded = Math.min(roundedRefunded, Number(order.finalAmount || 0));
+            _finalPaid = Math.max(0, Math.round(((order.finalAmount || 0) - _cappedRefunded + Number.EPSILON) * 100) / 100);
+        }
+
         const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
         const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
         const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
@@ -606,13 +626,13 @@
     %>
 
     <div style="margin-top:10px">
-        <div class="amount-row">
+            <div class="amount-row">
             <span class="amount-label">Refunded Amount</span>
-            <span class="amount-value">₹<%= refunded.toLocaleString() %></span>
+            <span class="amount-value">₹<%= (_cappedRefunded || 0).toLocaleString() %></span>
         </div>
         <div class="amount-row">
             <span class="amount-label">Final Paid Amount</span>
-            <span class="amount-value">₹<%= finalPaid.toLocaleString() %></span>
+            <span class="amount-value">₹<%= (_finalPaid || 0).toLocaleString() %></span>
         </div>
     </div>
 

@@ -1,4 +1,6 @@
 const Category = require('../../models/categorySchema');
+const messages = require('../../constants/messages');
+const statusCodes = require('../../constants/statusCodes');
 
 
 exports.getCategories = async (req, res) => {
@@ -36,7 +38,7 @@ exports.getCategories = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching categories:', err);
-        res.status(500).render('admin/error', { message: 'Error loading categories' });
+        res.status(statusCodes.INTERNAL_ERROR).render('admin/error', { message: messages.CATEGORY_LOAD_ERROR });
     }
 };
 
@@ -53,9 +55,9 @@ exports.addCategory = async (req, res) => {
         description = description.trim();
 
         if (!name || !description) {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: 'Category name and description cannot be empty'
+                message: messages.CATEGORY_NAME_DESC_REQUIRED
             });
         }
 
@@ -65,9 +67,9 @@ exports.addCategory = async (req, res) => {
         });
         
         if (existingCategory) {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: 'Category already exists'
+                message: messages.CATEGORY_EXISTS
             });
         }
 
@@ -76,13 +78,13 @@ exports.addCategory = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Category added successfully'
+            message: messages.CATEGORY_ADD_SUCCESS
         });
     } catch (err) {
         console.error('Error adding category:', err);
-        res.status(500).json({
+        res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: 'Error adding category'
+            message: messages.CATEGORY_ADD_ERROR
         });
     }
 };
@@ -101,9 +103,9 @@ exports.editCategory = async (req, res) => {
         });
         
         if (existingCategory) {
-            return res.status(400).json({
+            return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: 'Category name already exists'
+                message: messages.CATEGORY_EXISTS
             });
         }
 
@@ -114,21 +116,21 @@ exports.editCategory = async (req, res) => {
         );
 
         if (!category) {
-            return res.status(404).json({
+            return res.status(statusCodes.NOT_FOUND).json({
                 success: false,
-                message: 'Category not found'
+                message: messages.CATEGORY_NOT_FOUND
             });
         }
 
         res.json({
             success: true,
-            message: 'Category updated successfully'
+            message: messages.CATEGORY_UPDATE_SUCCESS
         });
     } catch (err) {
         console.error('Error updating category:', err);
-        res.status(500).json({
+        res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: 'Error updating category'
+            message: messages.CATEGORY_UPDATE_ERROR
         });
     }
 };
@@ -145,23 +147,23 @@ exports.deleteCategory = async (req, res) => {
         );
 
         if (!category) {
-            return res.status(404).json({
+            return res.status(statusCodes.NOT_FOUND).json({
                 success: false,
-                message: 'Category not found or already deleted'
+                message: messages.CATEGORY_NOT_FOUND
             });
         }
 
         
 
-        res.status(200).json({
+        res.status(statusCodes.OK).json({
             success: true,
-            message: 'Category deleted successfully'
+            message: messages.CATEGORY_DELETE_SUCCESS
         });
     } catch (err) {
         console.error('Error deleting category:', err);
-        res.status(500).json({
+        res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
-            message: 'Error deleting category'
+            message: messages.CATEGORY_DELETE_ERROR
         });
     }
 };

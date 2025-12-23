@@ -357,11 +357,11 @@
         <div class="header__user-actions">
           <a href="/wishlist" class="header__action-btn" title="Wishlist">
             <i class="fi fi-rs-heart"></i>
-            <span class="count">3</span>
+            <span class="count wishlist-count"><%= typeof locals.wishlistCount !== 'undefined' ? locals.wishlistCount : 0 %></span>
           </a>
           <a href="/cart" class="header__action-btn" title="Cart">
             <i class="fi fi-rs-shopping-cart"></i>
-            <span class="count">3</span>
+            <span class="count cart-count"><%= typeof locals.cartCount !== 'undefined' ? locals.cartCount : 0 %></span>
           </a>
           <div class="header__action-btn nav__toggle" id="nav-toggle">
             <img src="./assets//img/menu-burger.svg" alt="">
@@ -382,3 +382,5 @@ function clearSearch() {
 
 
 </script>
+
+<script src="/js/debounce-search.js"></script>

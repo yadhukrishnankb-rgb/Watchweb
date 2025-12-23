@@ -182,12 +182,13 @@
                     <a href="/profile" class="btn-green" title="Add a new address"> <i class="fas fa-plus"></i> Add New </a>
                 </div>
 
-             <% if (user.addresses && user.addresses.length > 0) { %>
-    <div class="address-list" role="list" aria-label="Saved addresses">
-        <% user.addresses.forEach((addr, idx) => { %>
-            <label class="address-card <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
+            <% if (user.addresses && user.addresses.length > 0) { %>
+        <div class="address-list" role="list" aria-label="Saved addresses">
+          <% const safeAddresses = user.addresses.filter(a => a); const defaultId = defaultAddress && defaultAddress._id ? defaultAddress._id.toString() : null; %>
+          <% safeAddresses.forEach((addr, idx) => { %>
+            <label class="address-card <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
                 <div class="radio-wrap">
-                    <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= defaultAddress && defaultAddress._id.toString() === addr._id.toString() ? 'checked' : '' %> required>
+                <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'checked' : '' %> required>
                 </div>
 
                 <div class="address-info">
