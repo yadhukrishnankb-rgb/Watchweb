@@ -22,10 +22,10 @@ const Category = require("../../models/categorySchema");
         return res.render('signup')
 
     }catch (error){
-
+    
         console.log('Home page not loading',error);
         res.status(500).send('Server Error')
-
+    
     }
  }
  

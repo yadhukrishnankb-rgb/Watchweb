@@ -313,11 +313,11 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: #d1fae5;
+        padding: 0.25rem 0.5rem;
+        background: transparent;
         border-radius: 8px;
-        font-weight: 600;
-        color: #047857;
+        font-weight: 700;
+        color: inherit;
     }
 
 
@@ -563,7 +563,22 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Payment Status</span>
-                        <span class="payment-status">✓ <%= order.paymentStatus %></span>
+                        <% 
+                            const _stat = (order.status || derivedOrderStatus || '').toString().trim().toLowerCase();
+                            let paymentLabel = 'Unknown';
+                            if (['pending','processing','shipped','out for delivery','placed'].includes(_stat)) {
+                                paymentLabel = 'Pending';
+                            } else if (_stat === 'delivered') {
+                                paymentLabel = 'Succeeded';
+                            } else if (_stat === 'cancelled') {
+                                paymentLabel = 'Refunded / Cancelled';
+                            } else if (_stat === 'returned') {
+                                paymentLabel = 'Refunded / Partially Refunded';
+                            }
+                        %>
+                        <span class="payment-status" style="display:inline-block; font-weight:700;">
+                            <%= paymentLabel %>
+                        </span>
                     </div>
                 </div>
             </div>

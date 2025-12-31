@@ -285,8 +285,8 @@ const downloadInvoice = async (req, res) => {
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         doc.text(`${shipping.name || req.session.user.name}`, 350, infoY + 24);
         doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 40);
-        doc.text(`${shipping.address || 'N/A'}`, 350, infoY + 56, { width: 200 });
-        doc.text(`Phone: ${shipping.phone || 'N/A'}`, 350, infoY + 88);
+        // doc.text(`${shipping.address || 'N/A'}`, 350, infoY + 56, { width: 200 });
+        // doc.text(`Phone: ${shipping.phone || 'N/A'}`, 350, infoY + 88);
         doc.text(`Email:`, 350, infoY + 104);
         doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 120);
 

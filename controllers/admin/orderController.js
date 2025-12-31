@@ -68,7 +68,7 @@ exports.getOrderDetails = async (req, res) => {
       .populate('orderedItems.product', 'productName productImage')
       .populate('user', 'name email phone')
       .lean();
-
+    
     if (!order) return res.status(statusCodes.NOT_FOUND).render('admin/error', { message: messages.ORDER_NOT_FOUND });
 
     res.render('admin/orderDetails', { order });
@@ -80,58 +80,7 @@ exports.getOrderDetails = async (req, res) => {
 
 
 
-// // PATCH /admin/orders/:id/status
-// exports.updateOrderStatus = async (req, res) => {
-//   try {
-//     const { status } = req.body;
-//     const orderId = req.params.id;
 
-//     const order = await Order.findById(orderId);
-//     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-
-//     const current = order.status.toLowerCase();
-//     const next = status.toLowerCase();
-
-//     // Define valid transitions
-//     const validTransitions = {
-//       pending: ['processing', 'cancelled'],
-//       processing: ['shipped', 'cancelled'],
-//       shipped: ['delivered'],
-//       delivered: ['return request', 'returned'],
-//       'cancellation request': ['cancelled', 'pending'],     // after user requests
-//       'return request': ['returned', 'delivered'],         // after user requests
-//       cancelled: [],                                        // terminal
-//       returned: [],                                         // terminal
-//     };
-
-//     const allowed = validTransitions[current] || [];
-    
-//     if (!allowed.includes(next)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: `Cannot change status from "${order.status}" to "${status}"`
-//       });
-//     }
-
-//     // Special case: only allow 'Return Request' → 'Returned' if user requested it
-//     if (next === 'returned' && current !== 'return request' && current !== 'delivered') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Can only mark as Returned after Return Request or Delivered'
-//       });
-//     }
-
-//     // Update status
-//     order.status = status;
-//     await order.save();
-
-//     res.json({ success: true, message: 'Status updated successfully', status: order.status });
-
-//   } catch (err) {
-//     console.error('Status update error:', err);
-//     res.status(500).json({ success: false, message: 'Server error' });
-//   }
-// };
 
 
 // PATCH /admin/orders/:id/status
@@ -223,7 +172,6 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 
-// ...existing code...
 exports.getRequests = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

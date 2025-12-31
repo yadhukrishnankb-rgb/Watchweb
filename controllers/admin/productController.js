@@ -168,7 +168,7 @@ exports.editProduct = async (req, res) => {
                 message: messages.INVALID_PRODUCT_ID
             });
         }
-
+            
         const oldProduct = await Product.findById(id);
         if (!oldProduct) {
             return res.status(statusCodes.NOT_FOUND).json({
@@ -176,35 +176,62 @@ exports.editProduct = async (req, res) => {
                 message: messages.PRODUCT_NOT_FOUND
             });
         }
-
-        const updateData = { ...req.body };
-
-        // Handle images
-        if (req.files?.length > 0) {
-            // Delete old images from Cloudinary
-            for (let imageUrl of oldProduct.productImage) {
-                const publicId = imageUrl.split('/').pop().split('.')[0];
-                await cloudinary.uploader.destroy(publicId);
+            // Normalize removedImages from the form (may be string, array or JSON string)
+            let removed = [];
+            if (req.body.removedImages) {
+                if (Array.isArray(req.body.removedImages)) removed = req.body.removedImages;
+                else if (typeof req.body.removedImages === 'string') {
+                    try {
+                        removed = JSON.parse(req.body.removedImages);
+                    } catch (e) {
+                        removed = [req.body.removedImages];
+                    }
+                }
             }
-            
-            // Add new Cloudinary URLs
-            updateData.productImage = req.files.map(file => file.path);
-        }
 
-        // Validate total images
-        if (updateData.productImage && updateData.productImage.length < 3) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: messages.PRODUCT_MIN_IMAGES
-            });
-        }
+            // Build update data from allowed fields
+            const updateData = {};
+            const allowed = ['productName','description','brand','category','regularPrice','salesPrice','productOffer','quantity','color','status'];
+            for (const key of allowed) {
+                if (req.body[key] !== undefined) {
+                    if (['regularPrice','salesPrice'].includes(key)) updateData[key] = parseFloat(req.body[key]) || 0;
+                    else if (['productOffer','quantity'].includes(key)) updateData[key] = parseInt(req.body[key]) || 0;
+                    else updateData[key] = req.body[key];
+                }
+            }
 
-        const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
+            const existingImages = Array.isArray(oldProduct.productImage) ? oldProduct.productImage.slice() : [];
 
-        res.status(statusCodes.OK).json({
-            success: true,
-            message: messages.PRODUCT_UPDATE_SUCCESS
-        });
+            // Compute remaining images after removal
+            const removedSet = new Set(removed);
+            const remainingImages = existingImages.filter(img => !removedSet.has(img));
+
+            // Delete removed images from Cloudinary (only those explicitly removed)
+            for (const img of existingImages) {
+                if (removedSet.has(img)) {
+                    try {
+                        const publicId = img.split('/').pop().split('.')[0];
+                        await cloudinary.uploader.destroy(publicId);
+                    } catch (e) {
+                        console.warn('Failed to delete image from cloudinary:', img, e.message || e);
+                    }
+                }
+            }
+        
+            // Handle newly uploaded images (these are appended to remaining images)
+            const newImagePaths = req.files?.length > 0 ? req.files.map(f => f.path) : [];
+            const finalImages = [...remainingImages, ...newImagePaths];
+
+            // If there are any productImage changes, validate minimum count
+            if (finalImages.length < 3) {
+                return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_MIN_IMAGES });
+            }
+
+            updateData.productImage = finalImages;
+
+            const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
+
+            res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS });
     } catch (err) {
         console.error('Error updating product:', err);
         res.status(statusCodes.INTERNAL_ERROR).json({

@@ -152,7 +152,7 @@ exports.deleteCategory = async (req, res) => {
                 message: messages.CATEGORY_NOT_FOUND
             });
         }
-
+    
         
 
         res.status(statusCodes.OK).json({

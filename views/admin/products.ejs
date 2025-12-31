@@ -125,6 +125,7 @@
       <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Product</h3>
       <form id="editProductForm" class="mt-4" enctype="multipart/form-data">
         <input type="hidden" id="editProductId" name="productId">
+        <input type="hidden" id="removedImagesInput" name="removedImages">
         <div class="grid grid-cols-2 gap-4">
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Product Name*</label>
@@ -185,7 +186,7 @@
           <label class="block text-gray-700 text-sm font-bold mb-2">New Images (Optional, Min 3 Total)</label>
           <input type="file" name="productImages" multiple accept="image/*"
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            onchange="previewImages(event, 'editNewImagePreview')">
+            onchange="previewAndCropImages(event, 'editNewImagePreview')">
           <div id="editNewImagePreview" class="mt-2 flex gap-2"></div>
         </div>
         <div class="flex justify-end mt-6">
@@ -337,15 +338,21 @@ function previewAndCropImages(event, previewId = 'imagePreview') {
     const preview = document.getElementById(previewId);
     preview.innerHTML = '';
 
+  // For add form (default imagePreview) require 3-4 images.
+  // For edit form (editNewImagePreview) allow 1-4 images since existing images may remain.
+  if (previewId === 'imagePreview') {
     if (files.length < 3 || files.length > 4) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: 'Please select 3-4 images'
-        });
-        event.target.value = '';
-        return;
+      Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 3-4 images' });
+      event.target.value = '';
+      return;
     }
+  } else {
+    if (files.length < 1 || files.length > 4) {
+      Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 1-4 images' });
+      event.target.value = '';
+      return;
+    }
+  }
 
     currentFileInput = event.target;
     currentFiles = Array.from(files);
@@ -359,29 +366,32 @@ function processNextImage(previewId) {
     if (currentImageIndex >= currentFiles.length) {
         return;
     }
+  const idx = currentImageIndex;
+  const file = currentFiles[idx];
+  const reader = new FileReader();
 
-    const file = currentFiles[currentImageIndex];
-    const reader = new FileReader();
+  reader.onload = function(e) {
+    // store current crop index so cropImage can reference it safely
+    window._currentCropIndex = idx;
+    openCropperModal(e.target.result, () => {
+      const preview = document.getElementById(previewId);
+      const div = document.createElement('div');
+      div.className = 'w-20 h-20 relative';
 
-    reader.onload = function(e) {
-        openCropperModal(e.target.result, () => {
-            const preview = document.getElementById(previewId);
-            const div = document.createElement('div');
-            div.className = 'w-20 h-20 relative';
-            
-            const img = document.createElement('img');
-            img.src = croppedImages[currentImageIndex];
-            img.className = 'w-full h-full object-cover rounded';
-            
-            div.appendChild(img);
-            preview.appendChild(div);
-            
-            currentImageIndex++;
-            processNextImage(previewId);
-        });
-    };
-    
-    reader.readAsDataURL(file);
+      const img = document.createElement('img');
+      img.src = croppedImages[idx];
+      img.className = 'w-full h-full object-cover rounded';
+
+      div.appendChild(img);
+      preview.appendChild(div);
+
+      // advance to next file
+      currentImageIndex++;
+      processNextImage(previewId);
+    });
+  };
+
+  reader.readAsDataURL(file);
 }
 
 function openCropperModal(imageSrc, callback) {
@@ -440,12 +450,11 @@ function cropImage() {
         });
 
         const dataTransfer = new DataTransfer();
+        // Use the captured crop index to replace the correct file
+        const replaceIndex = window._currentCropIndex ?? currentImageIndex;
         currentFiles.forEach((file, index) => {
-            if (index === currentImageIndex) {
-                dataTransfer.items.add(croppedFile);
-            } else {
-                dataTransfer.items.add(file);
-            }
+          if (index === replaceIndex) dataTransfer.items.add(croppedFile);
+          else dataTransfer.items.add(file);
         });
         currentFileInput.files = dataTransfer.files;
 
@@ -516,11 +525,29 @@ async function openEditModal(productId) {
     document.getElementById('editDescription').value = product.description;
 
     const imagePreview = document.getElementById('editImagePreview');
-    imagePreview.innerHTML = (product.productImage || []).map(img => `
-      <div class="w-20 h-20 relative">
+    // initialize removedImages tracker
+    window._removedImages = [];
+    document.getElementById('removedImagesInput').value = '';
+
+    imagePreview.innerHTML = (product.productImage || []).map((img, idx) => `
+      <div class="w-20 h-20 relative" data-image-url="${img}">
         <img src="${img}" class="w-full h-full object-cover rounded">
+        <button type="button" class="remove-image-btn absolute top-0 right-0 bg-red-600 text-white rounded-full text-xs w-6 h-6 flex items-center justify-center">&times;</button>
       </div>
     `).join('');
+
+    // attach click handlers for remove buttons
+    imagePreview.querySelectorAll('.remove-image-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const container = e.currentTarget.closest('[data-image-url]');
+        if (!container) return;
+        const url = container.getAttribute('data-image-url');
+        // mark removed and remove from UI
+        window._removedImages.push(url);
+        document.getElementById('removedImagesInput').value = JSON.stringify(window._removedImages);
+        container.remove();
+      });
+    });
 
     document.getElementById('editModal').classList.remove('hidden');
   } catch (err) {
