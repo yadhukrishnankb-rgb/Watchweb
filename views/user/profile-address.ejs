@@ -90,6 +90,7 @@
         <form id="address-form" action="/profile/address" method="POST">
           <input type="hidden" name="addressId" id="addressId" value="">
           <div class="form-group"><label>Address Line 1</label><input type="text" name="line1" id="line1" required></div>
+          <div class="form-group"><label>Landmark (optional)</label><input type="text" name="landmark" id="landmark" placeholder="Near Mall / Opposite Park"></div>
           <div class="form-group"><label>City</label><input type="text" name="city" id="city" required></div>
           <div class="form-group"><label>State</label><input type="text" name="state" id="state" required></div>
           <div class="form-group"><label>ZIP Code</label><input type="text" name="zip" id="zip" required></div>
@@ -104,11 +105,14 @@
       <!-- Address List -->
       <% if (user.addresses && user.addresses.length) { %>
         <% user.addresses.filter(a => a).forEach((addr, i) => { %>
-          <% const _line1 = addr.line1 || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
+          <% const _line1 = addr.line1 || ''; const _landmark = addr.landmark || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
           <div class="address-item">
-            <div><%= [_line1, _city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
+            <div>
+              <div style="font-weight:600; margin-bottom:6px;"><%= _line1 %><%= _landmark ? (' — ' + _landmark) : '' %></div>
+              <div><%= [_city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
+            </div>
             <div class="address-actions">
-              <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
+              <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
                 Edit
               </button>
               <button class="btn-delete" onclick="deleteAddress(<%= i %>)">
@@ -147,6 +151,7 @@
     const state = document.getElementById('state').value.trim();
     const zip = document.getElementById('zip').value.trim();
     const country = document.getElementById('country').value.trim();
+    const landmark = document.getElementById('landmark').value.trim();
 
     // Reset borders
     inputs.forEach(i => i.style.borderColor = '');
@@ -161,6 +166,10 @@
     }
     if (state.length < 2) {
       showError('state', 'State too short');
+      hasError = true;
+    }
+    if (landmark && landmark.length < 3) {
+      showError('landmark', 'Landmark too short');
       hasError = true;
     }
     if (country.length < 2) {
@@ -217,8 +226,9 @@
     inputs.forEach(i => i.style.borderColor = '');
   }
 
-  function editAddress(i, l1, c, s, z, co) {
+  function editAddress(i, l1, lm, c, s, z, co) {
     document.getElementById('line1').value = l1;
+    document.getElementById('landmark').value = lm || '';
     document.getElementById('city').value = c;
     document.getElementById('state').value = s;
     document.getElementById('zip').value = z;

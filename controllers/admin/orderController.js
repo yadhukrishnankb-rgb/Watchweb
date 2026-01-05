@@ -24,7 +24,7 @@ exports.getOrders = async (req, res) => {
       ];
     }
     if (statusFilter) query.status = statusFilter;
-
+  
     const [orders, total] = await Promise.all([
       Order.find(query)
         .populate('user', 'name email')
@@ -34,7 +34,7 @@ exports.getOrders = async (req, res) => {
         .lean(),
       Order.countDocuments(query)
     ]);
-
+  
     const statusOptions = [
       { value: '', label: 'All' },
       { value: 'pending', label: 'Pending' },

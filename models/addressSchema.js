@@ -23,6 +23,15 @@ const addressSchema = new Schema({
         required: true,
         trim: true
     },
+    line1: {
+        type: String,
+        trim: true
+    },
+    landmark: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     locality: {
         type: String,
         required: true,

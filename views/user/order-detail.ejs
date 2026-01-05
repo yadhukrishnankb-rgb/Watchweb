@@ -501,18 +501,34 @@
        <div class="card">
   <h2 class="card-title">Shipping Address</h2>
   <div class="address-card" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0;">
-    <% 
-            const a = order.address || order.shippingAddress || {};
-      const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
-      const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
-      const altPhone = a.altPhone || '';
-      const addr = a.street || a.address || a.line1 || a.addressLine1 || '';
-      const landmark = a.landmark || a.addressLine2 || '';
-      const locality = a.locality || a.area || '';
-      const city = a.city || a.town || 'Not Available';
-      const state = a.state || a.stateName || 'Not Available';
-      const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
-    %>
+        <% 
+                        const a = order.address || order.shippingAddress || {};
+            const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
+            const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
+            const altPhone = a.altPhone || '';
+
+            // Robust street extraction (handles different shapes: string, nested object, various keys)
+            let addr = '';
+            if (typeof a === 'string') {
+                addr = a;
+            } else {
+                addr = a.street || a.address || a.line1 || a.addressLine1 || '';
+                if (!addr && a.address && typeof a.address === 'object') {
+                    addr = a.address.line1 || a.address.street || a.address.addressLine1 || '';
+                }
+            }
+
+            // Robust landmark extraction
+            let landmark = '';
+            if (a.landmark) landmark = a.landmark;
+            else if (a.addressLine2) landmark = a.addressLine2;
+            else if (a.address && typeof a.address === 'object' && a.address.landmark) landmark = a.address.landmark;
+
+            const locality = a.locality || a.area || '';
+            const city = a.city || a.town || a.district || 'Not Available';
+            const state = a.state || a.stateName || 'Not Available';
+            const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
+        %>
 
     <div style="font-size:0.95rem; line-height:1.9;">
       <p><strong>Name:</strong> <span style="font-weight:600; color:#1f2937;"><%= name %></span></p>

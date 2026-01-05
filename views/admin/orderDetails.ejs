@@ -22,8 +22,25 @@
         </div>
         <div>
           <h3 class="font-bold mb-2">Delivery Address</h3>
-          <p><%= [order.address?.address, order.address?.locality].filter(Boolean).join(', ') %></p>
-          <p><%= order.address?.city %> <% if (order.address?.state) { %>, <%= order.address.state %><% } %> - <%= order.address?.pincode || '' %></p>
+          <% const a = order.address || {};
+             const addrLine1 = a.line1 || a.addressLine1 || a.address || '';
+             const addrLine2 = a.street || a.streetAddress || a.addressLine2 || '';
+             const lm = a.landmark || a.addressLine2 || a.landmarkDescription || '';
+             const locality = a.locality || '';
+             const city = a.city || a.cityName || '';
+             const state = a.state || a.stateName || '';
+             const pincode = a.pincode || a.postalCode || a.zip || a.pin || '';
+          %>
+          <% if (addrLine1) { %>
+            <p><strong>Address Line:</strong> <%= addrLine1 %></p>
+          <% } %>
+          <% if (addrLine2 || locality) { %>
+            <p><%= addrLine2 %><%= locality ? ', ' + locality : '' %></p>
+          <% } %>
+          <% if (lm) { %>
+            <p><strong>Landmark:</strong> <%= lm %></p>
+          <% } %>
+          <p><%= city %> <% if (state) { %>, <%= state %><% } %> - <%= pincode %></p>
         </div>
       </div>
 

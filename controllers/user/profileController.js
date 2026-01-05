@@ -176,7 +176,7 @@ exports.updateProfile = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   if (!userId) return res.redirect('/login');
 
-  const { name, phone, email, line1, city, state, zip, country } = req.body;
+  const { name, phone, email, line1, landmark, city, state, zip, country } = req.body;
   const errors = [];
 
   // === VALIDATION RULES ===
@@ -191,9 +191,10 @@ exports.updateProfile = async (req, res) => {
   }
 
   // Optional Address Validation (only if any field is filled)
-  const hasAddress = line1 || city || state || zip || country;
+  const hasAddress = line1 || landmark || city || state || zip || country;
   if (hasAddress) {
     if (!line1 || line1.trim().length < 5) errors.push("Address Line 1 must be at least 5 characters");
+    if (landmark && landmark.trim().length < 3) errors.push("Landmark must be at least 3 characters if provided");
     if (!city || city.trim().length < 2) errors.push("City must be at least 2 characters");
     if (!state || state.trim().length < 2) errors.push("State must be at least 2 characters");
     if (!country || country.trim().length < 2) errors.push("Country must be at least 2 characters");
@@ -230,6 +231,7 @@ exports.updateProfile = async (req, res) => {
         phone: phone.trim(),
         address: hasAddress ? {
           line1: line1?.trim(),
+          landmark: landmark?.trim() || '',
           city: city?.trim(),
           state: state?.trim(),
           zip: zip?.trim(),
@@ -253,25 +255,21 @@ exports.updateProfile = async (req, res) => {
 
     if (hasAddress) {
       user.addresses = user.addresses || [];
-      
+      const addrObj = {
+        line1: line1.trim(),
+        landmark: (landmark || '').trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zip: zip.trim(),
+        country: country.trim()
+      };
+
       if (user.addresses.length > 0) {
         // Update existing first address only
-        user.addresses[0] = {
-          line1: line1.trim(),
-          city: city.trim(),
-          state: state.trim(),
-          zip: zip.trim(),
-          country: country.trim()
-        };
+        user.addresses[0] = addrObj;
       } else {
         // Add new address only if none exists
-        user.addresses.push({
-          line1: line1.trim(),
-          city: city.trim(),
-          state: state.trim(),
-          zip: zip.trim(),
-          country: country.trim()
-        });
+        user.addresses.push(addrObj);
       }
     }
 
@@ -403,12 +401,15 @@ exports.manageAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   if (!userId) return res.redirect('/login');
 
-  const { line1, city, state, zip, country } = req.body;
+  const { line1, landmark, city, state, zip, country } = req.body;
   const errors = [];
 
   // === VALIDATION RULES ===
   if (!line1 || line1.trim().length < 5) {
     errors.push('Address Line 1 must be at least 5 characters');
+  }
+  if (landmark && landmark.trim().length < 3) {
+    errors.push('Landmark must be at least 3 characters if provided');
   }
   if (!city || city.trim().length < 2) {
     errors.push('City must be at least 2 characters');
@@ -437,6 +438,7 @@ exports.manageAddress = async (req, res) => {
       if (index >= 0 && index < user.addresses.length) {
         user.addresses[index] = {
           line1: line1.trim(),
+          landmark: (landmark || '').trim(),
           city: city.trim(),
           state: state.trim(),
           zip: zip.trim(),
@@ -447,6 +449,7 @@ exports.manageAddress = async (req, res) => {
     } else {
       user.addresses.push({
         line1: line1.trim(),
+        landmark: (landmark || '').trim(),
         city: city.trim(),
         state: state.trim(),
         zip: zip.trim(),

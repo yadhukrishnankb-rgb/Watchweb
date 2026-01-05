@@ -27,11 +27,13 @@ profileImage: {
 },
 addresses: [
   {
-    line1: String,
-    city: String,
-    state: String,
-    zip: String,
-    country: String
+    line1: { type: String },
+    landmark: { type: String, default: '' },
+    locality: { type: String, default: '' },
+    city: { type: String },
+    state: { type: String },
+    zip: { type: String },
+    country: { type: String }
   }
 ],
   googleId: {

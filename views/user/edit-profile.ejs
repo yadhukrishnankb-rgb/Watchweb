@@ -298,6 +298,8 @@ font-size: 24px;
 </div>
 </div>
 
+<!-- Address fields removed: address is managed on the Address page -->
+
 
 
 <div class="button-group">
@@ -353,6 +355,12 @@ font-size: 24px;
         if (value && value.length < 5) {
           valid = false;
           message = 'Address must be at least 5 characters';
+        }
+        break;
+      case 'landmark':
+        if (value && value.length < 3) {
+          valid = false;
+          message = 'Landmark must be at least 3 characters';
         }
         break;
       case 'zip':
