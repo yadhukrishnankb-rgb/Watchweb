@@ -5,7 +5,6 @@ const User = require("../../models/userSchema");
 const nodemailer = require("nodemailer");
 const Order = require("../../models/orderSchema");
 const bcrypt = require("bcrypt");
-
 const cloudinary = require('../../config/cloudinary');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');

@@ -42,10 +42,7 @@ exports.getCategories = async (req, res) => {
     }
 };
 
-
 // Add new category
-
-
 exports.addCategory = async (req, res) => {
     try {
         let { name, description } = req.body;
@@ -90,6 +87,7 @@ exports.addCategory = async (req, res) => {
 };
 
 
+
 // Edit category
 exports.editCategory = async (req, res) => {
     try {
@@ -99,10 +97,10 @@ exports.editCategory = async (req, res) => {
         // Check if new name already exists for different category
         const existingCategory = await Category.findOne({ 
             name, 
-            _id: { $ne: id } 
+            _id: { $ne: id }
         });
         
-        if (existingCategory) {
+       if (existingCategory) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: messages.CATEGORY_EXISTS

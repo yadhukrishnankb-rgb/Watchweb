@@ -1,34 +1,28 @@
 
-
 const User = require("../../models/userSchema"); 
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
-
 const messages = require("../../constants/messages");
 const statusCodes = require("../../constants/statusCodes");
-
-
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
-
-
 
 
  const loadSignup = async (req,res)=>{
     try{
 
-        return res.render('signup')
+         return res.render('signup')
 
     }catch (error){
     
-        console.log('Home page not loading',error);
+        console.log('Signup page error',error);
         res.status(500).send('Server Error')
     
     }
  }
- 
+
 
  const pageNotFound = async (req,res) => {
     try {
@@ -37,8 +31,6 @@ const Category = require("../../models/categorySchema");
 res.redirect("/pageNotFound")
     }
 }
-
-
 
 
 const loadHomepage = async (req, res) => {
@@ -50,15 +42,18 @@ const loadHomepage = async (req, res) => {
             .populate('category')
             .sort({ createdAt: -1 })
             .limit(10)
-            .lean();
-
+            .lean()
+   
+              
+    
         // Fetch popular products (you can modify this based on your criteria)
         const popularProducts = await Product.find({ isBlocked: false })
             .populate('category')
             .sort({ salesCount: -1 })
             .limit(10)
             .lean();
-
+    
+            
         // Fetch new arrivals
         const newArrivals = await Product.find({ isBlocked: false })
             .populate('category')
@@ -68,6 +63,7 @@ const loadHomepage = async (req, res) => {
 
         // Fetch categories for the filter
         const categories = await Category.find({ isListed: true }).lean();
+
 
         if (user) {
             const userData = await User.findOne({ _id: user._id });
@@ -92,8 +88,6 @@ const loadHomepage = async (req, res) => {
         res.status(500).send("Server error");
     }
 };
-
-
     
     function generateOtp(){
         return Math.floor(100000+Math.random()*900000).toString();
@@ -160,7 +154,7 @@ const signup = async (req,res)=>{
         if(findUser) {
             return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
         }
-
+    
         // Generate and send OTP
         const otp = generateOtp();
         const emailSend = await sendVerficationEmail(email, otp);
@@ -197,7 +191,7 @@ const verifyOtp = async (req,res) => {
                 message: messages.SESSION_EXPIRED
             });
         }
-
+        
         if(otp === req.session.userOtp) {
             const user = req.session.userData;
             const passwordHash = await securepassword(user.password);
@@ -216,12 +210,9 @@ const verifyOtp = async (req,res) => {
             req.session.userOtp = null;
             req.session.userData = null;
 
-            
-           
-
             return res.json({
                 success: true,
-                redirectUrl: "/login"
+                redirectUrl: "/"
             });
         } else {
             return res.status(statusCodes.BAD_REQUEST).json({
@@ -238,8 +229,6 @@ const verifyOtp = async (req,res) => {
     }
 }
 
-
-//resnt otp-----------------------------------------------------------------------------------------
 
 const resendOTP = async (req, res) => {
     try {
@@ -277,8 +266,6 @@ const resendOTP = async (req, res) => {
 };
 
 
-
-
 const loadLogin = async (req, res) => {
     try {
         if (req.session.user) {
@@ -290,7 +277,6 @@ const loadLogin = async (req, res) => {
         res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.SERVER_ERROR });
     }
 };
-
 
 
 
@@ -350,7 +336,6 @@ const login = async (req, res) => {
 
 
 
-
 const logout = async (req, res) => {
     try {
         // Destroy the session
@@ -374,22 +359,7 @@ const logout = async (req, res) => {
     }
 };
 
-
-
-
-
- 
-
-
-
-
-     
-
-
-
-
-
-    
+        
     module.exports = {
     loadHomepage,
     pageNotFound,
@@ -400,7 +370,5 @@ const logout = async (req, res) => {
     loadLogin,
      login,
     logout,
-   
-    
     
     }

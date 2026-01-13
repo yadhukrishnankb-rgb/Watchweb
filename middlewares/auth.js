@@ -26,28 +26,6 @@ const userAuth = async (req,res,next) => {
 
 
 
-
-// Admin auth: ensure session.admin exists and user is admin
-// const adminAuth = async (req, res, next) => {
-//     try {
-//         if (!req.session.admin || !req.session.admin._id) {
-//             return res.redirect("/admin/login");
-//         }
-//         const admin = await User.findById(req.session.admin._id).lean();
-//         if (!admin || !admin.isAdmin) {
-//             req.session.destroy?.(() => {});
-//             return res.redirect("/admin/login");
-//         }
-//         req.admin = admin;
-//         return next();
-//     } catch (error) {
-//         console.error("Admin Auth middleware error:", error);
-//         return res.redirect("/admin/login");
-//     }
-// };
-
-//----------------------------------------------------------------
-// ...existing code...
 const adminAuth = async (req, res, next) => {
   try {
     if (!req.session || !req.session.admin || !req.session.admin._id) {
@@ -84,7 +62,7 @@ const adminAuth = async (req, res, next) => {
 };
 
 
-//----------------------------------------------------
+
 
 
 

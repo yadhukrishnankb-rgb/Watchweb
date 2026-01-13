@@ -16,7 +16,7 @@ exports.viewCart = async (req, res) => {
         if (!cart || cart.items.length === 0) {
             return res.render('user/cart', { cart: { items: [] }, total: 0, user: req.session.user });
         }
-
+    
         // DO NOT filter out out-of-stock or blocked items anymore
         // We want to show them as disabled instead of removing
 

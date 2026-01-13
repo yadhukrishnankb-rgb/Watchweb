@@ -14,9 +14,6 @@ exports.getProducts = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-       
-        
-
         // Remove isBlocked: false from the query to show all products
         const query = {
             ...(searchQuery && {
@@ -159,6 +156,7 @@ exports.addProduct = async (req, res) => {
     }
 };
 
+
 exports.editProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -264,9 +262,9 @@ exports.deleteProduct = async (req, res) => {
             const publicId = imageUrl.split('/').pop().split('.')[0];
             await cloudinary.uploader.destroy(publicId);
         }
-
+    
         await Product.findByIdAndDelete(id);
-
+    
         res.status(statusCodes.OK).json({
             success: true,
             message: messages.PRODUCT_DELETE_SUCCESS

@@ -27,6 +27,7 @@ exports.listProducts = async (req, res) => {
                 { brand: { $regex: req.query.search, $options: 'i' } }
             ];
         }
+        
 
         // Category Filter
         if (req.query.category) {
@@ -118,11 +119,6 @@ exports.listProducts = async (req, res) => {
 };
 
 
-
-
-
-
-
 exports.getProductDetails = async (req, res) => {
     try {
         const { id } = req.params;
@@ -136,11 +132,13 @@ exports.getProductDetails = async (req, res) => {
         const product = await Product.findById(id)
             .populate('category')
             .lean();
-
+        
         // Check if product exists and is available
         if (!product || product.isBlocked) {
             return res.redirect('/shop');
         }
+
+       
 
         // Get related products from same category
         const relatedProducts = await Product.find({

@@ -8,7 +8,7 @@ const Order = require('../../models/orderSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 
-// --- Safe address helpers --------------------------------------------------
+// --- Safe address helpers 
 function _safeAddresses(user) {
   if (!user) return [];
   if (Array.isArray(user.addresses)) return user.addresses.filter(Boolean);
@@ -34,7 +34,8 @@ function getAddressById(user, addressId) {
   }
   return addrs.find(a => a && a._id && a._id.toString() === addressId) || null;
 }
-// ---------------------------------------------------------------------------
+
+
 
 const loadCheckout = async (req, res) => {
     try {
@@ -101,7 +102,7 @@ const placeOrder = async (req, res) => {
     if (!cart || cart.items.length === 0) {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CART_EMPTY });
     }
-
+    
     const itemsToOrder = cart.items
       .filter(i => i.productId && i.productId.quantity >= i.quantity)
       .map(i => ({
@@ -110,11 +111,11 @@ const placeOrder = async (req, res) => {
         price: i.price,
         totalPrice: i.totalPrice
       }));
-
+    
     if (itemsToOrder.length === 0) {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.OUT_OF_STOCK });
     }
-
+  
     const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
     const tax = subtotal * 0.18;
     const shipping = subtotal >= 1000 ? 0 : 79;
@@ -279,7 +280,6 @@ const directPlaceOrder = async (req, res) => {
   }
 };
 
-// ...existing code...
 
 //-----------
 

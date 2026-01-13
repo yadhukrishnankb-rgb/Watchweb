@@ -47,6 +47,36 @@ exports.getCustomers = async (req, res) => {
     }
 };
 
+// exports.getcustomer = async (req,res) => {
+
+//     const page = Math.max(parseInt(req.query.page)|| 1,1)
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page-1)*limit
+
+//     const query = {}
+
+//     const [totalCustomers,customers] = await Promise.all([
+//         Customer.countDocuments(query),
+//         Customer.find(query)
+//         .select('name email isBlocked createAt')
+//         .sort({createdAt:-1,_id:-1})
+//         .skip(skip)
+//         .limit(limit)
+
+//     ])
+
+//       const formattedCustomers = customers.map(customer=>({
+//         _id:customer._id,
+//         name:customer._id,
+//         email:customer.email,
+//         status:
+            
+//         }))
+
+
+
+// }
+
 // Search customers
 exports.searchCustomers = async (req, res) => {
     try {
@@ -130,11 +160,11 @@ exports.unblockCustomer = async (req, res) => {
             { isBlocked: false },
             { new: true }
         );
-
+        
         if (!customer) {
             return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.CUSTOMER_NOT_FOUND });
         }
-
+        
         const redirectPage = req.query.page ? `?page=${req.query.page}` : '';
         res.redirect('/admin/customers' + redirectPage + (req.query.search ? `&search=${encodeURIComponent(req.query.search)}` : ''));
     } catch (err) {

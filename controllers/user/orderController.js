@@ -25,6 +25,8 @@ const listOrders = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .lean();
+
+            
                          
         const totalOrders = await Order.countDocuments(query);
         const totalPages = Math.ceil(totalOrders / limit);
@@ -53,6 +55,7 @@ const orderDetails = async (req, res) => {
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate('orderedItems.product', 'productName price productImage')
       .exec();
+
 
     if (!order) return res.status(statusCodes.NOT_FOUND).redirect('/orders');
 
@@ -479,6 +482,23 @@ const requestReturnItem = async (req, res) => {
   }
 };
 
+// const getDeliveredOrdersByPrice = async (req,res) =>{
+//   try{
+
+//   const orders = await Order.find({
+//     status:"Delivered",
+//     totalPrice:{$gt:10000,$lte:30000}
+//   })
+//   res.render("orders")
+// }catch(error){
+
+//   console.log(error)
+//   res.status(500).send("server error")
+
+// }
+
+// }
+
 
 
 module.exports = {
@@ -490,4 +510,6 @@ module.exports = {
     downloadInvoice,
       requestCancelItem,
     requestReturnItem
+    // getDeliveredOrdersByPrice
+
 };

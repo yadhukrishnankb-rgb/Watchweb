@@ -19,6 +19,7 @@ const loadLogin = async (req, res) => {
   }
 };
 
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -78,6 +79,7 @@ const loadDashboard = async (req, res) => {
       { $group: { _id: null, total: { $sum: '$finalAmount' } } }
     ]);
     const totalRevenue = revenueAgg[0]?.total || 0;
+  
 
     // 5. Total customers (non‑admin users)
     const totalCustomers = await User.countDocuments({ isAdmin: { $ne: true } });
@@ -108,3 +110,5 @@ module.exports = {
   loadDashboard,
   logout
 };
+
+
