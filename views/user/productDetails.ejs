@@ -6,11 +6,11 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- Magnify.js (the plugin you already reference) -->
-<script src="/js/jquery.magnify.js"></script>
-<link rel="stylesheet" href="/css/magnify.css">
+<!-- <script src="/js/jquery.magnify.js"></script>
+<link rel="stylesheet" href="/css/magnify.css"> -->
 
 <!-- OPTIONAL – medium-zoom fallback (tiny, no jQuery) -->
-<script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script> -->
 
 <style>
 /* Custom CSS for Product Details UI */
@@ -97,6 +97,32 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+.zoom-container {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+}
+
+#mainImage {
+  width: 100%;
+  height: 450px;
+  object-fit: contain;
+  cursor: crosshair;
+}
+
+#zoomResult {
+  position: absolute;
+  top: 0;
+  left: 105%;
+  width: 450px;
+  height: 450px;
+  border: 1px solid #e5e7eb;
+  background-repeat: no-repeat;
+  display: none;
+  z-index: 10;
+}
+
 </style>
 
 <main class="bg-gray-50 py-8">
@@ -126,13 +152,15 @@
 
 <!-- Image Gallery with Zoom -->
 <div class="image-gallery space-y-4">
-<div class="relative aspect-square">
-<img src="<%= product.productImage[0] %>"
-id="mainImage"
-class="main-image w-full h-full object-contain cursor-zoom-in"
-data-magnify-src="<%= product.productImage[0] %>"
-alt="<%= product.productName %>">
+<div class="zoom-container">
+  <img
+    id="mainImage"
+    src="<%= product.productImage[0] %>"
+    alt="<%= product.productName %>"
+  />
+  <div id="zoomResult"></div>
 </div>
+
 <div class="flex gap-2 overflow-x-auto py-2">
 <% product.productImage.forEach((img, index) => { %>
 <button onclick="changeMainImage('<%= img %>', this)"
@@ -323,57 +351,99 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+// <script>
+// /* --------------------------------------------------------------
+// Unified zoom initializer – Magnify.js → medium-zoom → CSS fallback
+// -------------------------------------------------------------- */
+// (function () {
+// const $mainImg = $('#mainImage');
+// let zoomInstance = null;
+
+// function initMagnify() {
+// if (typeof $.fn.magnify === 'function') {
+// try { $mainImg.magnify({ speed: 200 }); console.info('Zoom: Magnify.js active'); return true; }
+// catch (e) { console.warn('Magnify.js failed →', e); }
+// }
+// return false;
+// }
+
+// function initMediumZoom() {
+// if (typeof mediumZoom === 'function') {
+// if (zoomInstance && typeof zoomInstance.detach === 'function') { zoomInstance.detach(); }
+// zoomInstance = mediumZoom('#mainImage', { margin: 30, background: '#fff', scrollOffset: 0 });
+// console.info('Zoom: medium-zoom active'); return true;
+// }
+// return false;
+// }
+
+// function initCssZoom() {
+// const el = document.getElementById('mainImage');
+// if (!el) return;
+// el.style.transition = 'transform .25s ease';
+// el.addEventListener('mouseenter', () => el.style.transform = 'translateZ(0) scale(1.08)');
+// el.addEventListener('mouseleave', () => el.style.transform = 'translateZ(0) scale(1)');
+// console.info('Zoom: CSS hover fallback');
+// }
+
+// window.initProductZoom = function () {
+// if (zoomInstance) { zoomInstance.detach(); zoomInstance = null; }
+// if (!initMagnify()) { if (!initMediumZoom()) { initCssZoom(); } }
+// };
+
+// window.changeMainImage = function (src, btn) {
+// const main = document.getElementById('mainImage');
+// if (!main) return;
+// main.src = src; main.dataset.magnifySrc = src;
+// document.querySelectorAll('.thumbnail-btn').forEach(b => b.classList.remove('border-blue-500', 'border-transparent'));
+// btn.classList.add('border-blue-500');
+// setTimeout(window.initProductZoom, 50);
+// };
+
+// $(document).ready(function () { window.initProductZoom(); });
+// })();
+// </script>
+
 <script>
-/* --------------------------------------------------------------
-Unified zoom initializer – Magnify.js → medium-zoom → CSS fallback
--------------------------------------------------------------- */
-(function () {
-const $mainImg = $('#mainImage');
-let zoomInstance = null;
+const img = document.getElementById("mainImage");
+const result = document.getElementById("zoomResult");
 
-function initMagnify() {
-if (typeof $.fn.magnify === 'function') {
-try { $mainImg.magnify({ speed: 200 }); console.info('Zoom: Magnify.js active'); return true; }
-catch (e) { console.warn('Magnify.js failed →', e); }
-}
-return false;
-}
+img.addEventListener("mousemove", moveZoom);
+img.addEventListener("mouseenter", () => {
+  result.style.display = "block";
+  result.style.backgroundImage = `url('${img.src}')`;
+  result.style.backgroundSize = "200%";
+});
+img.addEventListener("mouseleave", () => {
+  result.style.display = "none";
+});
 
-function initMediumZoom() {
-if (typeof mediumZoom === 'function') {
-if (zoomInstance && typeof zoomInstance.detach === 'function') { zoomInstance.detach(); }
-zoomInstance = mediumZoom('#mainImage', { margin: 30, background: '#fff', scrollOffset: 0 });
-console.info('Zoom: medium-zoom active'); return true;
-}
-return false;
-}
+function moveZoom(e) {
+  const rect = img.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-function initCssZoom() {
-const el = document.getElementById('mainImage');
-if (!el) return;
-el.style.transition = 'transform .25s ease';
-el.addEventListener('mouseenter', () => el.style.transform = 'translateZ(0) scale(1.08)');
-el.addEventListener('mouseleave', () => el.style.transform = 'translateZ(0) scale(1)');
-console.info('Zoom: CSS hover fallback');
+  const xPercent = (x / rect.width) * 100;
+  const yPercent = (y / rect.height) * 100;
+
+  result.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
 }
 
-window.initProductZoom = function () {
-if (zoomInstance) { zoomInstance.detach(); zoomInstance = null; }
-if (!initMagnify()) { if (!initMediumZoom()) { initCssZoom(); } }
-};
+function changeMainImage(src, btn) {
+  const main = document.getElementById("mainImage");
+  const zoom = document.getElementById("zoomResult");
 
-window.changeMainImage = function (src, btn) {
-const main = document.getElementById('mainImage');
-if (!main) return;
-main.src = src; main.dataset.magnifySrc = src;
-document.querySelectorAll('.thumbnail-btn').forEach(b => b.classList.remove('border-blue-500', 'border-transparent'));
-btn.classList.add('border-blue-500');
-setTimeout(window.initProductZoom, 50);
-};
+  main.src = src;
+  zoom.style.backgroundImage = `url('${src}')`;
 
-$(document).ready(function () { window.initProductZoom(); });
-})();
+  document.querySelectorAll('.thumbnail-btn')
+    .forEach(b => b.classList.remove('border-blue-500'));
+
+  btn.classList.add('border-blue-500');
+}
+
 </script>
+
 
 <!-- Add-to-Cart with Quantity -->
 <script>

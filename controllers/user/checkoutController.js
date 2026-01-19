@@ -3,7 +3,6 @@
 const Cart = require('../../models/cartSchema');
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
-
 const Order = require('../../models/orderSchema'); 
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
@@ -93,6 +92,7 @@ const loadCheckout = async (req, res) => {
 
 
 
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -147,7 +147,7 @@ const placeOrder = async (req, res) => {
                   user.name || 'Customer').replace(/undefined/g, '').trim() || 'Customer',
       phone: selectedAddress.phone || selectedAddress.mobile || user.phone || '',
       altPhone: selectedAddress.altPhone || selectedAddress.mobile2 || '',
-      street: selectedAddress.street || selectedAddress.house || selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
+      street: selectedAddress.street || selectedAddress.line1 || selectedAddress.house || selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
       landmark: selectedAddress.landmark || selectedAddress.addressLine2 || '',
       locality: selectedAddress.locality || selectedAddress.area || '',
       city: selectedAddress.city || selectedAddress.town || 'Not Available',
@@ -155,6 +155,11 @@ const placeOrder = async (req, res) => {
       pincode: selectedAddress.pincode || selectedAddress.postalCode || selectedAddress.zip || selectedAddress.pin || 'PIN Missing',
       country: selectedAddress.country || 'India'
     };
+
+    // Validate required address fields
+    if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Please ensure your delivery address has all required fields (name, city, state, pincode).' });
+    }
 
     const order = await Order.create({
       orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
@@ -190,10 +195,12 @@ const placeOrder = async (req, res) => {
   }
 };
 
+
 const directPlaceOrder = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const { productId, quantity = 1, addressId, paymentMethod } = req.body;
+
 
     const product = await Product.findById(productId);
     if (!product || product.quantity < quantity) {
@@ -239,7 +246,7 @@ const directPlaceOrder = async (req, res) => {
                   user.name || 'Customer').replace(/undefined/g, '').trim() || 'Customer',
       phone: selectedAddress.phone || selectedAddress.mobile || user.phone || '',
       altPhone: selectedAddress.altPhone || selectedAddress.mobile2 || '',
-      street: selectedAddress.street || selectedAddress.house || selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
+      street: selectedAddress.street || selectedAddress.line1 || selectedAddress.house || selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
       landmark: selectedAddress.landmark || selectedAddress.addressLine2 || '',
       locality: selectedAddress.locality || selectedAddress.area || '',
       city: selectedAddress.city || selectedAddress.town || 'Not Available',
@@ -247,6 +254,11 @@ const directPlaceOrder = async (req, res) => {
       pincode: selectedAddress.pincode || selectedAddress.postalCode || selectedAddress.zip || selectedAddress.pin || 'PIN Missing',
       country: selectedAddress.country || 'India'
     };
+
+    // Validate required address fields
+    if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Please ensure your delivery address has all required fields (name, city, state, pincode).' });
+    }
 
     const order = await Order.create({
       orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
@@ -294,6 +306,8 @@ const orderSuccess = async (req, res) => {
         res.redirect('/');
     }
 };
+
+
 const directCheckout = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -384,13 +398,130 @@ const atomicDeductStock = async (items) => {
 };
 
 
+// // Add address from checkout (AJAX)
+// const addAddressFromCheckout = async (req, res) => {
+//   try {
+//     const userId = req.session.user?._id || null;
+//     if (!userId) return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: 'Not authenticated' });
+
+//     const { fullName, phone, line1, landmark, city, state, zip, country, type, isDefault } = req.body;
+//     const errors = [];
+//     if (!line1 || line1.trim().length < 5) errors.push('Address Line 1 must be at least 5 characters');
+//     if (!city || city.trim().length < 2) errors.push('City must be at least 2 characters');
+//     if (!state || state.trim().length < 2) errors.push('State must be at least 2 characters');
+//     if (!country || country.trim().length < 2) errors.push('Country must be at least 2 characters');
+//     if (!zip || !/^\d{5,6}$/.test((zip || '').trim())) errors.push('ZIP Code must be 5 or 6 digits');
+
+//     if (errors.length > 0) {
+//       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: errors.join(' | ') });
+//     }
+
+//     const user = await User.findById(userId);
+//     if (!user) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: 'User not found' });
+
+//     user.addresses = user.addresses || [];
+
+//     // If setting default, clear others
+//     if (isDefault === 'on' || isDefault === true || isDefault === 'true') {
+//       user.addresses.forEach(a => { if (a) a.isDefault = false; });
+//     }
+
+//     const addrObj = {
+//       fullName: (fullName || '').trim(),
+//       phone: (phone || '').trim(),
+//       line1: (line1 || '').trim(),
+//       landmark: (landmark || '').trim(),
+//       city: (city || '').trim(),
+//       state: (state || '').trim(),
+//       zip: (zip || '').trim(),
+//       country: (country || '').trim() || 'India',
+//       type: (type || 'home').trim(),
+//       isDefault: (isDefault === 'on' || isDefault === true || isDefault === 'true')
+//     };
+
+//     user.addresses.push(addrObj);
+//     await user.save();
+
+//     const newAddr = user.addresses[user.addresses.length - 1];
+//     return res.json({ success: true, address: newAddr });
+//   } catch (err) {
+//     console.error('Add address from checkout error:', err);
+//     return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: 'Failed to add address' });
+//   }
+// };
+
+const addAddressFromCheckout = async (req, res) => {
+  try {
+    const userId = req.session.user?._id || null;
+    if (!userId) return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: 'Not authenticated'});
+
+    const { fullName, phone, line1, landmark, city, state, zip, country, type, isDefault } = req.body;
+    const errors = [];
+    if (!line1 || line1.trim().length < 5) errors.push('Address Line 1 must be at least 5 characters');
+    if (!city || city.trim().length < 2) errors.push('City must be at least 2 characters');
+    if (!state || state.trim().length < 2) errors.push('State must be at least 2 characters');
+    if (!country || country.trim().length < 2) errors.push('Country must be at least 2 characters');
+    if (!zip || !/^\d{5,6}$/.test((zip || '').trim()))errors.push('Zip Code must be 5 or 6 digits');
+    
+
+    if (errors.length > 0) {
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: errors.join(' |  ')})
+
+    }
+
+    const user = await User.findById(userId)
+
+    if(!user) {
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: 'User not found'});
+    }
+
+    user.addresses = user.addresses || [];
+  
+    // If setting default, clear others
+    if (isDefault === 'on' || isDefault === true || isDefault === 'true'  ){
+      user.addresses.forEach(a=> { if (a) a.isDefault = false;});
+    }
+
+    const addrObj = {
+      fullName: (fullName || '').trim(),
+      phone: (phone || '').trim(),
+      street: (line1 || '').trim(),
+      landmark: (landmark || '').trim(),
+      city: (city || '').trim(),
+      state: (state || '').trim(),
+      zip: (zip || '').trim(),
+      country: (country || '').trim() || 'India',
+      type: (type || 'home').trim(),
+      isDefault: (isDefault === 'on' || isDefault === true || isDefault === 'true')
+    };
+
+    user.addresses.push(addrObj);
+    await user.save();
+
+    const newAddr = user.addresses[user.addresses.length -1];
+    return res.json({ success: true, address: newAddr});
+
+
+
+
+
+  }catch (err) {
+
+    console.error('Add address from checkout error:', err);
+    return res.status (statusCodes.INTERNAL_ERROR).json({ success: false, message: 'Failed to add address'})
+
+  }
+}
+
+
 module.exports = { 
     loadCheckout,
      placeOrder,
       orderSuccess,
         directCheckout,
           directPlaceOrder,
-          atomicDeductStock
+          atomicDeductStock,
+          addAddressFromCheckout
      };
 
 

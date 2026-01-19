@@ -38,6 +38,8 @@ router.get('/logout', userController.logout);
 
 
 
+
+
 router.get('/forgot-password', profileController.loadForgotPassword);
 router.post('/forgot-password', profileController.sendForgotPasswordOtp);
 router.get('/forgot-password-otp', profileController.loadForgotPasswordOtp);
@@ -134,6 +136,8 @@ router.get('/orders/:id', isUser, orderController.orderDetails);
 router.post('/checkout/direct', isUser, checkBlockedStatus, checkoutController.directCheckout);
 // Direct order (Buy Now → Place Order)
 router.post('/checkout/direct-order', isUser, checkBlockedStatus, checkoutController.directPlaceOrder);
+// Add address from checkout (AJAX)
+router.post('/checkout/add-address', isUser, checkBlockedStatus, checkoutController.addAddressFromCheckout);
 
 
 
@@ -146,6 +150,7 @@ router.get('/auth/google/callback',
         failureRedirect: '/login'
     }),
     (req, res) => {
+        req.session.user = req.user;
         res.redirect('/');
     }
 );

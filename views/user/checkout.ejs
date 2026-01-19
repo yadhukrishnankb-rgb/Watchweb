@@ -179,7 +179,7 @@
                             <p style="margin:4px 0 0; color:var(--muted);">Choose where to deliver your items</p>
                         </div>
                     </div>
-                    <a href="/profile" class="btn-green" title="Add a new address"> <i class="fas fa-plus"></i> Add New </a>
+                    <button id="openAddAddress" class="btn-green" type="button" title="Add a new address"> <i class="fas fa-plus"></i> Add New </button>
                 </div>
 
             <% if (user.addresses && user.addresses.length > 0) { %>
@@ -225,7 +225,7 @@
         <i class="fas fa-home" style="font-size:2.4rem; color:#e5e7eb;"></i>
         <p style="margin-top:.75rem; font-weight:700;">No addresses added</p>
         <p style="color:var(--muted); margin-top:.25rem;">Add a delivery address to continue</p>
-        <a href="/profile" class="btn-green" style="margin-top:1rem; display:inline-flex;"><i class="fas fa-plus"></i> Add Address Now</a>
+        <button id="openAddAddressEmpty" class="btn-green" style="margin-top:1rem; display:inline-flex;" type="button"><i class="fas fa-plus"></i> Add Address Now</button>
     </div>
 <% } %>
             </div>
@@ -268,6 +268,39 @@
         </div>
       </div>
     <% }) %>
+  </div>
+</div>
+
+<!-- Add Address Modal (inline) -->
+<div id="addAddressModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:60;">
+  <div style="background:#fff; width:640px; max-width:95%; border-radius:12px; padding:1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+      <h3 style="margin:0;">Add Delivery Address</h3>
+      <button id="closeAddAddressModal" type="button" style="background:transparent;border:none;font-size:1.2rem;">&times;</button>
+    </div>
+    <form id="addAddressForm">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+        <input name="fullName" placeholder="Full name" required />
+        <input name="phone" placeholder="Phone" required />
+        <input name="line1" placeholder="Address line 1" required />
+        <input name="landmark" placeholder="Landmark (optional)" />
+        <input name="city" placeholder="City" required />
+        <input name="state" placeholder="State" required />
+        <input name="zip" placeholder="ZIP / PIN" required />
+        <input name="country" placeholder="Country" value="India" required />
+      </div>
+      <div style="display:flex; gap:0.75rem; align-items:center; margin-top:0.75rem;">
+        <label style="display:flex; gap:0.4rem; align-items:center;"><input type="checkbox" name="isDefault" /> Set as default</label>
+        <select name="type" style="margin-left:auto;">
+          <option value="home">Home</option>
+          <option value="work">Work</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.9rem;">
+        <button type="button" id="cancelAddAddress" class="btn-green" style="background:#eee;color:#111;">Cancel</button>
+        <button type="submit" class="btn-green">Save Address</button>
+      </div>
+    </form>
   </div>
 </div>
         </div>
@@ -456,6 +489,100 @@ document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
   });
 });
 
+// --- Add Address Modal + AJAX submit ---
+(function(){
+  const openBtn = document.getElementById('openAddAddress');
+  const openBtnEmpty = document.getElementById('openAddAddressEmpty');
+  const modal = document.getElementById('addAddressModal');
+  const closeBtn = document.getElementById('closeAddAddressModal');
+  const cancelBtn = document.getElementById('cancelAddAddress');
+  const form = document.getElementById('addAddressForm');
+
+  function showModal(){ if(modal) modal.style.display='flex'; }
+  function hideModal(){ if(modal) modal.style.display='none'; }
+
+  if(openBtn) openBtn.addEventListener('click', showModal);
+  if(openBtnEmpty) openBtnEmpty.addEventListener('click', showModal);
+  if(closeBtn) closeBtn.addEventListener('click', hideModal);
+  if(cancelBtn) cancelBtn.addEventListener('click', hideModal);
+
+  if(!form) return;
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    const original = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = 'Saving...';
+
+    const fm = new FormData(form);
+    try{
+      const resp = await fetch('/checkout/add-address', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(fm)
+      });
+      const data = await resp.json();
+      if(data.success && data.address){
+        const addr = data.address;
+
+        // Remove selected class from others
+        document.querySelectorAll('.address-card').forEach(c=>c.classList.remove('selected'));
+        // Uncheck other radios
+        document.querySelectorAll('input[name="selectedAddress"]').forEach(r=>r.checked=false);
+
+        // Build label
+        const label = document.createElement('label');
+        label.className = 'address-card selected';
+        label.setAttribute('role','listitem');
+
+        label.innerHTML = `
+          <div class="radio-wrap">
+            <input type="radio" name="selectedAddress" value="${addr._id}" checked required>
+          </div>
+          <div class="address-info">
+            <div style="font-weight:700; color:var(--primary); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">${addr.type || 'home'}</div>
+            <div style="font-weight:700; font-size:1.1rem; margin:0.25rem 0; color:#0f172a;">${addr.fullName || ''}</div>
+            <div style="color:#374151; margin-bottom:0.25rem;">${addr.line1 || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}, ${addr.country || ''}</div>
+            <div style="color:var(--primary); font-weight:600; font-size:0.95rem;"><i class="fas fa-phone" style="margin-right:0.4rem;"></i>${addr.phone || ''}</div>
+          </div>
+          <button type="button" onclick="location.href='/profile'" class="edit-btn" aria-label="Edit address"><a href="/profile" class="fas fa-edit" title="edit address"> Edit </a></button>
+        `;
+
+        // Insert into DOM
+        let list = document.querySelector('.address-list');
+        const empty = document.querySelector('.empty-state');
+        if(!list){
+          list = document.createElement('div');
+          list.className = 'address-list';
+          if(empty && empty.parentNode){
+            empty.parentNode.replaceChild(list, empty);
+          } else {
+            // fallback: append before items card
+            const card = document.querySelector('.card.fade-in');
+            if(card && card.parentNode) card.parentNode.insertBefore(list, card.nextSibling);
+          }
+        }
+        list.insertBefore(label, list.firstChild);
+
+        // attach change listener to new radio
+        const newRadio = label.querySelector('input[name="selectedAddress"]');
+        if(newRadio){
+          newRadio.addEventListener('change', function(){ document.getElementById('selectedAddressId').value = this.value; });
+          document.getElementById('selectedAddressId').value = newRadio.value;
+        }
+
+        hideModal();
+        form.reset();
+      } else {
+        alert(data.message || 'Failed to add address');
+      }
+    } catch (err){
+      console.error('Add address error', err);
+      alert('Network error. Try again.');
+    }
+    btn.disabled = false; btn.innerHTML = original;
+  });
+})();
 </script>
 
 <%- include('../partials/user/footer') %>

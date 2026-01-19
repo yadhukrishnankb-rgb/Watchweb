@@ -49,7 +49,7 @@ const orderSchema = new mongoose.Schema({
   finalAmount: { type: Number, required: true },
   address: {
   fullName: { type: String, required: true },
-  phone: { type: String, required: true },
+  phone: { type: String },
   altPhone: { type: String, default: '' },
   address: { type: String },        // House, Flat, Street
   landmark: { type: String, default: '' },

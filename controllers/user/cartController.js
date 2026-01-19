@@ -28,6 +28,8 @@ exports.viewCart = async (req, res) => {
             return sum;
         }, 0);
 
+     
+
         res.render('user/cart', { cart, total, user: req.session.user });
     } catch (error) {
         console.error('View cart error:', error);
@@ -58,8 +60,8 @@ exports.addToCart = async (req, res) => {
         }
 
         
-let qty = parseInt(quantity, 10);
-        if(qty>MAX_QUANTITY_PER_ITEM) {
+     let qty = parseInt(quantity, 10);
+         if(qty>MAX_QUANTITY_PER_ITEM) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: 'Maximum quantity per item is '
@@ -127,6 +129,10 @@ let qty = parseInt(quantity, 10);
         return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.ADD_TO_CART_ERROR });
     }
 };
+
+
+
+
 
 
 // Update quantity

@@ -606,6 +606,55 @@ html { scroll-behavior: smooth; }
 @media (max-width: 900px) {
     .product__img { height: 180px; }
 }
+
+/* Clear Filters Button Styles */
+.clear-filters-btn {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.9375rem;
+    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+    margin: 12px 0 0 0;;
+}
+
+.clear-filters-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.clear-filters-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.clear-filters-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(8, 129, 121, 0.35);
+    background: linear-gradient(135deg, #047857, #065f46);
+}
+
+.clear-filters-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+}
 </style>
 
 <main class="bg-gray-50 min-h-screen py-8">
@@ -635,12 +684,6 @@ html { scroll-behavior: smooth; }
                                 class="px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                             Search
                         </button>
-                        <% if (Object.keys(query).length > 0 && !query.search) { %>
-                            <a href="/shop" 
-                               class="px-6 py-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                                Clear All
-                            </a>
-                        <% } %>
                     </div>
 
                     <!-- Filters Grid -->
@@ -687,6 +730,13 @@ html { scroll-behavior: smooth; }
                                 <% }); %>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Clear Filters Button -->
+                    <div class="mt-6">
+                        <button type="button" onclick="clearAllFilters()" class="clear-filters-btn">
+                            Clear All Filters
+                        </button>
                     </div>
                 </form>
             </aside>
@@ -799,6 +849,11 @@ maxPrice?.addEventListener('change', function() {
         this.value = minPrice.value;
     }
 });
+
+// Clear all filters function
+function clearAllFilters() {
+    window.location.href = '/shop';
+}
 
 // Prevent cart button from triggering link
 document.querySelectorAll('.add-to-cart-btn').forEach(button => {

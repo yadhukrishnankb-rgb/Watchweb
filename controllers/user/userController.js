@@ -36,6 +36,7 @@ res.redirect("/pageNotFound")
 const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
+
         
         // Fetch featured products (newest 8 products)
         const featuredProducts = await Product.find({ isBlocked: false })
@@ -44,7 +45,7 @@ const loadHomepage = async (req, res) => {
             .limit(10)
             .lean()
    
-              
+      
     
         // Fetch popular products (you can modify this based on your criteria)
         const popularProducts = await Product.find({ isBlocked: false })

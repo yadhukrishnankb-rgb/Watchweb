@@ -51,7 +51,7 @@ const orderDetails = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const orderId = req.params.id;
-
+  
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate('orderedItems.product', 'productName price productImage')
       .exec();
@@ -64,7 +64,7 @@ const orderDetails = async (req, res) => {
     // --- NEW: robust address normalization/fallbacks ---
     const raw = plainOrder.address || plainOrder.shippingAddress || {};
     const sessionUser = req.session.user || {};
-
+    
     const fullName =
       raw.fullName ||
       raw.name ||
@@ -159,6 +159,7 @@ const cancelOrder = async (req, res) => {
     const orderId = req.params.id;
     const { reason } = req.body;
 
+
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
@@ -186,6 +187,7 @@ const cancelOrder = async (req, res) => {
         totalRemoved += it.totalPrice || (it.price * it.quantity) || 0;
       }
     }
+  
 
     order.status = 'cancelled';
     order.cancelReason = reason || 'No reason provided';
@@ -310,7 +312,7 @@ const downloadInvoice = async (req, res) => {
         // Header underline
         doc.moveTo(50, tableTop + 18).lineTo(560, tableTop + 18).strokeColor('#cccccc').lineWidth(1).stroke();
 
-        // ────────────────────── TABLE ROWS ──────────────────────
+        // ────────────────────── TABLE ROWS ──────────────────────  
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         let y = tableTop + 30;
 
@@ -472,6 +474,8 @@ const requestReturnItem = async (req, res) => {
     item.status = 'Return Request';
     item.returnReason = reason || 'No reason provided';
     item.requestedAt = new Date();
+
+    
 
     await order.save();
 

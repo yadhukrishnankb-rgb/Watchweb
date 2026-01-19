@@ -26,13 +26,18 @@ profileImage: {
 },
 addresses: [
   {
-    line1: { type: String },
+    fullName: { type: String },
+    phone: { type: String },
+    altPhone: { type: String, default: '' },
+    street: { type: String },
     landmark: { type: String, default: '' },
     locality: { type: String, default: '' },
     city: { type: String },
     state: { type: String },
     zip: { type: String },
-    country: { type: String }
+    country: { type: String },
+    type: { type: String, default: 'home' },
+    isDefault: { type: Boolean, default: false }
   }
 ],
   googleId: {
