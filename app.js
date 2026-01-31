@@ -27,6 +27,7 @@ const userRouter = require("./routes/userRouter");
 const adminRouter = require('./routes/adminRouter');
 const Cart = require('./models/cartSchema');
 const Wishlist = require('./models/wishlistSchema');
+const { autoCancelExpiredPendingOrders } = require('./helpers/pendingOrderCleanup');
 
 // Initialize database
 db();
@@ -139,6 +140,18 @@ app.use("/", userRouter);
 const PORT = process.env.PORT || 3000; // Fixed port configuration
 app.listen(PORT, () => {
     console.log(`Server Running on port ${PORT}`);
+    
+    // Start periodic cleanup of expired pending orders (every hour)
+    setInterval(async () => {
+        console.log('[Scheduler] Running pending order cleanup...');
+        await autoCancelExpiredPendingOrders();
+    }, 60 * 60 * 1000); // Run every 60 minutes
+    
+    // Run cleanup on startup after 5 seconds to let DB connect
+    setTimeout(async () => {
+        console.log('[Startup] Running initial pending order cleanup...');
+        await autoCancelExpiredPendingOrders();
+    }, 5000);
 });
 
 module.exports = app;

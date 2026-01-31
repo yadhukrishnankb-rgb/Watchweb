@@ -507,7 +507,7 @@ const userId = req.session.user ? req.session.user._id : (req.user ? req.user._i
 if (!userId) return res.redirect('/login');
 const orderId = req.params.id;
 const order = await Order.findOne({ _id: orderId, user: userId });
-if (order && order.status === 'Placed') {
+if (order && order.status === 'Pending') {
 order.status = 'Cancelled';
 await order.save();
 }

@@ -171,7 +171,7 @@ const placeOrder = async (req, res) => {
         price: i.price,
         totalPrice: i.totalPrice,
         productSnapshot: { image: cart.items.find(c => c.productId._id.toString() === i.product.toString()).productId.productImage[0] },
-        status: 'Placed'
+        status: 'Pending'
       })),
       totalPrice: total,
       finalAmount: total,
@@ -181,8 +181,9 @@ const placeOrder = async (req, res) => {
       discount: 0,
       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-      status: 'pending',
+      status: 'Pending',
       address: orderAddress,
+      pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
       createdOn: new Date()
     });
 
@@ -270,7 +271,7 @@ const directPlaceOrder = async (req, res) => {
         price: product.salesPrice,
         totalPrice: subtotal,
         productSnapshot: { image: product.productImage[0] },
-        status: 'Placed'
+        status: 'Pending'
       }],
       totalPrice: total,
       finalAmount: total,
@@ -280,8 +281,9 @@ const directPlaceOrder = async (req, res) => {
       discount: 0,
       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
       paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-      status: 'pending',
+      status: 'Pending',
       address: orderAddress,
+      pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
       createdOn: new Date()
     });
 

@@ -428,7 +428,7 @@
                                                                     const rawForDisplay = (itemRaw && itemRaw.toLowerCase() !== 'placed') ? itemRaw : (orderRaw || 'Pending');
                                                                     const displayStatus = rawForDisplay.toString().split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
                                                                     const canCancel = orderStatusClass === 'pending' && itemStatus !== 'cancelled';
-                                                                    const canReturn = itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered';
+                                                                    const canReturn = (itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered') && itemStatus !== 'cancelled' && itemStatus !== 'returned';
                                                                 %>
 
                     <div class="order-item" data-item-id="<%= item._id %>">
@@ -602,70 +602,91 @@
            <div class="card amount-card">
     <h2 class="card-title">Order Summary</h2>
     
-    <div class="amount-row">
-        <span class="amount-label">Subtotal</span>
-        <span class="amount-value">₹<%= order.subtotal.toLocaleString() %></span>
-    </div>
-    <div class="amount-row">
-        <span class="amount-label">Tax</span>
-        <span class="amount-value">₹<%= order.tax.toLocaleString() %></span>
-    </div>
-    <div class="amount-row">
-        <span class="amount-label">Shipping</span>
-        <span class="amount-value">₹<%= order.shipping.toLocaleString() %></span>
-    </div>
-    <div class="amount-divider"></div>
+        <%
+/* -----------------------------
+     STEP 1: Original values
+--------------------------------*/
+const originalSubtotal  = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+const originalTax       = Number(order.originalTax ?? order.tax ?? 0);
+const originalShipping  = Number(order.originalShipping ?? order.shipping ?? 0);
+const originalAmount    = Number(order.originalAmount ?? order.finalAmount ?? 0);
+
+/* -----------------------------
+     STEP 2: Calculate refunded amount from items
+--------------------------------*/
+let refundedAmount = 0;
+
+(order.orderedItems || []).forEach(item => {
+    const status = (item.status || '').toLowerCase();
+
+    if (status === 'cancelled' || status === 'returned') {
+        const itemSubtotal = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
+
+        // proportional tax & discount
+        const taxShare =
+            originalSubtotal > 0
+                ? (itemSubtotal / originalSubtotal) * originalTax
+                : 0;
+
+        const discountShare =
+            originalSubtotal > 0
+                ? (itemSubtotal / originalSubtotal) * Number(order.discount || 0)
+                : 0;
+
+        refundedAmount += itemSubtotal + taxShare - discountShare;
+    }
+});
+
+/* -----------------------------
+     STEP 3: Round + cap refund
+--------------------------------*/
+refundedAmount = Math.min(
+    Math.round(refundedAmount * 100) / 100,
+    originalAmount
+);
+
+/* -----------------------------
+     STEP 4: Final paid amount
+--------------------------------*/
+const finalPaidAmount = Math.max(
+    0,
+    Math.round((originalAmount - refundedAmount) * 100) / 100
+);
+
+// Recompute simple status flags used below in the template
+const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
+const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
+const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
+const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 'returned');
+        %>
     
-    <div class="amount-total">
-        <span>Original Amount</span>
-        <span>₹<%= order.finalAmount.toLocaleString() %></span>
-    </div>
-    <% 
-        // If controller passed cappedRefunded/finalPaid, prefer them (ensures server-side persistence is used).
-        let _cappedRefunded = (typeof cappedRefunded !== 'undefined') ? Number(cappedRefunded) : null;
-        let _finalPaid = (typeof finalPaid !== 'undefined') ? Number(finalPaid) : null;
-
-        if (_cappedRefunded == null || isNaN(_cappedRefunded)) {
-            const subtotal = Number(order.subtotal || 0);
-            const totalTax = Number(order.tax || 0);
-            const totalDiscount = Number(order.discount || 0);
-
-            const refundedComputed = (() => {
-                if (order.refunded != null && !isNaN(Number(order.refunded)) && Number(order.refunded) > 0) return Number(order.refunded);
-                return (order.orderedItems || []).reduce((acc, it) => {
-                    const st = ((it.status||'').toString().toLowerCase());
-                    if (['cancelled','returned'].includes(st)) {
-                        if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return acc + Number(it.refundAmount);
-                        const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
-                        const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
-                        const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-                        return acc + (itemSubtotal + taxShare - discountShare);
-                    }
-                    return acc;
-                }, 0);
-            })();
-
-            const roundedRefunded = Math.round((refundedComputed + Number.EPSILON) * 100) / 100;
-            _cappedRefunded = Math.min(roundedRefunded, Number(order.finalAmount || 0));
-            _finalPaid = Math.max(0, Math.round(((order.finalAmount || 0) - _cappedRefunded + Number.EPSILON) * 100) / 100);
-        }
-
-        const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
-        const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
-        const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
-        const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 'returned');
-    %>
-
-    <div style="margin-top:10px">
-            <div class="amount-row">
-            <span class="amount-label">Refunded Amount</span>
-            <span class="amount-value">₹<%= (_cappedRefunded || 0).toLocaleString() %></span>
-        </div>
-        <div class="amount-row">
-            <span class="amount-label">Final Paid Amount</span>
-            <span class="amount-value">₹<%= (_finalPaid || 0).toLocaleString() %></span>
-        </div>
-    </div>
+    <!-- Order Summary Table -->
+    <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
+        <tr style="border-bottom: 1px solid #7dd3fc;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Subtotal</td>
+            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalSubtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #7dd3fc;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Tax</td>
+            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalTax).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #7dd3fc;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Shipping</td>
+            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalShipping).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+        <tr style="border-bottom: 2px solid #7dd3fc;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:700; font-size:1.1rem;">Original Amount</td>
+            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:700; font-size:1.1rem;">₹<%= (originalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #7dd3fc;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Refunded Amount</td>
+            <td style="padding:12px 0; text-align:right; color:#10b981; font-weight:600;">₹<%= (refundedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+        <tr style="background-color:#f0f9ff; border-bottom: 2px solid #0c4a6e;">
+            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:700; font-size:1.1rem;">Final Paid Amount</td>
+            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:700; font-size:1.1rem;">₹<%= (finalPaidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+        </tr>
+    </table>
 
     <% if (fullCancelled || fullReturned) { %>
         <div style="margin-top:12px; padding:12px; background:#d1fae5; border-radius:8px; text-align:center; font-weight:600; color:#047857;">

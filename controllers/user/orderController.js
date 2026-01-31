@@ -114,8 +114,25 @@ const orderDetails = async (req, res) => {
       if (it.refundAmount != null) it.refundAmount = Number(it.refundAmount);
     });
 
-    const subtotal = Number(plainOrder.subtotal || 0);
-    const totalTax = Number(plainOrder.tax || 0);
+    // Reconstruct original subtotal from ordered items (use stored item totals when available)
+    const originalSubtotalFromItems = (plainOrder.orderedItems || []).reduce((acc, it) => {
+      const itemTotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+      return acc + itemTotal;
+    }, 0);
+
+    // Preserve original order-level amounts for display (do not rely on mutable order.subtotal)
+    const originalTax = Number(plainOrder.tax || 0);
+    const originalShipping = Number(plainOrder.shipping || 0);
+    const originalAmount = Math.round(((originalSubtotalFromItems + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
+    // attach for view usage
+    plainOrder.originalAmount = originalAmount;
+    plainOrder.originalSubtotal = Math.round((originalSubtotalFromItems + Number.EPSILON) * 100) / 100;
+    plainOrder.originalTax = originalTax;
+    plainOrder.originalShipping = originalShipping;
+
+    // Use reconstructed original values for refund allocation (protect against mutated order.subtotal)
+    const subtotal = originalSubtotalFromItems; // original items subtotal
+    const totalTax = originalTax;
     const totalDiscount = Number(plainOrder.discount || 0);
 
     const refundedComputed = (() => {
@@ -164,7 +181,7 @@ const cancelOrder = async (req, res) => {
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const current = (order.status || '').toLowerCase();
-    // Only allow full-order cancellation when order is in 'pending' state
+    // Only allow full-order cancellation when order is in 'Pending' state
     if (current !== 'pending') {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANCEL_ONLY_PENDING });
     }
@@ -189,12 +206,12 @@ const cancelOrder = async (req, res) => {
     }
   
 
-    order.status = 'cancelled';
+    order.status = 'Cancelled';
     order.cancelReason = reason || 'No reason provided';
     order.approvedAt = new Date();
 
-    order.subtotal = Math.max(0, (order.subtotal || 0) - totalRemoved);
-    order.finalAmount = Math.max(0, (order.finalAmount || 0) - totalRemoved);
+    // DO NOT modify order.subtotal or order.finalAmount - keep them as original
+    // The view will handle display logic based on item cancellation status
 
     await order.save();
 
@@ -416,14 +433,12 @@ const requestCancelItem = async (req, res) => {
       await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
     }
 
-    // Adjust order totals
-    const priceToRemove = item.totalPrice || (item.price * item.quantity) || 0;
-    order.subtotal = Math.max(0, (order.subtotal || 0) - priceToRemove);
-    order.finalAmount = Math.max(0, (order.finalAmount || 0) - priceToRemove);
+    // DO NOT modify order.subtotal or order.finalAmount - keep them as original
+    // The view will handle display logic based on item cancellation status
 
     // If all items cancelled -> mark full order cancelled
     const allCancelled = order.orderedItems.every(it => (it.status || '').toLowerCase() === 'cancelled');
-    if (allCancelled) order.status = 'cancelled';
+    if (allCancelled) order.status = 'Cancelled';
 
     await order.save();
 
@@ -458,24 +473,32 @@ const requestReturnItem = async (req, res) => {
 
     // Prefer item-level status when meaningful; otherwise fall back to parent order status
     let effectiveStatus = itemStatusLC;
-    if (!effectiveStatus || effectiveStatus === 'placed') {
+    if (!effectiveStatus || effectiveStatus === 'pending') {
       effectiveStatus = orderStatusLC;
     }
 
-    if (effectiveStatus === 'return request' || effectiveStatus === 'returned') {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_ALREADY_REQUESTED });
-    }
+    // if (effectiveStatus === 'return request' || effectiveStatus === 'returned') {
+    //   return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_ALREADY_REQUESTED });
+    // }
 
-    if (effectiveStatus !== 'delivered') {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ONLY_DELIVERED_CAN_RETURN });
-    }
+    // if (effectiveStatus !== 'delivered') {
+    //   return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ONLY_DELIVERED_CAN_RETURN });
+    // }
 
     // Mark item-level return request (admin approval required)
     item.status = 'Return Request';
-    item.returnReason = reason || 'No reason provided';
+    item.returnReason = reason;
     item.requestedAt = new Date();
 
+    // Check if all items have return requests
+    const allHaveReturnRequests = order.orderedItems.every(it => 
+      it.status === 'Return Request' || it.status === 'Returned'
+    );
     
+    // Update order status to Return Request if all items are in return process
+    if (allHaveReturnRequests) {
+      order.status = 'Return Request';
+    }
 
     await order.save();
 

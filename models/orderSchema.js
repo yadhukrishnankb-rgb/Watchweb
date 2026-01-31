@@ -34,8 +34,8 @@ const orderSchema = new mongoose.Schema({
     // ADD THESE FIELDS FOR ITEM-LEVEL CANCEL/RETURN
     status: {
       type: String,
-      enum: ['Placed', 'Processing', 'Shipped', 'Delivered', 'Cancellation Request', 'Cancelled', 'Return Request', 'Returned'],
-      default: 'Placed'
+      enum: ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancellation Request', 'Cancelled', 'Return Request', 'Returned'],
+      default: 'Pending'
     },
     cancelReason: { type: String },
     returnReason: { type: String },
@@ -73,14 +73,15 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['pending', 'Placed', 'Processing', 'Shipped','Out for Delivery', 'Delivered', 'cancelled', 'Cancellation Request', 'Return Request', 'Returned'],
-    default: 'pending'
+    enum: ['Pending', 'Processing', 'Shipped','Out for Delivery', 'Delivered', 'Cancelled', 'Cancellation Request', 'Return Request', 'Returned'],
+    default: 'Pending'
   },
   shipping: { type: Number, default: 0 },
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },
   refunded: { type: Number, default: 0 },
   createdOn: { type: Date, default: Date.now, required: true },
+  pendingCancelTime: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) },
   couponApplied: { type: Boolean, default: false },
   cancelReason: { type: String },
   returnReason: { type: String }

@@ -23,8 +23,8 @@ exports.getCategories = async (req, res) => {
         const [totalCategories, categories] = await Promise.all([
             Category.countDocuments(query),
             Category.find(query)
-            .select('name description createdAt')
-            .sort({createdAt: -1,_id: -1})
+            .select('name description createAt')
+            .sort({createAt: -1,_id: -1})
             .skip(skip)
             .limit(limit)
             

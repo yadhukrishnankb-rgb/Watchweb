@@ -68,7 +68,7 @@ module.exports = {
   ITEM_NOT_IN_CART: 'Item not found in cart',
   ITEM_REMOVED_FROM_CART: 'Item removed from cart',
   REMOVE_ITEM_ERROR: 'Error removing item',
-
+  CART_MAXIMUX_ITEMS: 'You can select a maximum of 10 items per order. Please reduce the quantity to continue.',
   // Orders
   ORDERS_LOAD_ERROR: 'Failed to load orders',
   ORDER_DETAILS_LOAD_ERROR: 'Failed to load order details',

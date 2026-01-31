@@ -64,8 +64,8 @@ exports.addToCart = async (req, res) => {
          if(qty>MAX_QUANTITY_PER_ITEM) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
-                message: 'Maximum quantity per item is '
-                    +MAX_QUANTITY_PER_ITEM
+                message: messages.CART_MAXIMUX_ITEMS
+                    
             })
         }
 

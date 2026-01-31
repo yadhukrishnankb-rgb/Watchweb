@@ -28,7 +28,7 @@ const userAuth = async (req,res,next) => {
 
 const adminAuth = async (req, res, next) => {
   try {
-    if (!req.session || !req.session.admin || !req.session.admin._id) {
+    if (!req.session || !req.session.admin || !req.session.admin.isAdmin) {
       // If AJAX / fetch -> return JSON 401, else redirect
       if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -36,20 +36,10 @@ const adminAuth = async (req, res, next) => {
       return res.redirect('/admin/login');
     }
 
-    const admin = await User.findById(req.session.admin._id).lean();
-    if (!admin || !admin.isAdmin || admin.isBlocked) {
-      req.session.destroy?.(() => {});
-      if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
-        return res.status(403).json({ success: false, message: 'Forbidden' });
-      }
-      return res.redirect('/admin/login');
-    }
-
+    // For admin, we don't need to check DB since admin is hardcoded, just ensure isAdmin flag
     // refresh session expiry (match app.js)
     const maxAge = 14 * 24 * 60 * 60 * 1000;
     req.session.cookie.maxAge = maxAge;
-    req.session.admin = { _id: admin._id, email: admin.email };
-    req.admin = admin;
     next();
   } catch (err) {
     console.error('Admin Auth error:', err);

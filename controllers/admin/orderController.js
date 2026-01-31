@@ -37,15 +37,16 @@ exports.getOrders = async (req, res) => {
   
     const statusOptions = [
       { value: '', label: 'All' },
-      { value: 'pending', label: 'Pending' },
+      { value: 'Pending', label: 'Pending' },
       { value: 'Processing', label: 'Processing' },
       { value: 'Shipped', label: 'Shipped' },
+      { value: 'Out for Delivery', label: 'Out for Delivery' },
       { value: 'Delivered', label: 'Delivered' },
-      { value: 'cancelled', label: 'Cancelled' },
+      { value: 'Cancelled', label: 'Cancelled' },
       { value: 'Return Request', label: 'Return Request' },
       { value: 'Returned', label: 'Returned' }
     ];
-
+  
     res.render('admin/orders', {
       orders,
       currentPage: page,
@@ -118,7 +119,9 @@ exports.updateOrderStatus = async (req, res) => {
       'Out for Delivery': ['Delivered'],
       'Delivered': ['Return Request'],
       'Cancelled': [],
-      'Returned': []
+      'Returned': [],
+      'Cancellation Request': ['Cancelled'],
+      'Return Request': ['Returned']
       // 'Return Request' → only admin can approve to 'Returned'
     };
 
@@ -155,8 +158,27 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // All checks passed → update status
+    // All checks passed → update order status
     order.status = newStatusNormalized;
+
+    // === SYNC ITEM STATUSES ===
+    // Update all items that don't have a cancellation/return request
+    // Items with pending cancel/return requests keep their status
+    order.orderedItems.forEach(item => {
+      // Skip items that have explicit cancel/return requests - they handle their own status
+      if (item.status === 'Cancellation Request' || item.status === 'Return Request') {
+        return; // Don't override pending requests
+      }
+
+      // Skip already cancelled or returned items
+      if (item.status === 'Cancelled' || item.status === 'Returned') {
+        return; // Keep their final status
+      }
+
+      // Sync normal items with order status
+      item.status = newStatusNormalized;
+    });
+
     await order.save();
 
     return res.status(statusCodes.OK).json({
@@ -274,7 +296,7 @@ exports.approveRequest = async (req, res) => {
 
         order.refunded = Math.round(((Number(order.refunded || 0) + totalRefund) + Number.EPSILON) * 100) / 100;
 
-        order.status = isCancel ? 'cancelled' : (isReturn ? 'Returned' : order.status);
+        order.status = isCancel ? 'Cancelled' : (isReturn ? 'Returned' : order.status);
         order.approvedAt = new Date();
 
         // Persist refund info; keep finalAmount/subtotal unchanged for audit
@@ -282,7 +304,7 @@ exports.approveRequest = async (req, res) => {
         return res.status(statusCodes.OK).json({ success: true, message: messages.FULL_ORDER_REQUEST_APPROVED, newStatus: order.status });
       } else {
         // Reject → revert status
-        order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Placed';
+        order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Pending';
         order.requestedAt = null;
         await order.save();
         return res.status(statusCodes.OK).json({ success: true, message: messages.REQUEST_REJECTED, newStatus: order.status });
@@ -317,13 +339,24 @@ exports.approveRequest = async (req, res) => {
       // DO NOT reduce finalAmount or subtotal → keep original
     } else if (action === 'reject') {
       if (itemType === 'Cancellation Request') {
-        item.status = 'Placed';
+        item.status = 'Pending';
         item.cancelReason = null;
       } else if (itemType === 'Return Request') {
         item.status = 'Delivered';
         item.returnReason = null;
       }
       item.requestedAt = null;
+    }
+
+    // Check if all items are now returned/cancelled
+    const allReturned = order.orderedItems.every(it => it.status === 'Returned');
+    const allCancelled = order.orderedItems.every(it => it.status === 'Cancelled');
+    
+    // Update order status if all items have same final status
+    if (allReturned) {
+      order.status = 'Returned';
+    } else if (allCancelled) {
+      order.status = 'Cancelled';
     }
 
     await order.save();

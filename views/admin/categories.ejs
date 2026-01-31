@@ -47,7 +47,7 @@
                             <td class="px-6 py-4 whitespace-nowrap"><%= category.name %></td>
                             <td class="px-6 py-4"><%= category.description %></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <%= new Date(category.createdAt).toLocaleDateString() %>
+                                <%= category.createAt && !isNaN(new Date(category.createAt)) ? new Date(category.createAt).toLocaleDateString() : 'Invalid Date' %>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <button onclick="openEditModal('<%= category._id %>', '<%= category.name %>', '<%= category.description %>')" 
