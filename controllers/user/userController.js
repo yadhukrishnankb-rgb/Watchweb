@@ -3,11 +3,12 @@ const User = require("../../models/userSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt");
-const crypto = require('crypto');
+// const crypto = require('crypto');
 const messages = require("../../constants/messages");
 const statusCodes = require("../../constants/statusCodes");
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
+const { session } = require("passport");
 
 
  const loadSignup = async (req,res)=>{
@@ -22,6 +23,7 @@ const Category = require("../../models/categorySchema");
     
     }
  }
+
 
 
  const pageNotFound = async (req,res) => {
@@ -180,6 +182,9 @@ const signup = async (req,res)=>{
     }
 }
 
+
+
+
 const verifyOtp = async (req,res) => {
     try {
         const {otp} = req.body;
@@ -285,7 +290,7 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
-
+        
         if (!user) {
             return res.status(statusCodes.UNAUTHORIZED).json({
                 success: false,
@@ -322,10 +327,10 @@ const login = async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            isBlocked: user.isBlocked
+            isBlocked: false
         };
 
-        res.json({ success: true });
+        res.json({ success: true, redirectUrl: '/' });
     } catch (error) {
         console.error('Login error:', error);
         res.status(statusCodes.INTERNAL_ERROR).json({
@@ -337,28 +342,50 @@ const login = async (req, res) => {
 
 
 
+// const logout = async (req, res) => {
+//     try {
+//         // Destroy the session
+//         req.session.destroy((err) => {
+//             if (err) {
+//                     console.error('Logout Error:', err);
+//                     return res.status(statusCodes.INTERNAL_ERROR).json({
+//                         success: false,
+//                         message: messages.LOGOUT_ERROR
+//                     });
+//                 }
+//             // Redirect to login page
+//             res.redirect('/login');
+//         });
+
+
+//     } catch (error) {
+//         console.error('Logout Error:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Error during logout'
+//         });
+//     }
+// };
+
+
 const logout = async (req, res) => {
-    try {
-        // Destroy the session
-        req.session.destroy((err) => {
-            if (err) {
-                    console.error('Logout Error:', err);
-                    return res.status(statusCodes.INTERNAL_ERROR).json({
-                        success: false,
-                        message: messages.LOGOUT_ERROR
-                    });
-                }
-            // Redirect to login page
-            res.redirect('/login');
-        });
-    } catch (error) {
-        console.error('Logout Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error during logout'
-        });
-    }
+  try {
+   if (!req.session) return res.redirect('/login');
+
+  req.session.user = null;    // remove only user
+  res.redirect('/login');
+  } catch (error) {
+    console.error('Logout Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error during logout'
+    });
+  }
 };
+
+
+
+
 
         
     module.exports = {

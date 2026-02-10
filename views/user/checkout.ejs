@@ -215,7 +215,7 @@
                 </div>
 
                 <button type="button" onclick="editAddress('<%= idx %>')" class="edit-btn" aria-label="Edit address">
-                    <a href="/profile" class="fas fa-edit" title="edit address"> Edit </a>
+                    <a href="/profile/address" class="fas fa-edit" title="edit address"> Edit </a>
                 </button>
             </label>
         <% }) %>
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Validate address selected
       const selectedAddr = document.getElementById('selectedAddressId').value;
       if (!selectedAddr) {
-        alert('Please select a delivery address');
+        await Swal.fire({ icon: 'warning', title: 'Please select a delivery address' });
         return;
       }
 
@@ -468,13 +468,13 @@ document.addEventListener('DOMContentLoaded', function() {
           // Redirect to success page
           window.location.href = data.redirectUrl;
         } else {
-          alert(data.message || 'Order failed. Please try again.');
+          await Swal.fire({ icon: 'error', title: data.message || 'Order failed. Please try again.' });
           btn.disabled = false;
           btn.innerHTML = originalText;
         }
       } catch (err) {
         console.error('Checkout error:', err);
-        alert('Network error. Please try again.');
+        await Swal.fire({ icon: 'error', title: 'Network error. Please try again.' });
         btn.disabled = false;
         btn.innerHTML = originalText;
       }
@@ -545,7 +545,7 @@ document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
             <div style="color:#374151; margin-bottom:0.25rem;">${addr.line1 || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}, ${addr.country || ''}</div>
             <div style="color:var(--primary); font-weight:600; font-size:0.95rem;"><i class="fas fa-phone" style="margin-right:0.4rem;"></i>${addr.phone || ''}</div>
           </div>
-          <button type="button" onclick="location.href='/profile'" class="edit-btn" aria-label="Edit address"><a href="/profile" class="fas fa-edit" title="edit address"> Edit </a></button>
+          <button type="button" onclick="location.href='/profile/address'" class="edit-btn" aria-label="Edit address"><a href="/profile/address" class="fas fa-edit" title="edit address"> Edit </a></button>
         `;
 
         // Insert into DOM
@@ -574,11 +574,11 @@ document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
         hideModal();
         form.reset();
       } else {
-        alert(data.message || 'Failed to add address');
+        await Swal.fire({ icon: 'error', title: data.message || 'Failed to add address' });
       }
     } catch (err){
       console.error('Add address error', err);
-      alert('Network error. Try again.');
+      await Swal.fire({ icon: 'error', title: 'Network error. Try again.' });
     }
     btn.disabled = false; btn.innerHTML = original;
   });

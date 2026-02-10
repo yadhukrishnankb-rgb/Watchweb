@@ -11,8 +11,8 @@ const userAuth = async (req,res,next) => {
         }
         const user = await User.findById(req.session.user._id).lean();
         if (!user || user.isBlocked) {
-            // clear session and redirect
-            req.session.destroy?.(() => {});
+            // clear only user session, not entire session
+            req.session.user = null;
             return res.redirect("/login");
         }
         // attach fresh user to req.user if needed
@@ -35,7 +35,7 @@ const adminAuth = async (req, res, next) => {
       }
       return res.redirect('/admin/login');
     }
-
+  
     // For admin, we don't need to check DB since admin is hardcoded, just ensure isAdmin flag
     // refresh session expiry (match app.js)
     const maxAge = 14 * 24 * 60 * 60 * 1000;
@@ -61,7 +61,7 @@ const checkBlockedStatus = async (req, res, next) => {
         if (req.session.user && req.session.user._id) {
             const user = await User.findById(req.session.user._id);
             if (user && user.isBlocked) {
-                req.session.destroy?.(() => {});
+                req.session.user = null;
                 return res.status(403).json({
                     success: false,
                     message: 'Your account has been blocked'

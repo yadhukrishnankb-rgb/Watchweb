@@ -203,7 +203,7 @@ $('#statusForm').on('submit', function(e) {
     },
     error: function(xhr) {
       const msg = xhr.responseJSON?.message || 'Update failed';
-      alert(msg);
+      Swal.fire({ icon: 'error', title: msg });
     }
   });
 });

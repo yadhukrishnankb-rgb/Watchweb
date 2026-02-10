@@ -20,6 +20,7 @@ const loadLogin = async (req, res) => {
 };
 
 
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -38,13 +39,14 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
   if (!req.session) return res.redirect('/admin/login');
-
-  req.session.destroy(err => {
-    if (err) console.error('Session destroy error:', err);
-    res.clearCookie('sid');
-    res.redirect('/admin/login');
-  });
+   
+   req.session.admin = null;
+   
+   res.redirect('/admin/login');
+   
 };
+
+
 
 
 

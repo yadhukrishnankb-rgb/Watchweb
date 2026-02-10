@@ -52,7 +52,7 @@
             </div>
 
             <div class="product__content">
-              <span class="product__category"><%= product.category.name %></span>
+              <span class="product__category"><%= product.category && product.category.name ? product.category.name : '' %></span>
               <a href="/product/<%= product._id %>">
                 <h3 class="product__title"><%= product.productName %></h3>
               </a>

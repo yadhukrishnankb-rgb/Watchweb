@@ -143,13 +143,13 @@ app.listen(PORT, () => {
     
     // Start periodic cleanup of expired pending orders (every hour)
     setInterval(async () => {
-        console.log('[Scheduler] Running pending order cleanup...');
+        // console.log('[Scheduler] Running pending order cleanup...');
         await autoCancelExpiredPendingOrders();
     }, 60 * 60 * 1000); // Run every 60 minutes
     
     // Run cleanup on startup after 5 seconds to let DB connect
     setTimeout(async () => {
-        console.log('[Startup] Running initial pending order cleanup...');
+        // console.log('[Startup] Running initial pending order cleanup...');
         await autoCancelExpiredPendingOrders();
     }, 5000);
 });

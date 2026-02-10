@@ -109,7 +109,17 @@
 
 <script>
 async function approveRequest(orderId, itemId, action) {
-  if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+  const conf = await Swal.fire({
+    title: `Are you sure you want to ${action} this request?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No',
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33'
+  });
+
+  if (!conf.isConfirmed) return;
 
   try {
     const res = await fetch(`/admin/orders/${orderId}/items/${itemId}/approve`, {
@@ -119,14 +129,14 @@ async function approveRequest(orderId, itemId, action) {
     });
     const data = await res.json();
     if (data.success) {
-      alert(data.message);
+      await Swal.fire({ icon: 'success', title: data.message || 'Done', timer: 1400, showConfirmButton: false });
       location.reload();
     } else {
-      alert(data.message || 'Failed');
+      Swal.fire({ icon: 'error', title: data.message || 'Failed' });
     }
   } catch (err) {
     console.error(err);
-    alert('Error processing request');
+    Swal.fire({ icon: 'error', title: 'Error processing request' });
   }
 }
 </script>

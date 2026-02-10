@@ -198,10 +198,10 @@ document.getElementById('addCategoryForm').addEventListener('submit', async (e) 
             closeAddModal();
             window.location.reload();
         } else {
-            alert(data.message);
+            Swal.fire({ icon: 'error', title: data.message || 'Error', timer: 2000 });
         }
     } catch (error) {
-        alert('Error adding category');
+        Swal.fire({ icon: 'error', title: 'Error adding category' });
     }
 });
 
@@ -228,10 +228,10 @@ document.getElementById('editCategoryForm').addEventListener('submit', async (e)
             closeEditModal();
             window.location.reload();
         } else {
-            alert(data.message);
+            Swal.fire({ icon: 'error', title: data.message || 'Error', timer: 2000 });
         }
     } catch (error) {
-        alert('Error updating category');
+        Swal.fire({ icon: 'error', title: 'Error updating category' });
     }
 });
 

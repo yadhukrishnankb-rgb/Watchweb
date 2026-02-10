@@ -134,7 +134,8 @@ exports.getProductDetails = async (req, res) => {
             .lean();
         
         // Check if product exists and is available
-        if (!product || product.isBlocked) {
+        // Check if product exists
+        if (!product) {
             return res.redirect('/shop');
         }
 

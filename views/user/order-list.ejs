@@ -359,22 +359,28 @@ function confirmCancel() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason, isFullOrder: true })
-  }).then(res => res.json()).then(data => {
-    if (data.success) location.reload();
-    else alert(data.message);
+  }).then(res => res.json()).then(async data => {
+    if (data.success) return location.reload();
+    await Swal.fire({ icon: 'error', title: data.message || 'Unable to cancel order' });
+  }).catch(async err => {
+    console.error(err);
+    await Swal.fire({ icon: 'error', title: 'Error cancelling order' });
   });
 }
 
 function confirmReturn() {
   const reason = document.getElementById('returnReason').value;
-  if (!reason) return alert('Reason required');
+  if (!reason) return Swal.fire({ icon: 'warning', title: 'Reason required' });
   fetch(`/orders/${currentOrderId}/return`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason })
-  }).then(res => res.json()).then(data => {
-    if (data.success) location.reload();
-    else alert(data.message);
+  }).then(res => res.json()).then(async data => {
+    if (data.success) return location.reload();
+    await Swal.fire({ icon: 'error', title: data.message || 'Unable to submit return' });
+  }).catch(async err => {
+    console.error(err);
+    await Swal.fire({ icon: 'error', title: 'Error submitting return' });
   });
 }
 

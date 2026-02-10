@@ -1,555 +1,719 @@
 <%- include('../partials/user/header') %>
 
-<!-- Fallback for Tailwind CSS in case it's not included in header.ejs -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Fallback for Tailwind CSS in case it's not included in header.ejs -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Magnify.js (the plugin you already reference) -->
-<!-- <script src="/js/jquery.magnify.js"></script>
+  <!-- Magnify.js (the plugin you already reference) -->
+  <!-- <script src="/js/jquery.magnify.js"></script>
 <link rel="stylesheet" href="/css/magnify.css"> -->
 
-<!-- OPTIONAL – medium-zoom fallback (tiny, no jQuery) -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script> -->
+  <!-- OPTIONAL – medium-zoom fallback (tiny, no jQuery) -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script> -->
 
-<style>
-/* Custom CSS for Product Details UI */
-.product-container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+  <style>
+    /* Custom CSS for Product Details UI */
+    .product-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
 
-/* Breadcrumbs */
-.breadcrumbs { background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; font-size: 0.875rem; line-height: 1.25rem; }
+    /* Breadcrumbs */
+    .breadcrumbs {
+      background: #f1f5f9;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
 
-/* Product Card */
-.product-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transition: box-shadow 0.3s ease; }
-.product-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    /* Product Card */
+    .product-card {
+      background: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: box-shadow 0.3s ease;
+    }
 
-/* Image Gallery */
-.image-gallery { padding: 1.5rem; }
-.main-image { border-radius: 0.75rem; transition: transform 0.3s ease; }
-.main-image:hover { transform: scale(1.02); }
-.thumbnail-btn { border-radius: 0.5rem; transition: all 0.2s ease; }
-.thumbnail-btn:hover { transform: scale(1.05); border-color: #3b82f6 !important; }
+    .product-card:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
 
-/* Product Info */
-.product-info h1 { font-size: 2rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
-.ratings { display: flex; align-items: center; gap: 0.5rem; }
-.price-section { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; }
-.discount-tag { background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
-.add-to-cart-btn { background: linear-gradient(to right, #2563eb, #1e40af); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 500; transition: all 0.3s ease; }
-.add-to-cart-btn:hover:not(:disabled) { background: linear-gradient(to right, #1e40af, #2563eb); transform: translateY(-2px); }
-.add-to-cart-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    /* Image Gallery */
+    .image-gallery {
+      padding: 1.5rem;
+    }
 
-/* Reviews */
-.reviews-section { margin-top: 3rem; }
-.review-card { background: #ffffff; border-radius: 0.5rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); transition: transform 0.2s ease; }
-.review-card:hover { transform: translateY(-3px); }
+    .main-image {
+      border-radius: 0.75rem;
+      transition: transform 0.3s ease;
+    }
 
-/* Related Products */
-.related-products { margin-top: 3rem; }
-.related-product-card { background: #ffffff; border-radius: 0.5rem; overflow: hidden; transition: all 0.3s ease; }
-.related-product-card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); }
-.related-product-card img { transition: transform 0.3s ease; }
-.related-product-card:hover img { transform: scale(1.03); }
+    .main-image:hover {
+      transform: scale(1.02);
+    }
 
-/* NEW: Quantity Selector */
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-.quantity-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #475569;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-.quantity-btn:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-.quantity-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.quantity-input {
-  width: 4rem;
-  height: 2.5rem;
-  text-align: center;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-.quantity-input::-webkit-inner-spin-button,
-.quantity-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+    .thumbnail-btn {
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
 
-.zoom-container {
-  position: relative;
-  width: 100%;
-  max-width: 450px;
-}
+    .thumbnail-btn:hover {
+      transform: scale(1.05);
+      border-color: #3b82f6 !important;
+    }
 
-#mainImage {
-  width: 100%;
-  height: 450px;
-  object-fit: contain;
-  cursor: crosshair;
-}
+    /* Product Info */
+    .product-info h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.2;
+    }
 
-#zoomResult {
-  position: absolute;
-  top: 0;
-  left: 105%;
-  width: 450px;
-  height: 450px;
-  border: 1px solid #e5e7eb;
-  background-repeat: no-repeat;
-  display: none;
-  z-index: 10;
-}
+    .ratings {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-</style>
+    .price-section {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+    }
 
-<main class="bg-gray-50 py-8">
-<div class="product-container">
+    .discount-tag {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
 
-<!-- Breadcrumbs -->
-<nav class="breadcrumbs flex mb-6 text-sm">
-<% try { %>
-<% breadcrumbs.forEach((crumb, index) => { %>
-<% if (index !== 0) { %>
-<span class="mx-2 text-gray-500">/</span>
-<% } %>
-<% if (crumb.url) { %>
-<a href="<%= crumb.url %>" class="text-blue-600 hover:text-blue-800"><%= crumb.name %></a>
-<% } else { %>
-<span class="text-gray-700"><%= crumb.name %></span>
-<% } %>
-<% }); %>
-<% } catch (e) { %>
-<p style="color: red;">Error rendering breadcrumbs: <%= e.message %></p>
-<% } %>
-</nav>
+    .add-to-cart-btn {
+      background: linear-gradient(to right, #2563eb, #1e40af);
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
 
-<!-- Product Details -->
-<div class="product-card bg-white rounded-xl shadow-sm overflow-hidden">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+    .add-to-cart-btn:hover:not(:disabled) {
+      background: linear-gradient(to right, #1e40af, #2563eb);
+      transform: translateY(-2px);
+    }
 
-<!-- Image Gallery with Zoom -->
-<div class="image-gallery space-y-4">
-<div class="zoom-container">
-  <img
-    id="mainImage"
-    src="<%= product.productImage[0] %>"
-    alt="<%= product.productName %>"
-  />
-  <div id="zoomResult"></div>
-</div>
+    .add-to-cart-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
 
-<div class="flex gap-2 overflow-x-auto py-2">
-<% product.productImage.forEach((img, index) => { %>
-<button onclick="changeMainImage('<%= img %>', this)"
-class="thumbnail-btn w-20 h-20 rounded-lg overflow-hidden border-2 <%= index === 0 ? 'border-blue-500' : 'border-transparent' %>">
-<img src="<%= img %>" class="w-full h-full object-cover" alt="Product thumbnail">
-</button>
-<% }); %>
-</div>
-</div>
+    /* Reviews */
+    .reviews-section {
+      margin-top: 3rem;
+    }
 
-<!-- Product Info -->
-<div class="product-info space-y-6">
-<h1 class="text-3xl font-bold text-gray-900"><%= product.productName %></h1>
+    .review-card {
+      background: #ffffff;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease;
+    }
 
-<!-- Ratings -->
-<div class="ratings flex items-center gap-2">
-<div class="flex">
-<% for(let i = 1; i <= 5; i++) { %>
-<svg class="w-5 h-5 <%= i <= Math.round(averageRating) ? 'text-yellow-400' : 'text-gray-300' %>"
-fill="currentColor" viewBox="0 0 20 20">
-<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-</svg>
-<% } %>
-</div>
-<span class="text-sm text-gray-600"><%= averageRating.toFixed(1) %> (<%= reviews.length %> reviews)</span>
-</div>
+    .review-card:hover {
+      transform: translateY(-3px);
+    }
 
-<!-- Price and Discounts -->
-<div class="price-section space-y-2">
-<div class="flex items-baseline gap-2">
-<span class="text-3xl font-bold text-gray-900">₹<%= product.salesPrice.toLocaleString() %></span>
-<% if (product.productOffer && product.productOffer > 0) { %>
-  <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
-  <span class="discount-tag text-sm font-medium"><%= product.productOffer %>% OFF</span>
-<% } else if (product.regularPrice > product.salesPrice) { %>
-  <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
-  <span class="discount-tag text-sm font-medium"><%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF</span>
-<% } %>
-</div>
+    /* Related Products */
+    .related-products {
+      margin-top: 3rem;
+    }
 
-<% if (discounts && discounts.length > 0) { %>
-<div class="space-y-2">
-<h3 class="text-sm font-medium text-gray-900">Available Offers:</h3>
-<% discounts.forEach(discount => { %>
-<div class="flex items-center gap-2 text-sm">
-<span class="px-2 py-1 bg-green-100 text-green-800 rounded"><%= discount.code %></span>
-<span class="text-gray-600"><%= discount.description %></span>
-</div>
-<% }); %>
-</div>
-<% } %>
-</div>
+    .related-product-card {
+      background: #ffffff;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
 
-<!-- Stock Status -->
-<div class="<%= stockStatus === 'IN_STOCK' ? 'text-green-600' : 'text-red-600' %> font-medium">
-<% switch(stockStatus) {
-case 'IN_STOCK': %> In Stock (<%= product.quantity %> available) <% break;
-case 'LOW_STOCK': %> Only <%= product.quantity %> left in stock! <% break;
-case 'SOLD_OUT': %> Sold Out <% break;
-case 'OUT_OF_STOCK': %> Out of Stock <% break;
-default: %> Currently Unavailable <% } %>
-</div>
+    .related-product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
 
-<!-- QUANTITY SELECTOR -->
-<div class="quantity-selector">
-  <button type="button" class="quantity-btn" id="decreaseQty" onclick="updateQuantity(-1)">-</button>
-  <input type="number" class="quantity-input" id="quantityInput" value="1" min="1" max="<%= product.quantity %>" readonly>
-  <button type="button" class="quantity-btn" id="increaseQty" onclick="updateQuantity(1)">+</button>
-</div>
+    .related-product-card img {
+      transition: transform 0.3s ease;
+    }
 
-<!-- Add to Cart Button -->
-<button onclick="addToCartWithQty('<%= product._id %>')"
-class="add-to-cart-btn w-full py-3 px-8 text-white font-medium <%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'opacity-50 cursor-not-allowed' %>"
-<%= ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus) ? '' : 'disabled' %>>
-Add to Cart
-</button>
+    .related-product-card:hover img {
+      transform: scale(1.03);
+    }
 
-<!-- Wishlist Button -->
-<button id="wishlistBtn" type="button"
-  class="w-full mt-2 py-3 px-8 border border-gray-300 rounded-md text-gray-700 font-medium flex items-center justify-center gap-2"
-  data-state="<%= isInWishlist ? 'remove' : 'add' %>"
-  onclick="toggleWishlist('<%= product._id %>')">
-  <svg id="wishlistIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.657 0L10 6.343l1.172-1.171a4 4 0 115.657 5.657L10 18.657l-6.829-7.828a4 4 0 010-5.657z" clip-rule="evenodd" />
-  </svg>
-  <span id="wishlistBtnText"><%= isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' %></span>
-</button>
+    /* NEW: Quantity Selector */
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
 
-<!-- Buy Now → Direct Checkout -->
-<form action="/checkout/direct" method="POST" id="buyNowForm">
-  <input type="hidden" name="productId" value="<%= product._id %>">
-  <input type="hidden" name="quantity" id="buyNowQty" value="1">
-  <button type="submit"
-    class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700"
-    <%= product.quantity <= 0 ? 'disabled' : '' %>>
-    Buy Now
-  </button>
-</form>
+    .quantity-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
 
-<!-- Product Highlights -->
-<div class="space-y-4">
-<h3 class="text-lg font-medium text-gray-900">Product Highlights</h3>
-<ul class="list-disc list-inside space-y-2 text-gray-600">
-<li>Brand: <%= product.brand %></li>
-<li>Color: <%= product.color %></li>
-<li>Category: <%= product.category.name %></li>
-</ul>
-</div>
+    .quantity-btn:hover:not(:disabled) {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
 
-<!-- Product Description -->
-<div class="space-y-4">
-<h3 class="text-lg font-medium text-gray-900">Description</h3>
-<p class="text-gray-600"><%= product.description %></p>
-</div>
-</div>
-</div>
-</div>
+    .quantity-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-<!-- Reviews Section -->
-<div class="reviews-section mt-12">
-<h2 class="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
-<% if (reviews.length > 0) { %>
-<div class="space-y-6">
-<% reviews.forEach(review => { %>
-<div class="review-card bg-white rounded-lg shadow-sm p-6">
-<div class="flex items-center justify-between mb-4">
-<div class="flex items-center gap-2">
-<div class="flex">
-<% for(let i = 1; i <= 5; i++) { %>
-<svg class="w-5 h-5 <%= i <= review.rating ? 'text-yellow-400' : 'text-gray-300' %>"
-fill="currentColor" viewBox="0 0 20 20">
-<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-</svg>
-<% } %>
-</div>
-<span class="font-medium text-gray-900"><%= review.user.name %></span>
-</div>
-<span class="text-sm text-gray-500"><%= new Date(review.createdAt).toLocaleDateString() %></span>
-</div>
-<p class="text-gray-600"><%= review.comment %></p>
-</div>
-<% }); %>
-</div>
-<% } else { %>
-<p class="text-gray-500">No reviews yet.</p>
-<% } %>
-</div>
+    .quantity-input {
+      width: 4rem;
+      height: 2.5rem;
+      text-align: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
 
-<!-- Related Products -->
-<% if (relatedProducts.length > 0) { %>
-<div class="related-products mt-12">
-<h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-<% relatedProducts.forEach(relatedProduct => { %>
-<div class="related-product-card bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-<a href="/product/<%= relatedProduct._id %>">
-<img src="<%= relatedProduct.productImage[0] %>" alt="<%= relatedProduct.productName %>" class="w-full h-48 object-cover">
-<div class="p-4">
-<h3 class="font-medium text-gray-900 mb-1"><%= relatedProduct.productName %></h3>
-<p class="text-gray-600">₹<%= relatedProduct.salesPrice.toLocaleString() %></p>
-</div>
-</a>
-</div>
-<% }); %>
-</div>
-</div>
-<% } %>
-</div>
-</main>
+    .quantity-input::-webkit-inner-spin-button,
+    .quantity-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
 
-<!-- QUANTITY SCRIPT -->
-<script>
-// Quantity Handler
-function updateQuantity(change) {
-  const input = document.getElementById('quantityInput');
-  const buyNowInput = document.getElementById('buyNowQty');
-  let current = parseInt(input.value) || 1;
-  const max = parseInt(input.max) || 1;
+    .zoom-container {
+      position: relative;
+      width: 100%;
+      max-width: 450px;
+    }
 
-  current = Math.max(1, Math.min(max, current + change));
-  input.value = current;
-  buyNowInput.value = current;
-}
+    #mainImage {
+      width: 100%;
+      height: 450px;
+      object-fit: contain;
+      cursor: crosshair;
+    }
 
-// Sync on page load
-document.addEventListener('DOMContentLoaded', () => {
-  updateQuantity(0); // ensure valid
-});
-</script>
+    #zoomResult {
+      position: absolute;
+      top: 0;
+      left: 105%;
+      width: 450px;
+      height: 450px;
+      border: 1px solid #e5e7eb;
+      background-repeat: no-repeat;
+      display: none;
+      z-index: 10;
+    }
+  </style>
 
+  <main class="bg-gray-50 py-8">
+    <div class="product-container">
 
-// <script>
-// /* --------------------------------------------------------------
-// Unified zoom initializer – Magnify.js → medium-zoom → CSS fallback
-// -------------------------------------------------------------- */
-// (function () {
-// const $mainImg = $('#mainImage');
-// let zoomInstance = null;
+      <!-- Breadcrumbs -->
+      <nav class="breadcrumbs flex mb-6 text-sm">
+        <% try { %>
+          <% breadcrumbs.forEach((crumb, index)=> { %>
+            <% if (index !==0) { %>
+              <span class="mx-2 text-gray-500">/</span>
+              <% } %>
+                <% if (crumb.url) { %>
+                  <a href="<%= crumb.url %>" class="text-blue-600 hover:text-blue-800">
+                    <%= crumb.name %>
+                  </a>
+                  <% } else { %>
+                    <span class="text-gray-700">
+                      <%= crumb.name %>
+                    </span>
+                    <% } %>
+                      <% }); %>
+                        <% } catch (e) { %>
+                          <p style="color: red;">Error rendering breadcrumbs: <%= e.message %>
+                          </p>
+                          <% } %>
+      </nav>
 
-// function initMagnify() {
-// if (typeof $.fn.magnify === 'function') {
-// try { $mainImg.magnify({ speed: 200 }); console.info('Zoom: Magnify.js active'); return true; }
-// catch (e) { console.warn('Magnify.js failed →', e); }
-// }
-// return false;
-// }
+      <!-- Product Details -->
+      <div class="product-card bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
 
-// function initMediumZoom() {
-// if (typeof mediumZoom === 'function') {
-// if (zoomInstance && typeof zoomInstance.detach === 'function') { zoomInstance.detach(); }
-// zoomInstance = mediumZoom('#mainImage', { margin: 30, background: '#fff', scrollOffset: 0 });
-// console.info('Zoom: medium-zoom active'); return true;
-// }
-// return false;
-// }
+          <!-- Image Gallery with Zoom -->
+          <div class="image-gallery space-y-4">
+            <div class="zoom-container">
+              <img id="mainImage" src="<%= product.productImage[0] %>" alt="<%= product.productName %>" />
+              <div id="zoomResult"></div>
+            </div>
 
-// function initCssZoom() {
-// const el = document.getElementById('mainImage');
-// if (!el) return;
-// el.style.transition = 'transform .25s ease';
-// el.addEventListener('mouseenter', () => el.style.transform = 'translateZ(0) scale(1.08)');
-// el.addEventListener('mouseleave', () => el.style.transform = 'translateZ(0) scale(1)');
-// console.info('Zoom: CSS hover fallback');
-// }
+            <div class="flex gap-2 overflow-x-auto py-2">
+              <% product.productImage.forEach((img, index)=> { %>
+                <button onclick="changeMainImage('<%= img %>', this)"
+                  class="thumbnail-btn w-20 h-20 rounded-lg overflow-hidden border-2 <%= index === 0 ? 'border-blue-500' : 'border-transparent' %>">
+                  <img src="<%= img %>" class="w-full h-full object-cover" alt="Product thumbnail">
+                </button>
+                <% }); %>
+            </div>
+          </div>
 
-// window.initProductZoom = function () {
-// if (zoomInstance) { zoomInstance.detach(); zoomInstance = null; }
-// if (!initMagnify()) { if (!initMediumZoom()) { initCssZoom(); } }
-// };
+          <!-- Product Info -->
+          <div class="product-info space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">
+              <%= product.productName %>
+            </h1>
 
-// window.changeMainImage = function (src, btn) {
-// const main = document.getElementById('mainImage');
-// if (!main) return;
-// main.src = src; main.dataset.magnifySrc = src;
-// document.querySelectorAll('.thumbnail-btn').forEach(b => b.classList.remove('border-blue-500', 'border-transparent'));
-// btn.classList.add('border-blue-500');
-// setTimeout(window.initProductZoom, 50);
-// };
+            <!-- Ratings -->
+            <div class="ratings flex items-center gap-2">
+              <div class="flex">
+                <% for(let i=1; i <=5; i++) { %>
+                  <svg class="w-5 h-5 <%= i <= Math.round(averageRating) ? 'text-yellow-400' : 'text-gray-300' %>"
+                    fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <% } %>
+              </div>
+              <span class="text-sm text-gray-600">
+                <%= averageRating.toFixed(1) %> (<%= reviews.length %> reviews)
+              </span>
+            </div>
 
-// $(document).ready(function () { window.initProductZoom(); });
-// })();
-// </script>
+            <% if (product.isBlocked) { %>
+              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 mt-4" role="alert">
+                <p class="font-bold">Unavailable</p>
+                <p>This product is currently not available for purchase.</p>
+              </div>
+              <% } %>
 
-<script>
-const img = document.getElementById("mainImage");
-const result = document.getElementById("zoomResult");
+                <!-- Price and Discounts -->
+                <div class="price-section space-y-2">
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-gray-900">₹<%= product.salesPrice.toLocaleString() %></span>
+                    <% if (product.productOffer && product.productOffer> 0) { %>
+                      <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %>
+                      </span>
+                      <span class="discount-tag text-sm font-medium">
+                        <%= product.productOffer %>% OFF
+                      </span>
+                      <% } else if (product.regularPrice> product.salesPrice) { %>
+                        <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %>
+                        </span>
+                        <span class="discount-tag text-sm font-medium">
+                          <%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>%
+                            OFF
+                        </span>
+                        <% } %>
+                  </div>
 
-img.addEventListener("mousemove", moveZoom);
-img.addEventListener("mouseenter", () => {
-  result.style.display = "block";
-  result.style.backgroundImage = `url('${img.src}')`;
-  result.style.backgroundSize = "200%";
-});
-img.addEventListener("mouseleave", () => {
-  result.style.display = "none";
-});
+                  <% if (discounts && discounts.length> 0) { %>
+                    <div class="space-y-2">
+                      <h3 class="text-sm font-medium text-gray-900">Available Offers:</h3>
+                      <% discounts.forEach(discount=> { %>
+                        <div class="flex items-center gap-2 text-sm">
+                          <span class="px-2 py-1 bg-green-100 text-green-800 rounded">
+                            <%= discount.code %>
+                          </span>
+                          <span class="text-gray-600">
+                            <%= discount.description %>
+                          </span>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } %>
+                </div>
 
-function moveZoom(e) {
-  const rect = img.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+                <!-- Stock Status -->
+                <div class="<%= stockStatus === 'IN_STOCK' ? 'text-green-600' : 'text-red-600' %> font-medium">
+                  <% switch(stockStatus) { case 'IN_STOCK' : %> In Stock (<%= product.quantity %> available) <% break;
+                        case 'LOW_STOCK' : %> Only <%= product.quantity %> left in stock! <% break; case 'SOLD_OUT' : %>
+                            Sold Out <% break; case 'OUT_OF_STOCK' : %> Out of Stock <% break; default: %> Currently
+                                Unavailable <% } %>
+                </div>
 
-  const xPercent = (x / rect.width) * 100;
-  const yPercent = (y / rect.height) * 100;
+                <!-- QUANTITY SELECTOR -->
+                <div class="quantity-selector">
+                  <button type="button" class="quantity-btn" id="decreaseQty" onclick="updateQuantity(-1)">-</button>
+                  <input type="number" class="quantity-input" id="quantityInput" value="1" min="1"
+                    max="<%= product.quantity %>" readonly>
+                  <button type="button" class="quantity-btn" id="increaseQty" onclick="updateQuantity(1)">+</button>
+                </div>
 
-  result.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
-}
+                <!-- Add to Cart Button -->
+                <button
+                  onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : `addToCartWithQty('${product._id}')` %>"
+                  class="add-to-cart-btn w-full py-3 px-8 text-white font-medium <%= product.quantity <= 0 && !product.isBlocked ? 'opacity-50 cursor-not-allowed' : '' %>"
+                  <%=product.quantity <=0 && !product.isBlocked ? 'disabled' : '' %>>
+                  Add to Cart
+                </button>
 
-function changeMainImage(src, btn) {
-  const main = document.getElementById("mainImage");
-  const zoom = document.getElementById("zoomResult");
+                <!-- Wishlist Button -->
+                <button id="wishlistBtn" type="button"
+                  class="w-full mt-2 py-3 px-8 border border-gray-300 rounded-md text-gray-700 font-medium flex items-center justify-center gap-2"
+                  data-state="<%= isInWishlist ? 'remove' : 'add' %>" onclick="toggleWishlist('<%= product._id %>')">
+                  <svg id="wishlistIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500"
+                    viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M3.172 5.172a4 4 0 015.657 0L10 6.343l1.172-1.171a4 4 0 115.657 5.657L10 18.657l-6.829-7.828a4 4 0 010-5.657z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <span id="wishlistBtnText">
+                    <%= isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' %>
+                  </span>
+                </button>
 
-  main.src = src;
-  zoom.style.backgroundImage = `url('${src}')`;
+                <!-- Buy Now → Direct Checkout -->
+                <form action="/checkout/direct" method="POST" id="buyNowForm">
+                  <button type="<%= product.isBlocked ? 'button' : 'submit' %>"
+                    onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : '' %>"
+                    class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 <%= product.quantity <= 0 && !product.isBlocked ? 'opacity-50 cursor-not-allowed' : '' %>"
+                    <%=product.quantity <=0 && !product.isBlocked ? 'disabled' : '' %>>
+                    Buy Now
+                  </button>
+                </form>
 
-  document.querySelectorAll('.thumbnail-btn')
-    .forEach(b => b.classList.remove('border-blue-500'));
+                <!-- Product Highlights -->
+                <div class="space-y-4">
+                  <h3 class="text-lg font-medium text-gray-900">Product Highlights</h3>
+                  <ul class="list-disc list-inside space-y-2 text-gray-600">
+                    <li>Brand: <%= product.brand %>
+                    </li>
+                    <li>Color: <%= product.color %>
+                    </li>
+                    <li>Category: <%= product.category.name %>
+                    </li>
+                  </ul>
+                </div>
 
-  btn.classList.add('border-blue-500');
-}
+                <!-- Product Description -->
+                <div class="space-y-4">
+                  <h3 class="text-lg font-medium text-gray-900">Description</h3>
+                  <p class="text-gray-600">
+                    <%= product.description %>
+                  </p>
+                </div>
+          </div>
+        </div>
+      </div>
 
-</script>
+      <!-- Reviews Section -->
+      <div class="reviews-section mt-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
+        <% if (reviews.length> 0) { %>
+          <div class="space-y-6">
+            <% reviews.forEach(review=> { %>
+              <div class="review-card bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <div class="flex">
+                      <% for(let i=1; i <=5; i++) { %>
+                        <svg class="w-5 h-5 <%= i <= review.rating ? 'text-yellow-400' : 'text-gray-300' %>"
+                          fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <% } %>
+                    </div>
+                    <span class="font-medium text-gray-900">
+                      <%= review.user.name %>
+                    </span>
+                  </div>
+                  <span class="text-sm text-gray-500">
+                    <%= new Date(review.createdAt).toLocaleDateString() %>
+                  </span>
+                </div>
+                <p class="text-gray-600">
+                  <%= review.comment %>
+                </p>
+              </div>
+              <% }); %>
+          </div>
+          <% } else { %>
+            <p class="text-gray-500">No reviews yet.</p>
+            <% } %>
+      </div>
 
+      <!-- Related Products -->
+      <% if (relatedProducts.length> 0) { %>
+        <div class="related-products mt-12">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <% relatedProducts.forEach(relatedProduct=> { %>
+              <div
+                class="related-product-card bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <a href="/product/<%= relatedProduct._id %>">
+                  <img src="<%= relatedProduct.productImage[0] %>" alt="<%= relatedProduct.productName %>"
+                    class="w-full h-48 object-cover">
+                  <div class="p-4">
+                    <h3 class="font-medium text-gray-900 mb-1">
+                      <%= relatedProduct.productName %>
+                    </h3>
+                    <p class="text-gray-600">₹<%= relatedProduct.salesPrice.toLocaleString() %>
+                    </p>
+                  </div>
+                </a>
+              </div>
+              <% }); %>
+          </div>
+        </div>
+        <% } %>
+    </div>
+  </main>
 
-<!-- Add-to-Cart with Quantity -->
-<script>
-async function addToCartWithQty(productId) {
-  const qty = parseInt(document.getElementById('quantityInput').value) || 1;
-  try {
-    const res = await fetch('/cart/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, quantity: qty })
+  <!-- QUANTITY SCRIPT -->
+  <script>
+    // Quantity Handler
+    function updateQuantity(change) {
+      const input = document.getElementById('quantityInput');
+      const buyNowInput = document.getElementById('buyNowQty');
+      let current = parseInt(input.value) || 1;
+      const max = parseInt(input.max) || 1;
+
+      current = Math.max(1, Math.min(max, current + change));
+      input.value = current;
+      buyNowInput.value = current;
+    }
+
+    // Sync on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateQuantity(0); // ensure valid
     });
-    const data = await res.json();
+  </script>
 
-    if (data.success) {
-      Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
-      // update header badges if server returned counts
-      const cartBadge = document.querySelector('.cart-count');
-      if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
-      const wishlistBadge = document.querySelector('.wishlist-count');
-      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
-      // If the product was in wishlist, ensure button updates to 'Add to Wishlist'
+
+  //
+  <script>
+    // /* --------------------------------------------------------------
+    // Unified zoom initializer – Magnify.js → medium-zoom → CSS fallback
+    // -------------------------------------------------------------- */
+    // (function () {
+    // const $mainImg = $('#mainImage');
+    // let zoomInstance = null;
+
+    // function initMagnify() {
+    // if (typeof $.fn.magnify === 'function') {
+    // try { $mainImg.magnify({ speed: 200 }); console.info('Zoom: Magnify.js active'); return true; }
+    // catch (e) { console.warn('Magnify.js failed →', e); }
+    // }
+    // return false;
+    // }
+
+    // function initMediumZoom() {
+    // if (typeof mediumZoom === 'function') {
+    // if (zoomInstance && typeof zoomInstance.detach === 'function') { zoomInstance.detach(); }
+    // zoomInstance = mediumZoom('#mainImage', { margin: 30, background: '#fff', scrollOffset: 0 });
+    // console.info('Zoom: medium-zoom active'); return true;
+    // }
+    // return false;
+    // }
+
+    // function initCssZoom() {
+    // const el = document.getElementById('mainImage');
+    // if (!el) return;
+    // el.style.transition = 'transform .25s ease';
+    // el.addEventListener('mouseenter', () => el.style.transform = 'translateZ(0) scale(1.08)');
+    // el.addEventListener('mouseleave', () => el.style.transform = 'translateZ(0) scale(1)');
+    // console.info('Zoom: CSS hover fallback');
+    // }
+
+    // window.initProductZoom = function () {
+    // if (zoomInstance) { zoomInstance.detach(); zoomInstance = null; }
+    // if (!initMagnify()) { if (!initMediumZoom()) { initCssZoom(); } }
+    // };
+
+    // window.changeMainImage = function (src, btn) {
+    // const main = document.getElementById('mainImage');
+    // if (!main) return;
+    // main.src = src; main.dataset.magnifySrc = src;
+    // document.querySelectorAll('.thumbnail-btn').forEach(b => b.classList.remove('border-blue-500', 'border-transparent'));
+    // btn.classList.add('border-blue-500');
+    // setTimeout(window.initProductZoom, 50);
+    // };
+
+    // $(document).ready(function () { window.initProductZoom(); });
+    // })();
+    // </script>
+
+  <script>
+    const img = document.getElementById("mainImage");
+    const result = document.getElementById("zoomResult");
+
+    img.addEventListener("mousemove", moveZoom);
+    img.addEventListener("mouseenter", () => {
+      result.style.display = "block";
+      result.style.backgroundImage = `url('${img.src}')`;
+      result.style.backgroundSize = "200%";
+    });
+    img.addEventListener("mouseleave", () => {
+      result.style.display = "none";
+    });
+
+    function moveZoom(e) {
+      const rect = img.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const xPercent = (x / rect.width) * 100;
+      const yPercent = (y / rect.height) * 100;
+
+      result.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+    }
+
+    function changeMainImage(src, btn) {
+      const main = document.getElementById("mainImage");
+      const zoom = document.getElementById("zoomResult");
+
+      main.src = src;
+      zoom.style.backgroundImage = `url('${src}')`;
+
+      document.querySelectorAll('.thumbnail-btn')
+        .forEach(b => b.classList.remove('border-blue-500'));
+
+      btn.classList.add('border-blue-500');
+    }
+
+    function showUnavailableMessage() {
+      Swal.fire({
+        icon: 'info',
+        title: 'Item Unavailable',
+        text: 'We apologize, but this item is currently unavailable for purchase.',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'OK'
+      });
+    }
+
+
+  </script>
+
+
+  <!-- Add-to-Cart with Quantity -->
+  <script>
+    async function addToCartWithQty(productId) {
+      const qty = parseInt(document.getElementById('quantityInput').value) || 1;
       try {
-        const wlBtn = document.getElementById('wishlistBtn');
-        const wlText = document.getElementById('wishlistBtnText');
-        if (wlBtn) {
-          wlBtn.setAttribute('data-state', 'add');
-          if (wlText) wlText.textContent = 'Add to Wishlist';
+        const res = await fetch('/cart/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, quantity: qty })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+          // update header badges if server returned counts
+          const cartBadge = document.querySelector('.cart-count');
+          if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
+          const wishlistBadge = document.querySelector('.wishlist-count');
+          if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
+          // If the product was in wishlist, ensure button updates to 'Add to Wishlist'
+          try {
+            const wlBtn = document.getElementById('wishlistBtn');
+            const wlText = document.getElementById('wishlistBtnText');
+            if (wlBtn) {
+              wlBtn.setAttribute('data-state', 'add');
+              if (wlText) wlText.textContent = 'Add to Wishlist';
+            }
+          } catch (e) { /* ignore */ }
+          return;
         }
-      } catch(e) { /* ignore */ }
-      return;
+
+        if (data.alreadyInCart) {
+          Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || 'This product is already in your cart.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+          return;
+        }
+
+        if (data.redirect) location.href = '/shop';
+        else throw new Error(data.message || 'Unknown error');
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Notice', text: err.message, toast: true, position: 'top-end', timer: 3000 });
+      }
     }
 
-    if (data.alreadyInCart) {
-      Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || 'This product is already in your cart.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
-      return;
-    }
-
-    if (data.redirect) location.href = '/shop';
-    else throw new Error(data.message || 'Unknown error');
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: 'Oops…', text: err.message, toast: true, position: 'top-end', timer: 3000 });
-  }
-}
 
 
 
 
 
+  </script>
 
-</script>
+  <%- include('../partials/user/footer') %>
 
-<%- include('../partials/user/footer') %>
+    <!-- Wishlist Toggle Script -->
+    <script>
+      async function toggleWishlist(productId) {
+        const btn = document.getElementById('wishlistBtn');
+        const text = document.getElementById('wishlistBtnText');
+        const state = btn ? btn.getAttribute('data-state') : 'add';
 
-<!-- Wishlist Toggle Script -->
-<script>
-async function toggleWishlist(productId) {
-  const btn = document.getElementById('wishlistBtn');
-  const text = document.getElementById('wishlistBtnText');
-  const state = btn ? btn.getAttribute('data-state') : 'add';
-
-  try {
-    if (state === 'add') {
-      const res = await fetch('/wishlist/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId })
-      });
-      if (res.status === 401) return window.location.href = '/login';
-      const data = await res.json();
-      if (data.success) {
-        if (btn) btn.setAttribute('data-state', 'remove');
-        if (text) text.textContent = 'Remove from Wishlist';
-        if (data.wishlistCount !== undefined) {
-          const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
+        try {
+          if (state === 'add') {
+            const res = await fetch('/wishlist/add', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId })
+            });
+            if (res.status === 401) return window.location.href = '/login';
+            const data = await res.json();
+            if (data.success) {
+              if (btn) btn.setAttribute('data-state', 'remove');
+              if (text) text.textContent = 'Remove from Wishlist';
+              if (data.wishlistCount !== undefined) {
+                const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
+              }
+              Swal.fire({ icon: 'success', title: data.message || 'Added to wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+              return;
+            }
+            if (data.alreadyInWishlist) {
+              if (btn) btn.setAttribute('data-state', 'remove');
+              if (text) text.textContent = 'Remove from Wishlist';
+              Swal.fire({ icon: 'info', title: data.message || 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+              return;
+            }
+            throw new Error(data.message || 'Unable to add to wishlist');
+          } else {
+            const res = await fetch('/wishlist/remove', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId })
+            });
+            if (res.status === 401) return window.location.href = '/login';
+            const data = await res.json();
+            if (data.success) {
+              if (btn) btn.setAttribute('data-state', 'add');
+              if (text) text.textContent = 'Add to Wishlist';
+              if (data.wishlistCount !== undefined) {
+                const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
+              }
+              Swal.fire({ icon: 'success', title: data.message || 'Removed from wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+              return;
+            }
+            throw new Error(data.message || 'Unable to remove from wishlist');
+          }
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000 });
         }
-        Swal.fire({ icon: 'success', title: data.message || 'Added to wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
-        return;
       }
-      if (data.alreadyInWishlist) {
-        if (btn) btn.setAttribute('data-state', 'remove');
-        if (text) text.textContent = 'Remove from Wishlist';
-        Swal.fire({ icon: 'info', title: data.message || 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
-        return;
-      }
-      throw new Error(data.message || 'Unable to add to wishlist');
-    } else {
-      const res = await fetch('/wishlist/remove', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId })
-      });
-      if (res.status === 401) return window.location.href = '/login';
-      const data = await res.json();
-      if (data.success) {
-        if (btn) btn.setAttribute('data-state', 'add');
-        if (text) text.textContent = 'Add to Wishlist';
-        if (data.wishlistCount !== undefined) {
-          const badge = document.querySelector('.wishlist-count'); if (badge) badge.textContent = data.wishlistCount;
-        }
-        Swal.fire({ icon: 'success', title: data.message || 'Removed from wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
-        return;
-      }
-      throw new Error(data.message || 'Unable to remove from wishlist');
-    }
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000 });
-  }
-}
-</script>
+    </script>

@@ -16,7 +16,7 @@ const autoCancelExpiredPendingOrders = async () => {
       pendingCancelTime: { $lt: now }
     });
 
-    console.log(`[Cleanup] Found ${expiredOrders.length} expired pending orders to cancel`);
+    // console.log(`[Cleanup] Found ${expiredOrders.length} expired pending orders to cancel`);
 
     for (const order of expiredOrders) {
       try {
@@ -41,15 +41,15 @@ const autoCancelExpiredPendingOrders = async () => {
         order.approvedAt = new Date();
 
         await order.save();
-        console.log(`[Cleanup] Auto-cancelled order ${order.orderId}`);
+        // console.log(`[Cleanup] Auto-cancelled order ${order.orderId}`);
       } catch (err) {
-        console.error(`[Cleanup] Error cancelling order ${order._id}:`, err);
+        // console.error(`[Cleanup] Error cancelling order ${order._id}:`, err);
       }
     }
 
     return { cancelled: expiredOrders.length };
   } catch (err) {
-    console.error('[Cleanup] Error in autoCancelExpiredPendingOrders:', err);
+    // console.error('[Cleanup] Error in autoCancelExpiredPendingOrders:', err);
     return { cancelled: 0, error: err.message };
   }
 };

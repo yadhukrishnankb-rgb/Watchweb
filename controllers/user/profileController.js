@@ -123,17 +123,28 @@ res.redirect('/login');
 
 // // Show profile page
 exports.profilePage = async (req, res) => {
-const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
-if (!userId) return res.redirect('/login');
-const user = await User.findById(userId).lean();
-user.addresses = user.addresses || [];
-const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
-res.render('user/profile', { 
-  user, 
-  orders,
-  success: req.flash('success')[0] || null,
-  error: req.flash('error')[0] || null
-});
+  const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
+  if (!userId) return res.redirect('/login');
+  const user = await User.findById(userId).lean();
+  user.addresses = user.addresses || [];
+  const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
+
+  // Collect flash messages and filter out unrelated product-level errors
+  const successArr = req.flash('success') || [];
+  const errorArr = req.flash('error') || [];
+
+  // Ignore messages that indicate missing products (these originate from shop/checkout flows)
+  const ignorePatterns = [/product not found/i, /product not found or unavailable/i];
+
+  const filteredError = errorArr.find(m => !ignorePatterns.some(p => p.test(m))) || null;
+  const filteredSuccess = successArr.find(m => !ignorePatterns.some(p => p.test(m))) || (successArr[0] || null);
+
+  res.render('user/profile', {
+    user,
+    orders,
+    success: filteredSuccess,
+    error: filteredError
+  });
 };
 
 
@@ -147,10 +158,18 @@ exports.addressPage = async (req, res) => {
   const user = await User.findById(userId).lean();
   user.addresses = user.addresses || [];
 
+  // Filter out unrelated flash errors (e.g., product-not-found) that may bleed in
+  const successArr = req.flash('success') || [];
+  const errorArr = req.flash('error') || [];
+  const ignorePatterns = [/product not found/i, /product not found or unavailable/i];
+
+  const filteredError = errorArr.find(m => !ignorePatterns.some(p => p.test(m))) || null;
+  const filteredSuccess = successArr.find(m => !ignorePatterns.some(p => p.test(m))) || (successArr[0] || null);
+
   res.render('user/profile-address', {
     user,
-    success: req.flash('success')[0] || null,
-    error: req.flash('error')[0] || null
+    success: filteredSuccess,
+    error: filteredError
   });
 };
 
@@ -482,6 +501,9 @@ exports.deleteAddress = async (req, res) => {
     }
 
     user.addresses.splice(index, 1);
+    if (!user.addresses.some(a => a.isDefault) && user.addresses.length > 0){
+      user.addresses[0].isDefault = true;
+    }
     await user.save();
 
     // RETURN JSON FOR AJAX + ALSO SUPPORT NORMAL REDIRECT
@@ -500,6 +522,40 @@ exports.deleteAddress = async (req, res) => {
     res.redirect('/profile/address');
   }
 };
+
+
+exports.setDefaultAddress = async (req, res) => {
+  const userId = req.session.user?._id || req.user?._id;
+  if (!userId) return res.redirect('/login');
+
+  const index = parseInt(req.params.index);
+
+  try{
+    const user = await User.findById(userId);
+
+    if(!user || !user.addresses || index < 0 || index >= user.addresses.length){
+      res.flash('error', 'Invalid address index');
+      return res.redirect('/profile/address');
+    }
+    
+    //remove default from all addresses
+    user.addresses.forEach(addr => addr.isDefault = false);
+  
+    //set selected as default
+    user.addresses[index].isDefault = true;
+
+   await user.save();
+
+   req.flash('success', 'Default address updated');
+   res.redirect('/profile/address');
+  }catch(err){
+    console.error('set default address error:', err);
+    res.redirect('/profile/address');
+
+  }
+}
+
+
 
 // Cancel order
 exports.cancelOrder = async (req, res) => {

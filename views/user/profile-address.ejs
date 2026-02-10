@@ -112,13 +112,23 @@
               <div><%= [_city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
             </div>
             <div class="address-actions">
-              <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
-                Edit
-              </button>
-              <button class="btn-delete" onclick="deleteAddress(<%= i %>)">
-                Delete
-              </button>
-            </div>
+  <% if (addr.isDefault) { %>
+    <span style="color:#1a7b7b;font-weight:600;">✓ Default</span>
+  <% } else { %>
+    <a href="/profile/address/<%= i %>/default"
+       style="padding:8px 16px;background:#2d9c9c;color:white;border-radius:20px;font-size:13px;text-decoration:none;font-weight:600;">
+      Set Default
+    </a>
+  <% } %>
+
+  <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
+    Edit
+  </button>
+  <button class="btn-delete" onclick="deleteAddress(<%= i %>)">
+    Delete
+  </button>
+</div>
+
           </div>
         <% }) %>
       <% } else { %>

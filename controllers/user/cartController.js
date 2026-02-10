@@ -56,7 +56,7 @@ exports.addToCart = async (req, res) => {
         // Validate product
         const product = await Product.findById(productId);
         if (!product || product.isBlocked || product.quantity <= 0) {
-            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_UNAVAILABLE });
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: "We apologize, but this product is currently unavailable." });
         }
 
         

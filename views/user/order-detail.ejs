@@ -455,7 +455,7 @@
                                 <% if (canCancel) { %>
                                     <button class="action-btn btn-cancel" 
                                             onclick="requestCancelItem('<%= order._id %>','<%= item._id %>', this)">
-                                        Request Cancel
+                                         Cancel Order
                                     </button>
                                 <% } %>
 
@@ -472,7 +472,7 @@
                                     </div>
                                 <% } %>
 
-                                <% if (itemStatus.includes('return')) { %>
+                                <% if (itemStatus === 'return request') { %>
                                     <div style="margin-top:8px; color:#b45309; font-weight:700;">
                                         Return request pending admin approval
                                     </div>
@@ -480,7 +480,7 @@
 
                                 <% if (itemStatus === 'cancelled') { %>
                                     <div style="margin-top:8px; color:#10b981; font-weight:700;">
-                                        Cancellation approved
+                                        Order Cancelled
                                     </div>
                                 <% } %>
 

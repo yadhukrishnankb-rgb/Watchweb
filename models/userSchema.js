@@ -18,7 +18,7 @@ const userSchema = new Schema({
     required: false,
     unique: true,
     sparse: true,
-    default: null,
+    // default: null,
   },
 profileImage: {
   type: String,
@@ -45,6 +45,10 @@ addresses: [
     unique: true,
     sparse: true,
   },
+  isGoogleUser: {
+  type: Boolean,
+  default: false
+},
   password: {
     type: String,
     required: false,

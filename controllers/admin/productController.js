@@ -116,6 +116,13 @@ exports.addProduct = async (req, res) => {
             });
         }
 
+        // if(parseFloat(salesPrice) > parseFloat(regularPrice)){
+        //     return res.status(statusCodes.BAD_REQUEST).json({
+        //         success: false,
+        //         message:'sales price cannot be greater than regular price'
+        //     })
+        // }
+     
         // Check images
         if (!req.files || req.files.length < 3) {
             return res.status(statusCodes.BAD_REQUEST).json({
@@ -295,6 +302,7 @@ exports.blockProduct = async (req, res) => {
     if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
             return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_BLOCK_SUCCESS, product });
     }
+
     // fallback: redirect back when called from a normal form
     return res.redirect(req.get('referer') || '/admin/products');
   } catch (err) {

@@ -22,12 +22,12 @@ const { profileUpload } = require('../middlewares/multerConfig');
 
 
 router.get("/pageNotFound",userController.pageNotFound)
-router.get("/",isUser, checkBlockedStatus,userController.loadHomepage)
+router.get("/", userController.loadHomepage)
  router.get("/signup",userController.loadSignup)
 router.post("/signup",userController.signup)
 router.post("/verify-otp",userController.verifyOtp)
 router.post("/resend-otp",userController.resendOTP)
-router.get('/shop', productController.listProducts);
+router.get('/shop',productController.listProducts);
 
 
 
@@ -56,6 +56,8 @@ router.delete('/profile/address/:index/delete', isUser, profileController.delete
 router.post('/profile/address', isUser, profileController.manageAddress);
 router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
 router.get('/profile/address', isUser, profileController.addressPage);
+
+router.get('/profile/address/:index/default', profileController.setDefaultAddress)
 
 router.get('/profile/edit', isUser, profileController.editProfilePage);
 router.post('/profile/edit', isUser, profileController.updateProfile);
