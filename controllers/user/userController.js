@@ -38,7 +38,7 @@ res.redirect("/pageNotFound")
 const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
-
+    
         
         // Fetch featured products (newest 8 products)
         const featuredProducts = await Product.find({ isBlocked: false })
@@ -76,6 +76,7 @@ const loadHomepage = async (req, res) => {
                 popularProducts,
                 newArrivals,
                 categories
+                
             });
         } else {
             res.render("home", {
@@ -84,6 +85,7 @@ const loadHomepage = async (req, res) => {
                 popularProducts,
                 newArrivals,
                 categories
+            
             });
         }
     } catch (error) {
@@ -91,6 +93,8 @@ const loadHomepage = async (req, res) => {
         res.status(500).send("Server error");
     }
 };
+
+
     
     function generateOtp(){
         return Math.floor(100000+Math.random()*900000).toString();

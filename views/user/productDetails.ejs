@@ -387,8 +387,10 @@
 
                 <!-- Buy Now → Direct Checkout -->
                 <form action="/checkout/direct" method="POST" id="buyNowForm">
+                  <input type="hidden" name="productId" value="<%= product._id %>">
+                  <input type="hidden" name="quantity" id="buyNowQuantity" value="1">
                   <button type="<%= product.isBlocked ? 'button' : 'submit' %>"
-                    onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : '' %>"
+                    onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : 'captureBuyNowQuantity()' %>"
                     class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 <%= product.quantity <= 0 && !product.isBlocked ? 'opacity-50 cursor-not-allowed' : '' %>"
                     <%=product.quantity <=0 && !product.isBlocked ? 'disabled' : '' %>>
                     Buy Now
@@ -488,13 +490,19 @@
     // Quantity Handler
     function updateQuantity(change) {
       const input = document.getElementById('quantityInput');
-      const buyNowInput = document.getElementById('buyNowQty');
+      const buyNowInput = document.getElementById('buyNowQuantity');
       let current = parseInt(input.value) || 1;
       const max = parseInt(input.max) || 1;
 
       current = Math.max(1, Math.min(max, current + change));
       input.value = current;
-      buyNowInput.value = current;
+      if (buyNowInput) buyNowInput.value = current;
+    }
+
+    // Capture quantity before Buy Now submission
+    function captureBuyNowQuantity() {
+      const qty = document.getElementById('quantityInput').value;
+      document.getElementById('buyNowQuantity').value = qty;
     }
 
     // Sync on page load

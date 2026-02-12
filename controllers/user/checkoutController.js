@@ -50,13 +50,66 @@ const loadCheckout = async (req, res) => {
             return res.redirect('/cart');
         }
 
-        // Filter invalid items
-        cart.items = cart.items.filter(item => {
+        // Track adjustments for notification
+        const adjustedItems = [];
+        const itemsToRemove = [];
+
+        // Check and auto-adjust quantities
+        cart.items = cart.items.filter((item, idx) => {
             const p = item.productId;
-            return p && !p.isBlocked && !p.category.isBlocked && p.quantity >= item.quantity;
+            
+            // Remove blocked or invalid items
+            if (!p || p.isBlocked || p.category.isBlocked) {
+                itemsToRemove.push({
+                    name: p?.productName || 'Unknown Product',
+                    reason: 'blocked'
+                });
+                return false;
+            }
+
+            // Auto-adjust if quantity decreased
+            if (p.quantity < item.quantity) {
+                if (p.quantity === 0) {
+                    // Product out of stock - remove it
+                    itemsToRemove.push({
+                        name: p.productName,
+                        reason: 'outOfStock'
+                    });
+                    return false;
+                } else {
+                    // Product quantity reduced - auto-adjust
+                    const oldQty = item.quantity;
+                    item.quantity = p.quantity;
+                    item.totalPrice = p.salesPrice * p.quantity;
+                    
+                    adjustedItems.push({
+                        name: p.productName,
+                        oldQty: oldQty,
+                        newQty: p.quantity
+                    });
+                    return true;
+                }
+            }
+
+            return true;
         });
 
+        // Save cart if adjustments were made
+        if (adjustedItems.length > 0) {
+            // Update the actual cart in database
+            const updatedItems = cart.items.map(item => ({
+                productId: item.productId._id,
+                quantity: item.quantity,
+                price: item.productId.salesPrice,
+                totalPrice: item.totalPrice
+            }));
+            await Cart.findByIdAndUpdate(cart._id, { items: updatedItems });
+        }
+
         if (cart.items.length === 0) {
+            if (itemsToRemove.length > 0) {
+                req.flash('warning', 'All items in your cart are no longer available');
+            }
             await Cart.deleteOne({ userId });
             return res.redirect('/cart');
         }
@@ -70,6 +123,7 @@ const loadCheckout = async (req, res) => {
 
         const defaultAddress = safeDefaultAddress(user);
 
+        // Pass adjustment data to view
         res.render('user/checkout', {
             user,
             cart,
@@ -79,7 +133,11 @@ const loadCheckout = async (req, res) => {
             shipping,
             total,
             defaultAddress,
-            isDirect: false
+            isDirect: false,
+            adjustedItems,
+            itemsRemoved: itemsToRemove,
+            hasAdjustments: adjustedItems.length > 0,
+            hasRemovals: itemsToRemove.length > 0
         });
 
     } catch (err) {
@@ -326,17 +384,17 @@ const directCheckout = async (req, res) => {
     }
 
     const stock = Number(product.quantity) || 0;
-const qty = parseInt(quantity) || 1;
+    const qty = parseInt(quantity) || 1;
 
-if (product.isBlocked === true) {
-  req.flash('error', 'Product is blocked');
-  return res.redirect(`/product/${productId}`);
-}
+    if (product.isBlocked === true) {
+      req.flash('error', 'Product is blocked');
+      return res.redirect(`/product/${productId}`);
+    }
 
-if (stock < qty) {
-  req.flash('error', `Only ${stock} left in stock`);
-  return res.redirect(`/product/${productId}`);
-}
+    if (stock < qty) {
+      req.flash('error', `Only ${stock} left in stock`);
+      return res.redirect(`/product/${productId}`);
+    }
 
     const fakeCart = {
       items: [{
@@ -365,7 +423,11 @@ if (stock < qty) {
       total,
       defaultAddress,
       isDirect: true,
-      directProductId: productId
+      directProductId: productId,
+      hasAdjustments: false,
+      hasRemovals: false,
+      adjustedItems: [],
+      itemsRemoved: []
     });
 
   } catch (err) {

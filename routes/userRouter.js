@@ -22,7 +22,7 @@ const { profileUpload } = require('../middlewares/multerConfig');
 
 
 router.get("/pageNotFound",userController.pageNotFound)
-router.get("/", userController.loadHomepage)
+router.get("/",userController.loadHomepage)
  router.get("/signup",userController.loadSignup)
 router.post("/signup",userController.signup)
 router.post("/verify-otp",userController.verifyOtp)

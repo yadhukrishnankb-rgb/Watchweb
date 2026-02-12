@@ -47,16 +47,6 @@ exports.addCategory = async (req, res) => {
     try {
 
         let { name, description } = req.body;
-
-//         const nameRegex = /^[A-Za-z\s]+$/;
-
-// if (!nameRegex.test(name)) {
-//     return res.status(statusCodes.BAD_REQUEST).json({
-//         success: false,
-//         message: "Category name must contain only letters"
-//     });
-// }
-
         
         // Trim whitespace and validate
         name = name.trim();

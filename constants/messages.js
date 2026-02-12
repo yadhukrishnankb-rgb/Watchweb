@@ -62,7 +62,7 @@ module.exports = {
   CART_NOT_FOUND: 'Cart not found',
   PRODUCT_NOT_IN_CART: 'Product not found in cart',
   PRODUCT_NOT_FOUND: 'Product not found',
-  CANNOT_INCREASE_QUANTITY: 'Cannot increase quantity',
+  CANNOT_INCREASE_QUANTITY: 'You’ve reached the maximum available quantity for this product.',
   MIN_QUANTITY_ERROR: 'Minimum quantity is 1',
   UPDATE_QUANTITY_ERROR: 'Error updating quantity',
   ITEM_NOT_IN_CART: 'Item not found in cart',

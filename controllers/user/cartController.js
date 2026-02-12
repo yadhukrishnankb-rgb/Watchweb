@@ -59,6 +59,14 @@ exports.addToCart = async (req, res) => {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: "We apologize, but this product is currently unavailable." });
         }
 
+         //  Check latest stock
+    if (product.quantity < quantity) {
+      return res.json({
+        success: false,
+        message: `Only ${product.quantity} items available`
+      });
+    }
+
         
      let qty = parseInt(quantity, 10);
          if(qty>MAX_QUANTITY_PER_ITEM) {

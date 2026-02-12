@@ -50,6 +50,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  
   productImage: {
     type: [String],
     required: true,
