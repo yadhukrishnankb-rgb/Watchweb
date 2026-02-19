@@ -1,61 +1,51 @@
-<footer class="footer container">
-    <div class="footer__container grid">
-      <div class="footer__content">
+<footer class="footer">
+  <div class="footer__top">
+    <div class="footer__top-inner">
+      <div class="footer__brand">
         <a href="index.html" class="footer__logo">
           <img src="./assets/img/logo.svg" alt="" class="footer__logo-img" />
         </a>
+        <p class="footer__tagline">Quality you can trust, delivered to your door.</p>
+
         <h4 class="footer__subtitle">Contact</h4>
-        <p class="footer__description">
-          <span>Address:</span> 13 Tlemcen Road, Street 32, Beb-Wahren
-        </p>
-        <p class="footer__description">
-          <span>Phone:</span> +01 2222 365 /(+91) 01 2345 6789
-        </p>
-        <p class="footer__description">
-          <span>Hours:</span> 10:00 - 18:00, Mon - Sat
-        </p>
+        <div class="footer__contact-list">
+          <div class="footer__contact-item">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p class="footer__description">13 Tlemcen Road, Street 32, Beb-Wahren</p>
+          </div>
+          <div class="footer__contact-item">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            <p class="footer__description">+01 2222 365 / (+91) 01 2345 6789</p>
+          </div>
+          <div class="footer__contact-item">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/></svg>
+            <p class="footer__description">10:00 - 18:00, Mon - Sat</p>
+          </div>
+        </div>
+
         <div class="footer__social">
           <h4 class="footer__subtitle">Follow Me</h4>
-          <div class="footer__links flex">
-            <a href="#">
-              <img
-                src="./assets/img/icon-facebook.svg"
-                alt=""
-                class="footer__social-icon"
-              />
+          <div class="footer__social-links">
+            <a href="#" class="footer__social-icon" aria-label="Facebook">
+              <img src="./assets/img/icon-facebook.svg" alt="Facebook" />
             </a>
-            <a href="#">
-              <img
-                src="./assets/img/icon-twitter.svg"
-                alt=""
-                class="footer__social-icon"
-              />
+            <a href="#" class="footer__social-icon" aria-label="Twitter">
+              <img src="./assets/img/icon-twitter.svg" alt="Twitter" />
             </a>
-            <a href="#">
-              <img
-                src="./assets/img/icon-instagram.svg"
-                alt=""
-                class="footer__social-icon"
-              />
+            <a href="#" class="footer__social-icon" aria-label="Instagram">
+              <img src="./assets/img/icon-instagram.svg" alt="Instagram" />
             </a>
-            <a href="#">
-              <img
-                src="./assets/img/icon-pinterest.svg"
-                alt=""
-                class="footer__social-icon"
-              />
+            <a href="#" class="footer__social-icon" aria-label="Pinterest">
+              <img src="./assets/img/icon-pinterest.svg" alt="Pinterest" />
             </a>
-            <a href="#">
-              <img
-                src="./assets/img/icon-youtube.svg"
-                alt=""
-                class="footer__social-icon"
-              />
+            <a href="#" class="footer__social-icon" aria-label="YouTube">
+              <img src="./assets/img/icon-youtube.svg" alt="YouTube" />
             </a>
           </div>
         </div>
       </div>
-      <div class="footer__content">
+
+      <div class="footer__col">
         <h3 class="footer__title">Address</h3>
         <ul class="footer__links">
           <li><a href="#" class="footer__link">About Us</a></li>
@@ -66,7 +56,8 @@
           <li><a href="#" class="footer__link">Support Center</a></li>
         </ul>
       </div>
-      <div class="footer__content">
+
+      <div class="footer__col">
         <h3 class="footer__title">My Account</h3>
         <ul class="footer__links">
           <li><a href="#" class="footer__link">Sign In</a></li>
@@ -77,36 +68,237 @@
           <li><a href="#" class="footer__link">Order</a></li>
         </ul>
       </div>
-      <div class="footer__content">
-        <h3 class="footer__title">Secured Payed Gateways</h3>
-        <img
-          src="./assets/img/payment-method.png"
-          alt=""
-          class="payment__img"
-        />
+
+      <div class="footer__col">
+        <h3 class="footer__title">Secured Payment Gateways</h3>
+        <img src="./assets/img/payment-method.png" alt="Payment Methods" class="payment__img" />
       </div>
     </div>
-    <div class="footer__bottom">
-      <p class="copyright">&copy; 2024 Evara. All right reserved</p>
-      <span class="designer">Designer by Crypticalcoder</span>
-    </div>
-  </footer>
+  </div>
 
+  <div class="footer__bottom">
+    <p class="copyright">&copy; 2024 Evara. All rights reserved</p>
+    <span class="designer">Designed by Crypticalcoder</span>
+  </div>
+</footer>
+
+<style>
+/* ── FOOTER ── */
+.footer {
+  background: #2e3d2e;
+  color: rgba(255,255,255,.75);
+  font-family: inherit;
+  margin-top: 0;
+}
+
+.footer__top {
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.footer__top-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 40px 50px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  gap: 48px;
+}
+
+/* ── BRAND COL ── */
+.footer__logo-img {
+  height: 38px;
+  width: auto;
+  margin-bottom: 12px;
+  filter: brightness(0) invert(1);
+  display: block;
+}
+
+.footer__tagline {
+  font-size: 13px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.footer__subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 12px;
+  margin-top: 20px;
+}
+.footer__subtitle:first-of-type {
+  margin-top: 0;
+}
+
+/* contact items */
+.footer__contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.footer__contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.footer__contact-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #8aad8a;
+}
+.footer__description {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,.6);
+}
+
+/* social icons */
+.footer__social-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.footer__social-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, transform .2s;
+  text-decoration: none;
+}
+.footer__social-icon:hover {
+  background: #4a5e4a;
+  transform: translateY(-2px);
+}
+.footer__social-icon img {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+  opacity: .8;
+}
+
+/* ── NAV COLS ── */
+.footer__col {}
+
+.footer__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #4a5e4a;
+  display: inline-block;
+}
+
+.footer__links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer__link {
+  font-size: 13px;
+  color: rgba(255,255,255,.6);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color .2s, gap .2s;
+}
+.footer__link::before {
+  content: '›';
+  color: #8aad8a;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform .2s;
+}
+.footer__link:hover {
+  color: #fff;
+  gap: 10px;
+}
+.footer__link:hover::before {
+  transform: translateX(2px);
+}
+
+/* ── PAYMENT ── */
+.payment__img {
+  max-width: 200px;
+  width: 100%;
+  margin-top: 8px;
+  filter: brightness(0) invert(1);
+  opacity: .55;
+  display: block;
+}
+
+/* ── BOTTOM BAR ── */
+.footer__bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.copyright {
+  font-size: 13px;
+  color: rgba(255,255,255,.4);
+}
+
+.designer {
+  font-size: 13px;
+  color: rgba(255,255,255,.35);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+  .footer__top-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+  .footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer__top-inner {
+    grid-template-columns: 1fr;
+    padding: 40px 20px 36px;
+    gap: 28px;
+  }
+  .footer__bottom {
+    padding: 16px 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+}
+</style>
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<!--=============== SWIPER JS ===============-->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-   <!--=============== SWIPER JS ===============-->
-   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<!--=============== MAIN JS ===============-->
+<script src="assets/js/main.js"></script>
 
-   <!--=============== MAIN JS ===============-->
-   <script src="assets/js/main.js"></script>
-
-
-<!-- Bootstrap JS (REQUIRED for modals, dropdowns, collapse) -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-   
- </body>
+</body>
 </html>

@@ -13,7 +13,7 @@ exports.listProducts = async (req, res) => {
     try {
         // Pagination
         const page = parseInt(req.query.page) || 1;
-        const limit = 10;
+        const limit = 8;
         const skip = (page - 1) * limit;
 
         // Build query
@@ -156,6 +156,7 @@ exports.getProductDetails = async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
+            
         // Calculate average rating
         const averageRating = reviews.length > 0 
             ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
