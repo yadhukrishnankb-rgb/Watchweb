@@ -1,141 +1,425 @@
 <%- include('../partials/user/header') %>
 
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-  /* Your existing beautiful styles - keep them all */
-  * {margin:0;padding:0;box-sizing:border-box;}
-  body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#e8f4f3 0%,#d4e9e7 100%);min-height:100vh;padding:20px;}
-  .container {max-width:1200px;margin:0 auto;}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .profile-container {background:linear-gradient(135deg,#1a7b7b 0%,#2d9c9c 100%);border-radius:20px 20px 0 0;padding:30px 40px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1);}
-  .profile-container h2 {color:white;margin:0;font-size:28px;font-weight:600;}
+:root {
+  --green:      #4a5e4a;
+  --green-dk:   #3a4a3a;
+  --green-lt:   #5a7a5a;
+  --bg:         #f0f4f0;
+  --text:       #2a3a2a;
+  --muted:      #7a9080;
+  --line:       rgba(74,94,74,.12);
+  --red:        #e8435a;
+  --success:    #2ecc71;
+}
 
-  .nav-tabs {background:white;padding:20px 40px;display:flex;justify-content:center;gap:15px;flex-wrap:wrap;border-bottom:2px solid #e8f4f3;box-shadow:0 2px 10px rgba(0,0,0,.05);}
-  .nav-tab {padding:12px 28px;background:transparent;color:#666;text-decoration:none;border-radius:25px;font-weight:600;font-size:15px;transition:all .3s;border:2px solid transparent;cursor:pointer;}
-  .nav-tab:hover {background:#e8f4f3;color:#1a7b7b;}
-  .nav-tab.active {background:#1a7b7b;color:white;border-color:#1a7b7b;}
-  .nav-tab.logout {background:#ff4757;color:white;}
-  .nav-tab.logout:hover {background:#ff3838;}
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
 
-  .content-card {background:white;border-radius:0 0 20px 20px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
-  .address-section{margin-bottom:40px;}
-  .section-title{font-size:24px;font-weight:600;color:#1a7b7b;margin-bottom:0;}
-  .add-address-btn{display:inline-block;padding:10px 24px;background:#1a7b7b;color:white;border-radius:25px;font-weight:600;font-size:14px;transition:all .3s;border:none;cursor:pointer;}
-  .add-address-btn:hover{background:#145e5e;transform:translateY(-2px);}
-  .address-form{background:linear-gradient(135deg,#e8f4f3 0%,#d4e9e7 100%);padding:30px;border-radius:15px;margin:20px 0;border-left:4px solid #1a7b7b;display:none;animation:slideDown .3s;}
-  .address-form.active{display:block;}
-  @keyframes slideDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
-  .form-group{margin-bottom:20px;}
-  .form-group label{display:block;margin-bottom:8px;font-weight:600;color:#1a7b7b;font-size:14px;}
-  .form-group input{width:100%;padding:12px 16px;border:2px solid #d4e9e7;border-radius:10px;font-size:15px;background:white;transition:all .3s;}
-  .form-group input:focus{outline:none;border-color:#1a7b7b;background:#f8fcfc;box-shadow:0 0 0 3px rgba(26,123,123,.1);}
-  .form-actions{display:flex;gap:12px;margin-top:25px;}
-  .btn-submit{flex:1;background:#1a7b7b;color:white;padding:12px 24px;border:none;border-radius:25px;cursor:pointer;font-weight:600;font-size:15px;transition:all .3s;}
-  .btn-submit:hover{background:#145e5e;transform:translateY(-2px);}
-  .btn-cancel-form{flex:1;background:#e0e0e0;color:#333;padding:12px 24px;border:none;border-radius:25px;cursor:pointer;font-weight:600;font-size:15px;transition:all .3s;}
-  .btn-cancel-form:hover{background:#d0d0d0;}
-  .address-item{background:linear-gradient(135deg,#e8f4f3 0%,#d4e9e7 100%);padding:20px 25px;border-radius:12px;margin-bottom:15px;border-left:4px solid #1a7b7b;transition:transform .3s;}
-  .address-item:hover{transform:translateX(5px);box-shadow:0 4px 15px rgba(0,0,0,.1);}
-  .address-item > div:first-child{color:#333;font-size:15px;line-height:1.6;margin-bottom:12px;}
-  .address-actions{display:flex;gap:10px;margin-top:10px;}
-  .btn-edit,.btn-delete{padding:8px 20px;font-size:13px;border-radius:20px;font-weight:600;transition:all .3s;border:none;cursor:pointer;}
-  .btn-edit{background:#1a7b7b;color:white;}
-  .btn-edit:hover{background:#145e5e;transform:translateY(-2px);}
-  .btn-delete{background:#ff4757;color:white;}
-  .btn-delete:hover{background:#ff3838;transform:translateY(-2px);}
-  .no-address{text-align:center;color:#666;font-style:italic;padding:30px;background:linear-gradient(135deg,#e8f4f3 0%,#d4e9e7 100%);border-radius:12px;margin-top:20px;}
+/* ─── TOP BANNER ─── */
+.profile-banner {
+  background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+  padding: 56px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.profile-banner::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+  top: -200px; right: -100px;
+  pointer-events: none;
+}
+.profile-banner::after {
+  content: '';
+  position: absolute;
+  width: 250px; height: 250px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.03);
+  bottom: 30px; left: -80px;
+  pointer-events: none;
+}
 
-  @media (max-width:768px){
-    body{padding:10px;}
-    .profile-container{padding:20px;}
-    .nav-tabs{padding:15px 10px;gap:8px;}
-    .nav-tab{padding:10px 20px;font-size:14px;}
-    .content-card{padding:30px 20px;}
-  }
+.banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-title {
+  padding: 32px 0;
+}
+.banner-title h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* ─── TAB NAV ─── */
+.tab-nav {
+  background: rgba(0,0,0,.15);
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.tab-nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-nav-inner::-webkit-scrollbar { display: none; }
+
+.tnav-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 22px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,.55);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s;
+}
+.tnav-btn svg { width: 16px; height: 16px; }
+.tnav-btn:hover { color: rgba(255,255,255,.9); }
+.tnav-btn.active { color: #fff; border-bottom-color: #fff; }
+.tnav-btn.logout-btn { color: rgba(255,160,160,.8); margin-left: auto; }
+.tnav-btn.logout-btn:hover { color: #ff9090; }
+
+/* ─── PAGE BODY ─── */
+.page-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 40px 80px;
+}
+
+/* flash */
+.flash {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 28px;
+}
+.flash.ok  { background: #d5f5e3; color: #1a7a45; border-left: 4px solid var(--success); }
+.flash.err { background: #fde8ec; color: #9a1928; border-left: 4px solid var(--red); }
+.flash svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ─── SECTION HEADING ─── */
+.sec-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 28px;
+}
+.sec-heading h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--green);
+}
+.sec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 40px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .2s, transform .2s;
+}
+.sec-btn:hover { background: var(--green-dk); transform: translateY(-1px); }
+
+/* ─── ADDRESS FORM ─── */
+.addr-form {
+  display: none;
+  padding: 28px 0;
+  border-bottom: 2px dashed var(--line);
+  margin-bottom: 24px;
+  animation: fadeUp .3s ease both;
+}
+.addr-form.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fg { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.fg label { font-size: 12px; font-weight: 700; color: var(--green-dk); text-transform: uppercase; letter-spacing: .5px; }
+.fg input {
+  padding: 12px 16px;
+  border: 2px solid #c8d8c8;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  transition: border-color .2s, box-shadow .2s;
+}
+.fg input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(74,94,74,.1); }
+.fg input.error { border-color: var(--red); }
+
+.form-actions { display: flex; gap: 12px; margin-top: 20px; }
+.fa-save {
+  padding: 12px 32px;
+  background: var(--green); color: #fff;
+  border: none; border-radius: 40px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .2s;
+}
+.fa-save:hover { background: var(--green-dk); }
+.fa-cancel {
+  padding: 12px 32px;
+  background: #e8e8e8; color: #555;
+  border: none; border-radius: 40px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .2s;
+}
+.fa-cancel:hover { background: #ddd; }
+
+/* ─── ADDRESS ITEMS ─── */
+.addr-list { display: flex; flex-direction: column; }
+.addr-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.addr-row:last-child { border-bottom: none; }
+.addr-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #dde8dd, #ccdacc);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.addr-icon svg { width: 18px; height: 18px; color: var(--green); }
+.addr-text { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); font-weight: 500; }
+.addr-line1 { font-weight: 700; margin-bottom: 6px; color: var(--text); }
+.addr-btns { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+
+.ab-default {
+  padding: 7px 18px; 
+  background: #dde8dd; 
+  color: var(--green);
+  border: none; 
+  border-radius: 40px; 
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; 
+  font-weight: 700; 
+  cursor: pointer; 
+  text-decoration: none;
+  transition: background .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ab-default:hover { background: #ccdacc; }
+.ab-default.is-default { 
+  background: var(--green); 
+  color: #fff; 
+  cursor: default;
+}
+.ab-default.is-default:hover { background: var(--green); }
+
+.ab-edit {
+  padding: 7px 18px; background: #dde8dd; color: var(--green);
+  border: none; border-radius: 40px; font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: background .2s;
+}
+.ab-edit:hover { background: #ccdacc; }
+.ab-del {
+  padding: 7px 18px; background: #fde8ec; color: var(--red);
+  border: none; border-radius: 40px; font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: background .2s;
+}
+.ab-del:hover { background: #fbd0d8; }
+
+/* empty states */
+.empty-msg {
+  padding: 40px 0; text-align: center;
+  color: var(--muted); font-size: 14px; font-weight: 600;
+}
+.empty-msg svg { width: 38px; height: 38px; color: #aac0aa; margin: 0 auto 12px; display: block; }
+
+/* ─── RESPONSIVE ─── */
+@media(max-width: 700px) {
+  .banner-inner, .tab-nav-inner { padding: 0 20px; }
+  .page-body { padding: 28px 20px 60px; }
+  .banner-title h1 { font-size: 24px; }
+  .addr-row { flex-wrap: wrap; }
+  .addr-btns { width: 100%; }
+}
 </style>
 
-<div class="container">
-  <div class="profile-container">
-    <h2>Address</h2>
-  </div>
-
-  <div class="nav-tabs">
-    <a href="/profile" class="nav-tab">My Info</a>
-    <a href="/profile/address" class="nav-tab active">Address</a>
-    <a href="/orders" class="nav-tab">Orders</a>
-    <a href="/profile#wallet" class="nav-tab">My Wallet</a>
-    <a href="/logout" class="nav-tab logout">Logout</a>
-  </div>
-
-  <div class="content-card">
-    <div class="address-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding-bottom:10px;border-bottom:2px solid #e8f4f3;">
-        <h3 class="section-title">Address</h3>
-        <a href="#" id="add-address-toggle" class="add-address-btn">+ Add New Address</a>
-      </div>
-
-      <!-- Success/Error Messages -->
-      <% if (success) { %>
-        <div style="background:#d4f4dd;color:#1a7b7b;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid #2d9c9c;">
-          <%= success %>
-        </div>
-      <% } %>
-      <% if (error) { %>
-        <div style="background:#ffe5e5;color:#c62828;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid #e53935;">
-          <%= error %>
-        </div>
-      <% } %>
-
-      <!-- Add/Edit Form -->
-      <div id="address-form-container" class="address-form">
-        <form id="address-form" action="/profile/address" method="POST">
-          <input type="hidden" name="addressId" id="addressId" value="">
-          <div class="form-group"><label>Address Line 1</label><input type="text" name="line1" id="line1" required></div>
-          <div class="form-group"><label>Landmark (optional)</label><input type="text" name="landmark" id="landmark" placeholder="Near Mall / Opposite Park"></div>
-          <div class="form-group"><label>City</label><input type="text" name="city" id="city" required></div>
-          <div class="form-group"><label>State</label><input type="text" name="state" id="state" required></div>
-          <div class="form-group"><label>ZIP Code</label><input type="text" name="zip" id="zip" required></div>
-          <div class="form-group"><label>Country</label><input type="text" name="country" id="country" required></div>
-          <div class="form-actions">
-            <button type="submit" class="btn-submit">Save Address</button>
-            <button type="button" id="cancel-form" class="btn-cancel-form">Cancel</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Address List -->
-      <% if (user.addresses && user.addresses.length) { %>
-        <% user.addresses.filter(a => a).forEach((addr, i) => { %>
-          <% const _line1 = addr.line1 || ''; const _landmark = addr.landmark || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
-          <div class="address-item">
-            <div>
-              <div style="font-weight:600; margin-bottom:6px;"><%= _line1 %><%= _landmark ? (' — ' + _landmark) : '' %></div>
-              <div><%= [_city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
-            </div>
-            <div class="address-actions">
-  <% if (addr.isDefault) { %>
-    <span style="color:#1a7b7b;font-weight:600;">✓ Default</span>
-  <% } else { %>
-    <a href="/profile/address/<%= i %>/default"
-       style="padding:8px 16px;background:#2d9c9c;color:white;border-radius:20px;font-size:13px;text-decoration:none;font-weight:600;">
-      Set Default
-    </a>
-  <% } %>
-
-  <button class="btn-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">
-    Edit
-  </button>
-  <button class="btn-delete" onclick="deleteAddress(<%= i %>)">
-    Delete
-  </button>
-</div>
-
-          </div>
-        <% }) %>
-      <% } else { %>
-        <div class="no-address">No address added yet.</div>
-      <% } %>
+<!-- ═══ PROFILE BANNER ═══ -->
+<div class="profile-banner">
+  <div class="banner-inner">
+    <div class="banner-title">
+      <h1>Address Management</h1>
     </div>
   </div>
+
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <div class="tab-nav-inner">
+      <a href="/profile" class="tnav-btn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        My Info
+      </a>
+      <a href="/profile/address" class="tnav-btn active">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Address
+      </a>
+      <a href="/orders" class="tnav-btn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+        Orders
+      </a>
+      <a href="/profile#wallet" class="tnav-btn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        My Wallet
+      </a>
+      <a href="/logout" class="tnav-btn logout-btn">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Logout
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE BODY ═══ -->
+<div class="page-body">
+
+  <!-- Flash Messages -->
+  <% if (success) { %>
+    <div class="flash ok">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <%= success %>
+    </div>
+  <% } %>
+  <% if (error) { %>
+    <div class="flash err">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <%= error %>
+    </div>
+  <% } %>
+
+  <div class="sec-heading">
+    <h2>Saved Addresses</h2>
+    <a href="#" id="add-address-toggle" class="sec-btn">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      Add New Address
+    </a>
+  </div>
+
+  <!-- Add/Edit Form -->
+  <div id="address-form-container" class="addr-form">
+    <form id="address-form" action="/profile/address" method="POST">
+      <input type="hidden" name="addressId" id="addressId" value="">
+      <div class="fg">
+        <label>Address Line 1</label>
+        <input type="text" name="line1" id="line1" required>
+      </div>
+      <div class="fg">
+        <label>Landmark (optional)</label>
+        <input type="text" name="landmark" id="landmark" placeholder="Near Mall / Opposite Park">
+      </div>
+      <div class="fg">
+        <label>City</label>
+        <input type="text" name="city" id="city" required>
+      </div>
+      <div class="fg">
+        <label>State</label>
+        <input type="text" name="state" id="state" required>
+      </div>
+      <div class="fg">
+        <label>ZIP Code</label>
+        <input type="text" name="zip" id="zip" required>
+      </div>
+      <div class="fg">
+        <label>Country</label>
+        <input type="text" name="country" id="country" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="fa-save">Save Address</button>
+        <button type="button" id="cancel-form" class="fa-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Address List -->
+  <% if (user.addresses && user.addresses.length) { %>
+    <div class="addr-list">
+      <% user.addresses.filter(a => a).forEach((addr, i) => { %>
+        <% const _line1 = addr.line1 || ''; const _landmark = addr.landmark || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
+        <div class="addr-row">
+          <div class="addr-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div class="addr-text">
+            <div class="addr-line1"><%= _line1 %><%= _landmark ? (' — ' + _landmark) : '' %></div>
+            <div><%= [_city, _state, _zip, _country].filter(Boolean).join(', ') %></div>
+          </div>
+          <div class="addr-btns">
+            <% if (addr.isDefault) { %>
+              <span class="ab-default is-default">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                Default
+              </span>
+            <% } else { %>
+              <a href="/profile/address/<%= i %>/default" class="ab-default">Set Default</a>
+            <% } %>
+            <button class="ab-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">Edit</button>
+            <button class="ab-del" onclick="deleteAddress(<%= i %>)">Delete</button>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-msg">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      No addresses saved yet. Add your first address above.
+    </div>
+  <% } %>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.4/dist/sweetalert2.all.min.js"></script>
@@ -146,10 +430,10 @@
   // Add red border on invalid
   inputs.forEach(input => {
     input.addEventListener('invalid', (e) => {
-      e.target.style.borderColor = '#e74c3c';
+      e.target.classList.add('error');
     });
     input.addEventListener('input', (e) => {
-      e.target.style.borderColor = '';
+      e.target.classList.remove('error');
     });
   });
 
@@ -164,7 +448,7 @@
     const landmark = document.getElementById('landmark').value.trim();
 
     // Reset borders
-    inputs.forEach(i => i.style.borderColor = '');
+    inputs.forEach(i => i.classList.remove('error'));
 
     if (line1.length < 5) {
       showError('line1', 'Address must be at least 5 characters');
@@ -198,9 +482,8 @@
 
   function showError(id, message) {
     const input = document.getElementById(id);
-    input.style.borderColor = '#e74c3c';
+    input.classList.add('error');
     input.focus();
-    // Optional: show toast
     Swal.fire({
       icon: 'error',
       title: 'Invalid Input',
@@ -212,7 +495,7 @@
     });
   }
 
-  // Keep your existing functions (toggle, edit, delete)
+  // Toggle form
   const formContainer = document.getElementById('address-form-container');
   const toggleBtn = document.getElementById('add-address-toggle');
   const cancelBtn = document.getElementById('cancel-form');
@@ -233,7 +516,7 @@
     form.reset();
     addressIdInput.value = '';
     form.action = '/profile/address';
-    inputs.forEach(i => i.style.borderColor = '');
+    inputs.forEach(i => i.classList.remove('error'));
   }
 
   function editAddress(i, l1, lm, c, s, z, co) {
@@ -246,18 +529,17 @@
     addressIdInput.value = i;
     form.action = `/profile/address/${i}/edit`;
     formContainer.classList.add('active');
-    inputs.forEach(i => i.style.borderColor = '');
+    inputs.forEach(i => i.classList.remove('error'));
     window.scrollTo({top: formContainer.offsetTop - 100, behavior: 'smooth'});
   }
 
-  // Your working delete function (keep it)
   async function deleteAddress(index) {
     const result = await Swal.fire({
       title: 'Delete this address?',
       text: "You won't be able to recover it!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ff4757',
+      confirmButtonColor: '#e8435a',
       cancelButtonColor: '#666',
       confirmButtonText: 'Yes, delete it!',
       cancelButtonText: 'Cancel'

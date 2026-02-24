@@ -1,0 +1,257 @@
+<%- include('../partials/user/header') %>
+
+<style>
+    :root { 
+        --primary: #5a7f72; 
+        --error: #dc2626; 
+    }
+    
+    html, body {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .page-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    header {
+        flex-shrink: 0;
+    }
+    
+    .error-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+    
+    footer {
+        flex-shrink: 0;
+    }
+    
+    .error-container {
+        text-align: center;
+        max-width: 600px;
+        padding: 3rem;
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        animation: slideUp 0.5s ease;
+        width: 100%;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .error-icon {
+        width: 120px;
+        height: 120px;
+        background: var(--error);
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem;
+        animation: shake 0.6s infinite;
+        box-shadow: 0 15px 30px rgba(220, 38, 38, 0.3);
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-8px); }
+        75% { transform: translateX(8px); }
+    }
+    
+    .error-title {
+        font-size: 2.6rem;
+        font-weight: 800;
+        color: var(--error);
+        margin-bottom: 1rem;
+    }
+    
+    .error-msg {
+        color: #374151;
+        font-size: 1.2rem;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+    
+    .order-id {
+        background: #fee2e2;
+        color: #7f1d1d;
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        display: inline-block;
+        margin: 1rem 0;
+        font-size: 1.1rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .error-details {
+        background: #fef2f2;
+        padding: 1.5rem;
+        border-left: 4px solid var(--error);
+        border-radius: 0.5rem;
+        margin: 1.5rem 0;
+        text-align: left;
+    }
+    
+    .error-details h4 {
+        margin: 0 0 0.75rem 0;
+        color: var(--error);
+        font-size: 1rem;
+    }
+    
+    .error-details p {
+        margin: 0 0 0.5rem 0;
+        color: #7f1d1d;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    .error-details ul {
+        margin: 0.75rem 0 0 0;
+        padding-left: 1.5rem;
+    }
+    
+    .error-details li {
+        color: #7f1d1d;
+        margin-bottom: 0.4rem;
+        font-size: 0.95rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2.5rem;
+    }
+    
+    .btn-retry {
+        background: var(--error);
+        color: white;
+        padding: 0.875rem 2.5rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+        transition: all 0.3s;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-retry:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(220, 38, 38, 0.35);
+        background: #b91c1c;
+    }
+    
+    .btn-details {
+        background: var(--primary);
+        color: white;
+        padding: 0.875rem 2.5rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 8px 20px rgba(90, 127, 114, 0.25);
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+    
+    .btn-details:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(90, 127, 114, 0.35);
+        background: #4a6f62;
+    }
+    
+    .support-link {
+        color: #9ca3af;
+        font-size: 0.9rem;
+        margin-top: 2.5rem;
+    }
+    
+    .support-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 700;
+        transition: color 0.3s;
+    }
+    
+    .support-link a:hover {
+        color: #4a6f62;
+    }
+</style>
+
+<div class="page-wrapper">
+    <%- include('../partials/user/header') %>
+    
+    <div class="error-content">
+        <div class="error-container">
+            <div class="error-icon">
+                <i class="fas fa-times"></i>
+            </div>
+            
+            <h1 class="error-title">Payment Failed</h1>
+            
+            <p class="error-msg">
+                Sorry, your payment could not be processed.<br>
+                Please try again or contact support if the issue persists.
+            </p>
+            
+            <div class="order-id">
+                Order ID: <%= orderId %>
+            </div>
+            
+            <div class="error-details">
+                <h4><i class="fas fa-exclamation-circle"></i> What happened?</h4>
+                <p>Your payment was declined by the payment gateway. This could be due to:</p>
+                <ul>
+                    <li>Insufficient funds in your account</li>
+                    <li>Card declined by your bank</li>
+                    <li>Incorrect card details</li>
+                    <li>Network or timeout issue</li>
+                    <li>Session expired</li>
+                </ul>
+            </div>
+            
+            <div class="btn-group">
+                <a href="/checkout" class="btn-retry">
+                    <i class="fas fa-redo"></i> Retry Payment
+                </a>
+                <a href="/orders/<%= orderId %>" class="btn-details">
+                    <i class="fas fa-file-alt"></i> View Order Details
+                </a>
+            </div>
+            
+            <div class="support-link">
+                <i class="fas fa-question-circle"></i> Need help? 
+                <a href="/">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('../partials/user/footer') %>
+</div>

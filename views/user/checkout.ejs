@@ -12,8 +12,6 @@
         --shadow-soft: 0 10px 30px rgba(16,185,129,0.08);
     }
 
-    /* body { background: linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%); color: #111827; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; } */
-
     .container { max-width:1200px; margin:0 auto; padding:0 1rem; }
 
     .card { background:var(--card); border-radius:var(--radius); border:1px solid rgba(15,23,42,0.04); box-shadow:var(--shadow-soft); padding:1.5rem; transition:transform .18s ease,box-shadow .18s ease; }
@@ -53,95 +51,60 @@
     .summary-card { border-radius:.9rem; padding:1.25rem; background:linear-gradient(180deg,#fff,#fcfffb); border:1px solid rgba(15,23,42,0.04); }
     .summary-line { display:flex; justify-content:space-between; padding:.55rem 0; color:var(--muted); }
 
-    .place-order-btn { width:100%; padding:.95rem; font-weight:800; border-radius:.8rem; border:none; color:white; background:linear-gradient(90deg,#5a7f72,#5a7f72); cursor:pointer; box-shadow: 0 12px 30px rgba(239,68,68,0.12); }
-
-
-.place-order-btn { width:100%; padding:.95rem; font-weight:800; border-radius:.8rem; border:none; color:white; background:linear-gradient(90deg,#5a7f72,#5a7f72); cursor:pointer; box-shadow: 0 12px 30px rgba(239,68,68,0.12); }
+    .place-order-btn { 
+        width:100%; padding:.95rem; font-weight:800; border-radius:.8rem; border:none; 
+        color:white; background:linear-gradient(90deg,#5a7f72,#5a7f72); cursor:pointer; 
+        box-shadow: 0 12px 30px rgba(239,68,68,0.12); 
+    }
 
     /* Payment method buttons */
-.payment-methods {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-    margin: 1.5rem 0;
-}
+    .payment__methods {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+    }
 
-.pay-btn {
-    background: #fff;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
+    .payment__option {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+    }
 
-.pay-btn:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
+    .payment__option:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
 
-.pay-btn.active {
-    border-color: var(--primary);
-    background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-    box-shadow: 0 0 0 3px rgba(90, 127, 114, 0.15);
-}
+    .payment__option input[type="radio"] {
+        accent-color: var(--primary);
+        width: 1.25rem;
+        height: 1.25rem;
+    }
 
-.pay-icon {
-    font-size: 1.5rem;
-    color: var(--primary);
-}
+    .payment__label {
+        font-weight: 600;
+        color: #0f172a;
+        flex: 1;
+    }
 
-.payment__methods {
-    margin: 1.5rem 0;
-}
+    .payment__option.selected {
+        border-color: var(--primary);
+        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+        box-shadow: 0 0 0 3px rgba(90, 127, 114, 0.15);
+    }
 
-.checkout__title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    color: #0f172a;
-}
-
-.payment__option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #fff;
-}
-
-.payment__option:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-
-.payment__option input[type="radio"] {
-    accent-color: var(--primary);
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-.payment__label {
-    font-weight: 600;
-    color: #0f172a;
-    flex: 1;
-}
-
-.payment__option.selected {
-    border-color: var(--primary);
-    background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-    box-shadow: 0 0 0 3px rgba(90, 127, 114, 0.15);
-}
+    .disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
 
     /* responsive */
     @media (max-width:1024px){ .page-header h1{ font-size:2rem } .item-img{ width:82px; height:82px } }
@@ -154,83 +117,80 @@
         <p>Complete your order with confidence</p>
     </div>
 
-<!-- ADJUSTMENT NOTIFICATION MODAL -->
-<% if (hasAdjustments || hasRemovals) { %>
-  <div id="adjustmentModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:100;">
-    <div style="background:white; border-radius:12px; padding:2rem; max-width:500px; width:95%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-      <div style="display:flex; gap:1rem; margin-bottom:1.5rem;">
-        <div style="flex-shrink:0;">
-          <i class="fas fa-info-circle" style="font-size:2rem; color:#f59e0b;"></i>
-        </div>
-        <div>
-          <h3 style="margin:0; font-size:1.25rem; font-weight:700; color:#1f2937;">Cart Updated</h3>
-          <p style="margin:0.5rem 0 0; color:#6b7280; font-size:0.95rem;">Some items in your cart have been adjusted</p>
+    <!-- ADJUSTMENT NOTIFICATION MODAL -->
+    <% if (hasAdjustments || hasRemovals) { %>
+      <div id="adjustmentModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:100;">
+        <div style="background:white; border-radius:12px; padding:2rem; max-width:500px; width:95%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+          <div style="display:flex; gap:1rem; margin-bottom:1.5rem;">
+            <div style="flex-shrink:0;">
+              <i class="fas fa-info-circle" style="font-size:2rem; color:#f59e0b;"></i>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:1.25rem; font-weight:700; color:#1f2937;">Cart Updated</h3>
+              <p style="margin:0.5rem 0 0; color:#6b7280; font-size:0.95rem;">Some items in your cart have been adjusted</p>
+            </div>
+          </div>
+
+          <div style="background:#fffbeb; border-left:4px solid #f59e0b; padding:1rem; border-radius:0.5rem; margin-bottom:1.5rem;">
+            <% if (adjustedItems && adjustedItems.length > 0) { %>
+              <div style="margin-bottom:1rem;">
+                <p style="margin:0 0 0.75rem; font-weight:600; color:#1f2937;">Quantity Updated:</p>
+                <% adjustedItems.forEach(adj => { %>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem; background:white; border-radius:0.375rem; margin-bottom:0.5rem;">
+                    <span style="color:#374151; flex:1;"><%= adj.name %></span>
+                    <span style="color:#dc2626; font-weight:600; font-size:0.9rem;">
+                      <i class="fas fa-arrow-right" style="margin:0 0.5rem;"></i>
+                      <%= adj.newQty %> <span style="color:#6b7280;">available</span>
+                    </span>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <% if (itemsRemoved && itemsRemoved.length > 0) { %>
+              <div>
+                <p style="margin:0 0 0.75rem; font-weight:600; color:#dc2626;">Removed from Cart:</p>
+                <% itemsRemoved.forEach(removed => { %>
+                  <div style="padding:0.5rem; color:#374151; margin-bottom:0.5rem;">
+                    <i class="fas fa-trash" style="color:#dc2626; margin-right:0.5rem;"></i>
+                    <span><%= removed.name %></span>
+                    <span style="color:#9ca3af; font-size:0.85rem;">(<%=removed.reason === 'outOfStock' ? 'Out of Stock' : 'Unavailable' %>)</span>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+
+          <p style="color:#6b7280; font-size:0.9rem; margin:0 0 1.5rem; line-height:1.6;">
+            <strong>Note:</strong> Only the available quantities have been kept in your cart. Please review your order before proceeding.
+          </p>
+
+          <button id="closeAdjustmentModal" type="button" style="width:100%; background:#1f2937; color:white; border:none; border-radius:0.5rem; padding:0.75rem; font-weight:600; cursor:pointer;">
+            Got It, Continue
+          </button>
         </div>
       </div>
 
-      <div style="background:#fffbeb; border-left:4px solid #f59e0b; padding:1rem; border-radius:0.5rem; margin-bottom:1.5rem;">
-        <% if (adjustedItems && adjustedItems.length > 0) { %>
-          <div style="margin-bottom:1rem;">
-            <p style="margin:0 0 0.75rem; font-weight:600; color:#1f2937;">Quantity Updated:</p>
-            <% adjustedItems.forEach(adj => { %>
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem; background:white; border-radius:0.375rem; margin-bottom:0.5rem;">
-                <span style="color:#374151; flex:1;"><%= adj.name %></span>
-                <span style="color:#dc2626; font-weight:600; font-size:0.9rem;">
-                  <i class="fas fa-arrow-right" style="margin:0 0.5rem;"></i>
-                  <%= adj.newQty %> <span style="color:#6b7280;">available</span>
-                </span>
-              </div>
-            <% }) %>
-          </div>
-        <% } %>
-
-        <% if (itemsRemoved && itemsRemoved.length > 0) { %>
-          <div>
-            <p style="margin:0 0 0.75rem; font-weight:600; color:#dc2626;">Removed from Cart:</p>
-            <% itemsRemoved.forEach(removed => { %>
-              <div style="padding:0.5rem; color:#374151; margin-bottom:0.5rem;">
-                <i class="fas fa-trash" style="color:#dc2626; margin-right:0.5rem;"></i>
-                <span><%= removed.name %></span>
-                <span style="color:#9ca3af; font-size:0.85rem;">(<%=removed.reason === 'outOfStock' ? 'Out of Stock' : 'Unavailable' %>)</span>
-              </div>
-            <% }) %>
-          </div>
-        <% } %>
-      </div>
-
-      <p style="color:#6b7280; font-size:0.9rem; margin:0 0 1.5rem; line-height:1.6;">
-        <strong>Note:</strong> Only the available quantities have been kept in your cart. Please review your order before proceeding.
-      </p>
-
-      <button id="closeAdjustmentModal" type="button" style="width:100%; background:#1f2937; color:white; border:none; border-radius:0.5rem; padding:0.75rem; font-weight:600; cursor:pointer;">
-        Got It, Continue
-      </button>
-    </div>
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const closeBtn = document.getElementById('closeAdjustmentModal');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-          document.getElementById('adjustmentModal').style.display = 'none';
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const closeBtn = document.getElementById('closeAdjustmentModal');
+          if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+              document.getElementById('adjustmentModal').style.display = 'none';
+            });
+          }
         });
-      }
-    });
-  </script>
-<% } %>
+      </script>
+    <% } %>
 
-<% if (isDirect) { %>
-  <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
-    <p class="text-blue-800 font-medium">
-      <i class="fas fa-bolt"></i>
-      You're buying <strong>1 item</strong> directly from the product page.
-    </p>
-  </div>
-<% } %>
-
-
-
+    <% if (isDirect) { %>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+        <p class="text-blue-800 font-medium">
+          <i class="fas fa-bolt"></i>
+          You're buying <strong>1 item</strong> directly from the product page.
+        </p>
+      </div>
+    <% } %>
 
     <div class="grid" style="display:grid; grid-template-columns: 1fr 340px; gap:1.5rem;">
         <div>
@@ -247,407 +207,354 @@
                     <button id="openAddAddress" class="btn-green" type="button" title="Add a new address"> <i class="fas fa-plus"></i> Add New </button>
                 </div>
 
-            <% if (user.addresses && user.addresses.length > 0) { %>
-        <div class="address-list" role="list" aria-label="Saved addresses">
-          <% const safeAddresses = user.addresses.filter(a => a); const defaultId = defaultAddress && defaultAddress._id ? defaultAddress._id.toString() : null; %>
-          <% safeAddresses.forEach((addr, idx) => { %>
-            <label class="address-card <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
-                <div class="radio-wrap">
-                <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'checked' : '' %> required>
-                </div>
+                <% if (user.addresses && user.addresses.length > 0) { %>
+                    <div class="address-list" role="list" aria-label="Saved addresses">
+                        <% const safeAddresses = user.addresses.filter(a => a); 
+                           const defaultId = defaultAddress && defaultAddress._id ? defaultAddress._id.toString() : null; %>
+                        <% safeAddresses.forEach((addr, idx) => { %>
+                            <label class="address-card <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'selected' : '' %>" role="listitem" tabindex="0">
+                                <div class="radio-wrap">
+                                    <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= defaultId && addr._id && defaultId === addr._id.toString() ? 'checked' : '' %> required>
+                                </div>
 
-                <div class="address-info">
-                    <!-- Address Type (e.g., home) -->
-                    <div style="font-weight:700; color:var(--primary); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">
-                        <%= addr.type || 'home' %>
+                                <div class="address-info">
+                                    <div style="font-weight:700; color:var(--primary); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">
+                                        <%= addr.type || 'home' %>
+                                    </div>
+                                    <div style="font-weight:700; font-size:1.1rem; margin:0.25rem 0; color:#0f172a;">
+                                        <%= addr.fullName %>
+                                    </div>
+                                    <div style="color:#374151; margin-bottom:0.25rem;">
+                                        <%= addr.line1 %>, <%= addr.city %>, <%= addr.state %> <%= addr.zip %>, <%= addr.country %>
+                                    </div>
+                                    <div style="color:var(--primary); font-weight:600; font-size:0.95rem;">
+                                        <i class="fas fa-phone" style="margin-right:0.4rem;"></i>
+                                        <%= addr.phone %>
+                                    </div>
+                                </div>
+
+                                <button type="button" onclick="editAddress('<%= idx %>')" class="edit-btn" aria-label="Edit address">
+                                    <a href="/profile/address" class="fas fa-edit" title="edit address"> Edit </a>
+                                </button>
+                            </label>
+                        <% }) %>
                     </div>
-
-                    <!-- Full Name -->
-                    <div style="font-weight:700; font-size:1.1rem; margin:0.25rem 0; color:#0f172a;">
-                        <%= addr.fullName %>
+                <% } else { %>
+                    <div class="empty-state" role="status" aria-live="polite" style="padding-top:1rem;">
+                        <i class="fas fa-home" style="font-size:2.4rem; color:#e5e7eb;"></i>
+                        <p style="margin-top:.75rem; font-weight:700;">No addresses added</p>
+                        <p style="color:var(--muted); margin-top:.25rem;">Add a delivery address to continue</p>
+                        <button id="openAddAddressEmpty" class="btn-green" style="margin-top:1rem; display:inline-flex;" type="button"><i class="fas fa-plus"></i> Add Address Now</button>
                     </div>
-
-                    <!-- Full Address -->
-                    <div style="color:#374151; margin-bottom:0.25rem;">
-                        <%= addr.line1 %>, <%= addr.city %>, <%= addr.state %> <%= addr.zip %>, <%= addr.country %>
-                    </div>
-
-                    <!-- Phone -->
-                    <div style="color:var(--primary); font-weight:600; font-size:0.95rem;">
-                        <i class="fas fa-phone" style="margin-right:0.4rem;"></i>
-                        <%= addr.phone %>
-                    </div>
-                </div>
-
-                <button type="button" onclick="editAddress('<%= idx %>')" class="edit-btn" aria-label="Edit address">
-                    <a href="/profile/address" class="fas fa-edit" title="edit address"> Edit </a>
-                </button>
-            </label>
-        <% }) %>
-    </div>
-<% } else { %>
-    <div class="empty-state" role="status" aria-live="polite" style="padding-top:1rem;">
-        <i class="fas fa-home" style="font-size:2.4rem; color:#e5e7eb;"></i>
-        <p style="margin-top:.75rem; font-weight:700;">No addresses added</p>
-        <p style="color:var(--muted); margin-top:.25rem;">Add a delivery address to continue</p>
-        <button id="openAddAddressEmpty" class="btn-green" style="margin-top:1rem; display:inline-flex;" type="button"><i class="fas fa-plus"></i> Add Address Now</button>
-    </div>
-<% } %>
+                <% } %>
             </div>
 
             <!-- Items -->
-            <!-- Items -->
-<div class="card fade-in" style="margin-top:1rem;">
-  <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
-    <div class="icon-box"><i class="fas fa-shopping-bag"></i></div>
-    <div>
-      <h2 style="margin:0; font-size:1.125rem; font-weight:800;">
-        <%= isDirect ? 'Your Item' : 'Your Items' %>
-      </h2>
-      <p style="margin-top:.25rem; color:var(--muted);">
-        <%= cart.items.length %> <%= cart.items.length === 1 ? 'item' : 'items' %> in cart
-      </p>
-    </div>
-  </div>
+            <div class="card fade-in" style="margin-top:1rem;">
+                <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
+                    <div class="icon-box"><i class="fas fa-shopping-bag"></i></div>
+                    <div>
+                        <h2 style="margin:0; font-size:1.125rem; font-weight:800;">
+                            <%= isDirect ? 'Your Item' : 'Your Items' %>
+                        </h2>
+                        <p style="margin-top:.25rem; color:var(--muted);">
+                            <%= cart.items.length %> <%= cart.items.length === 1 ? 'item' : 'items' %> in cart
+                        </p>
+                    </div>
+                </div>
 
-  <div style="display:flex; flex-direction:column; gap:1rem;">
-    <% cart.items.forEach(item => { %>
-      <div class="item-row" role="group" aria-label="<%= item.productId.productName %>">
-        <div style="position:relative; width:110px; flex-shrink:0;">
-          <img src="<%= item.productId.productImage?.[0] || '/images/default-product.jpg' %>"
-               class="item-img" alt="<%= item.productId.productName %>">
-          <div class="quantity-badge"><%= item.quantity %></div>
-        </div>
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                    <% cart.items.forEach(item => { %>
+                        <div class="item-row" role="group" aria-label="<%= item.productId.productName %>">
+                            <div style="position:relative; width:110px; flex-shrink:0;">
+                                <img src="<%= item.productId.productImage?.[0] || '/images/default-product.jpg' %>"
+                                     class="item-img" alt="<%= item.productId.productName %>">
+                                <div class="quantity-badge"><%= item.quantity %></div>
+                            </div>
 
-        <div class="item-main">
-          <h4 style="margin:0; font-weight:700; color:#0f172a;">
-            <%= item.productId.productName %>
-          </h4>
-          <div class="price-line">
-            <span>Price × Qty</span>
-            <span>₹<%= item.price.toLocaleString() %> × <%= item.quantity %></span>
-          </div>
-          <div class="price-line">
-            <strong>₹<%= item.totalPrice.toLocaleString() %></strong>
-          </div>
-        </div>
-      </div>
-    <% }) %>
-  </div>
-</div>
+                            <div class="item-main">
+                                <h4 style="margin:0; font-weight:700; color:#0f172a;">
+                                    <%= item.productId.productName %>
+                                </h4>
+                                <div class="price-line">
+                                    <span>Price × Qty</span>
+                                    <span>₹<%= item.price.toLocaleString() %> × <%= item.quantity %></span>
+                                </div>
+                                <div class="price-line">
+                                    <strong>₹<%= item.totalPrice.toLocaleString() %></strong>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
 
-<!-- Add Address Modal (inline) -->
-<div id="addAddressModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:60;">
-  <div style="background:#fff; width:640px; max-width:95%; border-radius:12px; padding:1rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-      <h3 style="margin:0;">Add Delivery Address</h3>
-      <button id="closeAddAddressModal" type="button" style="background:transparent;border:none;font-size:1.2rem;">&times;</button>
-    </div>
-    <form id="addAddressForm">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-        <input name="fullName" placeholder="Full name" required />
-        <input name="phone" placeholder="Phone" required />
-        <input name="line1" placeholder="Address line 1" required />
-        <input name="landmark" placeholder="Landmark (optional)" />
-        <input name="city" placeholder="City" required />
-        <input name="state" placeholder="State" required />
-        <input name="zip" placeholder="ZIP / PIN" required />
-        <input name="country" placeholder="Country" value="India" required />
-      </div>
-      <div style="display:flex; gap:0.75rem; align-items:center; margin-top:0.75rem;">
-        <label style="display:flex; gap:0.4rem; align-items:center;"><input type="checkbox" name="isDefault" /> Set as default</label>
-        <select name="type" style="margin-left:auto;">
-          <option value="home">Home</option>
-          <option value="work">Work</option>
-        </select>
-      </div>
-      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.9rem;">
-        <button type="button" id="cancelAddAddress" class="btn-green" style="background:#eee;color:#111;">Cancel</button>
-        <button type="submit" class="btn-green">Save Address</button>
-      </div>
-    </form>
-  </div>
-</div>
+            <!-- Add Address Modal (inline) -->
+            <div id="addAddressModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:60;">
+                <div style="background:#fff; width:640px; max-width:95%; border-radius:12px; padding:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <h3 style="margin:0;">Add Delivery Address</h3>
+                        <button id="closeAddAddressModal" type="button" style="background:transparent;border:none;font-size:1.2rem;">×</button>
+                    </div>
+                    <form id="addAddressForm">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                            <input name="fullName" placeholder="Full name" required />
+                            <input name="phone" placeholder="Phone" required />
+                            <input name="line1" placeholder="Address line 1" required />
+                            <input name="landmark" placeholder="Landmark (optional)" />
+                            <input name="city" placeholder="City" required />
+                            <input name="state" placeholder="State" required />
+                            <input name="zip" placeholder="ZIP / PIN" required />
+                            <input name="country" placeholder="Country" value="India" required />
+                        </div>
+                        <div style="display:flex; gap:0.75rem; align-items:center; margin-top:0.75rem;">
+                            <label style="display:flex; gap:0.4rem; align-items:center;"><input type="checkbox" name="isDefault" /> Set as default</label>
+                            <select name="type" style="margin-left:auto;">
+                                <option value="home">Home</option>
+                                <option value="work">Work</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.9rem;">
+                            <button type="button" id="cancelAddAddress" class="btn-green" style="background:#eee;color:#111;">Cancel</button>
+                            <button type="submit" class="btn-green">Save Address</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <!-- Right summary -->
-<aside>
-    <div class="card summary-card slide-in" style="position:sticky; top:1.25rem;">
-        <div style="display:flex; gap:.75rem; align-items:center; margin-bottom:.5rem;">
-            <div class="icon-box" style="width:3rem;height:3rem;font-size:1.125rem;">
-                <i class="fas fa-file-invoice-dollar"></i>
-            </div>
-            <div>
-                <h3 style="margin:0; font-size:1.125rem; font-weight:800;">Order Summary</h3>
-                <p style="margin:6px 0 0; color:var(--muted); font-size:.95rem;">Review & pay</p>
-            </div>
-        </div>
+        <aside>
+            <div class="card summary-card slide-in" style="position:sticky; top:1.25rem;">
+                <div style="display:flex; gap:.75rem; align-items:center; margin-bottom:.5rem;">
+                    <div class="icon-box" style="width:3rem;height:3rem;font-size:1.125rem;">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; font-size:1.125rem; font-weight:800;">Order Summary</h3>
+                        <p style="margin:6px 0 0; color:var(--muted); font-size:.95rem;">Review & pay</p>
+                    </div>
+                </div>
 
-        <div style="margin-top:.5rem;">
-            <div class="summary-line"><span>Subtotal</span> <strong>₹<%= subtotal.toLocaleString() %></strong></div>
-            <div class="summary-line"><span>Tax (18% GST)</span> <span>₹<%= (typeof tax !== 'undefined' ? tax.toFixed(2) : '0.00') %></span></div>
-            <% if (typeof discount !== 'undefined' && discount > 0) { %>
-                <div class="summary-line" style="color:#b91c1c; font-weight:700;"><span>Discount</span> <span>-₹<%= discount.toLocaleString() %></span></div>
-            <% } %>
-            <div class="summary-line"><span>Shipping</span> <span class="<%= shipping === 0 ? 'text-green-600' : '' %>"><%= shipping === 0 ? 'FREE' : '₹' + shipping %></span></div>
-        </div>
+                <div style="margin-top:.5rem;">
+                    <div class="summary-line"><span>Subtotal</span> <strong>₹<%= subtotal.toLocaleString() %></strong></div>
+                    <div class="summary-line"><span>Tax (18% GST)</span> <span>₹<%= (typeof tax !== 'undefined' ? tax.toFixed(2) : '0.00') %></span></div>
+                    <% if (typeof discount !== 'undefined' && discount > 0) { %>
+                        <div class="summary-line" style="color:#b91c1c; font-weight:700;"><span>Discount</span> <span>-₹<%= discount.toLocaleString() %></span></div>
+                    <% } %>
+                    <div class="summary-line"><span>Shipping</span> <span class="<%= shipping === 0 ? 'text-green-600' : '' %>"><%= shipping === 0 ? 'FREE' : '₹' + shipping %></span></div>
+                </div>
 
-        <div class="summary-line total" style="margin-top:.75rem; border-top:1px dashed rgba(0,0,0,0.05); padding-top:.85rem;">
-            <span style="font-weight:800;">Total Amount</span>
-            <span style="font-weight:900; color:var(--primary);">₹<%= total.toLocaleString() %></span>
-        </div>
+                <div class="summary-line total" style="margin-top:.75rem; border-top:1px dashed rgba(0,0,0,0.05); padding-top:.85rem;">
+                    <span style="font-weight:800;">Total Amount</span>
+                    <span style="font-weight:900; color:var(--primary);">₹<%= total.toLocaleString() %></span>
+                </div>
 
-        <!-- Payment Method Selector -->
-             <!-- <form id="checkoutForm" action="/checkout/order-success" method="POST"> -->
+                <!-- Payment Method Selector + Place Order Button -->
                 <form id="checkoutForm"
-      action="<%= isDirect ? '/checkout/direct-order' : '/checkout/order-success' %>"
-      method="POST">
-  <input type="hidden" name="addressId" id="selectedAddressId" value="">
-  <% if (isDirect) { %>
-    <input type="hidden" name="productId" value="<%= directProductId %>">
-    <input type="hidden" name="quantity" value="1">
-  <% } %>
+                      action="<%= isDirect ? '/checkout/direct-place-order' : '/checkout/place-order' %>"
+                      method="POST">
+                    <input type="hidden" name="addressId" id="selectedAddressId" value="">
+                    <% if (isDirect) { %>
+                        <input type="hidden" name="productId" value="<%= directProductId %>">
+                        <input type="hidden" name="quantity" value="1">
+                    <% } %>
 
-  <!-- Payment Options -->
-  <div class="payment__methods">
-    <label class="payment__option <%= total > 100000 ? 'disabled' : '' %>">
-  <input type="radio" name="paymentMethod" value="cod" <%= total > 100000 ? 'disabled' : '' %> />
-  <span>Cash on Delivery</span>
-</label>
-    <label class="payment__option">
-  <input type="radio" name="paymentMethod" value="razorpay"  checked />
-  <span>Razorpay</span>
-</label>
-  </div>
+                    <!-- Payment Options -->
+                    <div class="payment__methods">
+                        <label class="payment__option <%= total > 100000 ? 'disabled' : '' %>">
+                            <input type="radio" name="paymentMethod" value="cod" <%= total > 100000 ? 'disabled' : '' %> />
+                            <span>Cash on Delivery</span>
+                        </label>
+                        <label class="payment__option">
+                            <input type="radio" name="paymentMethod" value="razorpay" checked />
+                            <span>Razorpay</span>
+                        </label>
+                    </div>
 
-  <button type="submit" id="placeOrderBtn" class="place-order-btn">
-    <%= isDirect ? 'Buy Now' : 'Place Order' %> – ₹<%= total.toLocaleString() %>
-  </button>
-</form>
+                    <button type="submit" id="placeOrderBtn" class="place-order-btn">
+                        <%= isDirect ? 'Buy Now' : 'Place Order' %> – ₹<%= total.toLocaleString() %>
+                    </button>
+                </form>
 
-        <!-- COD Warning (if total > ₹2000) -->
-        <p id="cod-warning" class="text-red-600 text-xs mt-2 hidden text-center">
-            <i class="fas fa-exclamation-triangle"></i> COD not available for orders above ₹20000
-        </p>
+                <!-- COD Warning -->
+                <p id="cod-warning" class="text-red-600 text-xs mt-2 hidden text-center">
+                    <i class="fas fa-exclamation-triangle"></i> COD not available for orders above ₹100000
+                </p>
 
-      
-
-        <div style="margin-top:1rem;" class="security-badge">
-            <p style="margin:0; font-weight:700; color:#065f46;"><i class="fas fa-shield-alt"></i> 100% Secure Checkout</p>
-            <p style="margin:.35rem 0 0; color:var(--muted); font-size:.9rem;">Original products • Easy returns</p>
-            <div style="margin-top:.6rem; display:flex; gap:.6rem; justify-content:center; color:#9ca3af;">
-                <i class="fab fa-cc-visa"></i>
-                <i class="fab fa-cc-mastercard"></i>
-                <i class="fab fa-cc-paypal"></i>
-                <i class="fas fa-wallet"></i>
+                <div style="margin-top:1rem;" class="security-badge">
+                    <p style="margin:0; font-weight:700; color:#065f46;"><i class="fas fa-shield-alt"></i> 100% Secure Checkout</p>
+                    <p style="margin:.35rem 0 0; color:var(--muted); font-size:.9rem;">Original products • Easy returns</p>
+                    <div style="margin-top:.6rem; display:flex; gap:.6rem; justify-content:center; color:#9ca3af;">
+                        <i class="fab fa-cc-visa"></i>
+                        <i class="fab fa-cc-mastercard"></i>
+                        <i class="fab fa-cc-paypal"></i>
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</aside>
+        </aside>
     </div>
 </div>
 
-<!-- ...existing code... -->
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-let selectedPayment = 'cod';
-const COD_MAX = 100000;
-
-// Sync selected address
-document.addEventListener('change', function(e) {
-    if (e.target.name === 'selectedAddress') {
-        document.getElementById('selectedAddressId').value = e.target.value;
-    }
-});
-
-// Payment selection + COD disable
+// Payment method selection visual feedback + COD limit check
 document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', function() {
-        selectedPayment = this.value;
-        document.querySelectorAll('.payment__option').forEach(opt => opt.classList.remove('selected'));
+        document.querySelectorAll('.payment__option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
         this.closest('.payment__option').classList.add('selected');
 
         const codWarning = document.getElementById('cod-warning');
-        if (this.value === 'cod') {
-            if (<%= total %> > COD_MAX) {
-                this.disabled = true;
-                this.closest('.payment__option').classList.add('disabled');
-                codWarning.classList.remove('hidden');
-            } else {
-                codWarning.classList.add('hidden');
-            }
+        if (this.value === 'cod' && <%= total %> > 100000) {
+            codWarning.classList.remove('hidden');
         } else {
             codWarning.classList.add('hidden');
         }
     });
 });
 
-// Trigger on load
-document.querySelector('input[name="paymentMethod"]:checked').dispatchEvent(new Event('change'));
+// Trigger initial state
+document.querySelector('input[name="paymentMethod"]:checked')?.dispatchEvent(new Event('change'));
 
-// Address selection on load
+// Address selection sync + form intercept
 document.addEventListener('DOMContentLoaded', function() {
-  const defaultRadio = document.querySelector('input[name="selectedAddress"]:checked');
-  if (defaultRadio) {
-    document.getElementById('selectedAddressId').value = defaultRadio.value;
-  } else if (document.querySelector('input[name="selectedAddress"]')) {
-    const first = document.querySelector('input[name="selectedAddress"]');
-    first.checked = true;
-    document.getElementById('selectedAddressId').value = first.value;
-  }
-
-  // INTERCEPT FORM SUBMISSION AND REDIRECT
-  const checkoutForm = document.getElementById('checkoutForm');
-  if (checkoutForm) {
-    checkoutForm.addEventListener('submit', async function(e) {
-      e.preventDefault(); // prevent default form submission
-
-      // Validate address selected
-      const selectedAddr = document.getElementById('selectedAddressId').value;
-      if (!selectedAddr) {
-        await Swal.fire({ icon: 'warning', title: 'Please select a delivery address' });
-        return;
-      }
-
-      // Get form data
-      const formData = new FormData(this);
-
-      // Show loading state
-      const btn = document.getElementById('placeOrderBtn');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-      try {
-        // Send via AJAX instead of form submit
-        const response = await fetch(this.action, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(formData)
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.redirectUrl) {
-          // Redirect to success page
-          window.location.href = data.redirectUrl;
-        } else {
-          await Swal.fire({ icon: 'error', title: data.message || 'Order failed. Please try again.' });
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-        }
-      } catch (err) {
-        console.error('Checkout error:', err);
-        await Swal.fire({ icon: 'error', title: 'Network error. Please try again.' });
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    });
-  }
-});
-
-// Update hidden input when user changes
-document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    document.getElementById('selectedAddressId').value = this.value;
-  });
-});
-
-// --- Add Address Modal + AJAX submit ---
-(function(){
-  const openBtn = document.getElementById('openAddAddress');
-  const openBtnEmpty = document.getElementById('openAddAddressEmpty');
-  const modal = document.getElementById('addAddressModal');
-  const closeBtn = document.getElementById('closeAddAddressModal');
-  const cancelBtn = document.getElementById('cancelAddAddress');
-  const form = document.getElementById('addAddressForm');
-
-  function showModal(){ if(modal) modal.style.display='flex'; }
-  function hideModal(){ if(modal) modal.style.display='none'; }
-
-  if(openBtn) openBtn.addEventListener('click', showModal);
-  if(openBtnEmpty) openBtnEmpty.addEventListener('click', showModal);
-  if(closeBtn) closeBtn.addEventListener('click', hideModal);
-  if(cancelBtn) cancelBtn.addEventListener('click', hideModal);
-
-  if(!form) return;
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    const btn = form.querySelector('button[type="submit"]');
-    const original = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = 'Saving...';
-
-    const fm = new FormData(form);
-    try{
-      const resp = await fetch('/checkout/add-address', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(fm)
-      });
-      const data = await resp.json();
-      if(data.success && data.address){
-        const addr = data.address;
-
-        // Remove selected class from others
-        document.querySelectorAll('.address-card').forEach(c=>c.classList.remove('selected'));
-        // Uncheck other radios
-        document.querySelectorAll('input[name="selectedAddress"]').forEach(r=>r.checked=false);
-
-        // Build label
-        const label = document.createElement('label');
-        label.className = 'address-card selected';
-        label.setAttribute('role','listitem');
-
-        label.innerHTML = `
-          <div class="radio-wrap">
-            <input type="radio" name="selectedAddress" value="${addr._id}" checked required>
-          </div>
-          <div class="address-info">
-            <div style="font-weight:700; color:var(--primary); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">${addr.type || 'home'}</div>
-            <div style="font-weight:700; font-size:1.1rem; margin:0.25rem 0; color:#0f172a;">${addr.fullName || ''}</div>
-            <div style="color:#374151; margin-bottom:0.25rem;">${addr.line1 || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}, ${addr.country || ''}</div>
-            <div style="color:var(--primary); font-weight:600; font-size:0.95rem;"><i class="fas fa-phone" style="margin-right:0.4rem;"></i>${addr.phone || ''}</div>
-          </div>
-          <button type="button" onclick="location.href='/profile/address'" class="edit-btn" aria-label="Edit address"><a href="/profile/address" class="fas fa-edit" title="edit address"> Edit </a></button>
-        `;
-
-        // Insert into DOM
-        let list = document.querySelector('.address-list');
-        const empty = document.querySelector('.empty-state');
-        if(!list){
-          list = document.createElement('div');
-          list.className = 'address-list';
-          if(empty && empty.parentNode){
-            empty.parentNode.replaceChild(list, empty);
-          } else {
-            // fallback: append before items card
-            const card = document.querySelector('.card.fade-in');
-            if(card && card.parentNode) card.parentNode.insertBefore(list, card.nextSibling);
-          }
-        }
-        list.insertBefore(label, list.firstChild);
-
-        // attach change listener to new radio
-        const newRadio = label.querySelector('input[name="selectedAddress"]');
-        if(newRadio){
-          newRadio.addEventListener('change', function(){ document.getElementById('selectedAddressId').value = this.value; });
-          document.getElementById('selectedAddressId').value = newRadio.value;
-        }
-
-        hideModal();
-        form.reset();
-      } else {
-        await Swal.fire({ icon: 'error', title: data.message || 'Failed to add address' });
-      }
-    } catch (err){
-      console.error('Add address error', err);
-      await Swal.fire({ icon: 'error', title: 'Network error. Try again.' });
+    // Set default address in hidden field
+    const defaultRadio = document.querySelector('input[name="selectedAddress"]:checked');
+    if (defaultRadio) {
+        document.getElementById('selectedAddressId').value = defaultRadio.value;
+    } else if (document.querySelector('input[name="selectedAddress"]')) {
+        const first = document.querySelector('input[name="selectedAddress"]');
+        first.checked = true;
+        document.getElementById('selectedAddressId').value = first.value;
     }
-    btn.disabled = false; btn.innerHTML = original;
-  });
-})();
+
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const selectedAddr = document.getElementById('selectedAddressId').value;
+            if (!selectedAddr) {
+                alert("Please select a delivery address");
+                return;
+            }
+
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            if (!paymentMethod) {
+                alert("Please select a payment method");
+                return;
+            }
+
+            const btn = document.getElementById('placeOrderBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            const formData = new FormData(this);
+            const jsonData = {};
+            for (let [key, value] of formData.entries()) {
+                jsonData[key] = value;
+            }
+
+            try {
+                // ──────────────────────────────
+                //   IMPORTANT: Use the REAL route
+                // ──────────────────────────────
+                const response = await fetch('/checkout/order-success', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData),
+                    credentials: 'same-origin'
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonErr) {
+                    // If not JSON → probably HTML error page (404/500)
+                    console.log(await response.text());
+                    throw new Error("Server returned unexpected response (not JSON)");
+                }
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Order failed");
+                }
+
+                if (paymentMethod === 'cod') {
+                    // COD success → redirect
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    }
+                    return;
+                }
+
+                // Razorpay flow
+                if (!data.razorpay || !data.razorpay.key || !data.razorpay.order_id) {
+                    throw new Error("Invalid Razorpay order data from server");
+                }
+
+                const options = {
+                    key: data.razorpay.key,
+                    amount: data.razorpay.amount,
+                    currency: data.razorpay.currency,
+                    name: data.razorpay.name,
+                    description: data.razorpay.description,
+                    order_id: data.razorpay.order_id,
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await fetch('/checkout/payment/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    razorpay_order_id:   response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature:  response.razorpay_signature,
+                                    orderMongoId:        data.orderMongoId
+                                })
+                            });
+
+                            const verifyData = await verifyRes.json();
+
+                            if (verifyData.success && verifyData.redirectUrl) {
+                                window.location.href = verifyData.redirectUrl;
+                            } else {
+                                console.error('Payment verification failed:', verifyData.message);
+                                window.location.href = `/order-failed/${data.orderMongoId}`;
+                            }
+                        } catch (err) {
+                            console.error('Verification error:', err);
+                            window.location.href = `/order-failed/${data.orderMongoId}`;
+                        }
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            window.location.href = `/order-failed/${data.orderMongoId}`;
+                        }
+                    },
+                    prefill: data.razorpay.prefill,
+                    theme: { color: "#5a7f72" },
+                    retry: { enabled: true, max_count: 3 }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                console.error('Checkout error:', err);
+                alert(err.message || "Something went wrong. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+});
 </script>
 
 <%- include('../partials/user/footer') %>

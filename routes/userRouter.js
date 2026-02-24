@@ -109,9 +109,13 @@ router.post('/wishlist/remove', isUser, (req, res, next) => {
 
 
 router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheckout);
-
 router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutController.placeOrder);
+router.post('/checkout/payment/verify', isUser,checkBlockedStatus, checkoutController.verifyPayment );
 router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
+router.get('/order-failed/:id', isUser, (req, res) => {
+  res.render('user/order-failed', { orderId: req.params.id });
+});
+
 
 
 

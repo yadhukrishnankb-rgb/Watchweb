@@ -98,6 +98,7 @@ module.exports = {
   PLEASE_ADD_DELIVERY_ADDRESS: 'Please add a delivery address',
   ORDER_FAILED: 'Order failed. Try again.',
   ORDER_PLACE_FAILED: 'Failed to place order',
+  INVALID_PAYMENT_METHOD: "Invalid payment method selected. Please choose a valid payment option.",
 
   // Wishlist
   WISHLIST_LOAD_ERROR: 'Unable to load wishlist',
