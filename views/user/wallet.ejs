@@ -1,0 +1,393 @@
+<%- include('../partials/user/header') %>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green:      #4a5e4a;
+  --green-dk:   #3a4a3a;
+  --green-lt:   #5a7a5a;
+  --bg:         #f0f4f0;
+  --text:       #2a3a2a;
+  --muted:      #7a9080;
+  --line:       rgba(74,94,74,.12);
+  --red:        #e8435a;
+  --success:    #2ecc71;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ─── TOP BANNER ─── */
+.profile-banner {
+  background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+  padding: 56px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+.profile-banner::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+  top: -200px; right: -100px;
+  pointer-events: none;
+}
+.profile-banner::after {
+  content: '';
+  position: absolute;
+  width: 250px; height: 250px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.03);
+  bottom: 30px; left: -80px;
+  pointer-events: none;
+}
+
+.banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-title {
+  padding: 32px 0;
+  text-align: center;
+}
+.banner-title h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* ─── PAGE BODY ─── */
+.page-body {
+  max-width: 900px;
+  margin: -20px auto 0;
+  padding: 0 40px 80px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Balance Card */
+.balance-card {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-lt) 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(74,94,74,.2);
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.balance-card::before {
+  content: '₹';
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 140px;
+  font-weight: 800;
+  opacity: .06;
+  pointer-events: none;
+  font-family: 'Nunito', sans-serif;
+}
+
+.balance-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: .85;
+  margin-bottom: 16px;
+}
+
+.balance-amount {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* Transaction Section */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0 16px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+/* Table Styles */
+.table-container {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border: 1px solid var(--line);
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+}
+
+.table th {
+  padding: 16px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--green-dk);
+  text-align: left;
+  border-bottom: 2px solid var(--line);
+}
+
+.table td {
+  padding: 18px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: #fafcfa;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.badge-credit {
+  background: #d5f5e3;
+  color: #1a7a45;
+}
+
+.badge-debit {
+  background: #fde8ec;
+  color: var(--red);
+}
+
+/* Amount Colors */
+.text-credit {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.text-debit {
+  color: var(--red);
+  font-weight: 700;
+}
+
+/* Link */
+.table a {
+  color: var(--green);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color .2s;
+}
+
+.table a:hover {
+  color: var(--green-dk);
+  text-decoration: underline;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 40px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px dashed var(--line);
+}
+
+.empty-state h4 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  color: #aac0aa;
+  margin-bottom: 20px;
+}
+
+/* Back Button */
+.btn-back {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--green);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  transition: all .2s;
+  margin-top: 32px;
+}
+
+.btn-back:hover {
+  background: var(--green-dk);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74,94,74,.2);
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width: 700px) {
+  .banner-inner { padding: 0 20px; }
+  .page-body { padding: 0 20px 60px; }
+  .banner-title h1 { font-size: 24px; }
+  .balance-card { padding: 32px 24px; }
+  .balance-amount { font-size: 42px; }
+  
+  .table th, .table td {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .table th {
+    font-size: 11px;
+  }
+}
+</style>
+
+<div class="profile-banner">
+  <div class="banner-inner">
+    <div class="banner-title">
+      <h1>My Wallet</h1>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- Balance Card -->
+  <div class="balance-card">
+    <h3>Available Balance</h3>
+    <div class="balance-amount">
+      ₹<%= wallet.balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="section-header">
+    <h3 class="section-title">Transaction History</h3>
+  </div>
+
+  <% if (wallet.transactions && wallet.transactions.length > 0) { %>
+    <div class="table-container">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Order ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% 
+              // Sort newest first
+              const sortedTx = wallet.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+              sortedTx.forEach(tx => { 
+            %>
+              <tr>
+                <td><%= new Date(tx.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                <td>
+                  <span class="badge <%= tx.type === 'credit' ? 'badge-credit' : 'badge-debit' %>">
+                    <%= tx.type.toUpperCase() %>
+                  </span>
+                </td>
+                <td class="<%= tx.type === 'credit' ? 'text-credit' : 'text-debit' %>">
+                  <%= tx.type === 'credit' ? '+' : '-' %>₹<%= tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                </td>
+                <td><%= tx.reason %></td>
+                <td>
+                  <% if (tx.orderId) { %>
+                    <a href="/orders/<%= tx.orderId %>">
+                      <%= tx.orderId.toString().slice(-8).toUpperCase() %>
+                    </a>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/>
+      </svg>
+      <h4>No transactions yet</h4>
+      <p>Your wallet activity will appear here once you make purchases, cancellations, or returns.</p>
+    </div>
+  <% } %>
+
+  <div class="text-center">
+    <a href="/profile" class="btn-back">Back to Profile</a>
+  </div>
+</div>
+
+<%- include('../partials/user/footer') %>

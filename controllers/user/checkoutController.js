@@ -8,6 +8,7 @@ const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const razorpay = require('../../config/razorpay')
 const crypto = require('crypto');
+const { addToWallet } = require('./walletController');
 
 // --- Safe address helpers 
 function _safeAddresses(user) {
@@ -150,210 +151,420 @@ const loadCheckout = async (req, res) => {
 };
 
 
+// const placeOrder = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const { addressId, paymentMethod, productId, quantity } = req.body;
+
+//     if (!['cod', 'razorpay'].includes(paymentMethod)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid payment method. Use 'cod' or 'razorpay'"
+//       });
+//     }
+
+//     let itemsToOrder = [];
+//     let subtotal = 0;
+//     let isDirect = !!productId;  // if productId exists → direct buy
+
+//     if (isDirect) {
+//       // ── DIRECT BUY (Buy Now) ──
+//       if (!productId || !quantity) {
+//         return res.status(400).json({ success: false, message: "Product ID and quantity required" });
+//       }
+
+//       const product = await Product.findById(productId);
+//       if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+//       const qty = parseInt(quantity);
+//       if (qty < 1 || product.quantity < qty) {
+//         return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
+//       }
+
+//       const price = product.salesPrice || product.price;
+//       const totalPrice = price * qty;
+
+//       itemsToOrder = [{
+//         product: product._id,
+//         name: product.productName,
+//         quantity: qty,
+//         price,
+//         totalPrice,
+//         productSnapshot: { image: product.productImage?.[0] || '' },
+//         status: 'Pending'
+//       }];
+
+//       subtotal = totalPrice;
+//     } else {
+//       // ── NORMAL CART CHECKOUT ──
+//       const cart = await Cart.findOne({ userId }).populate('items.productId');
+//       if (!cart || cart.items.length === 0) {
+//         return res.status(400).json({ success: false, message: messages.CART_EMPTY });
+//       }
+
+//       itemsToOrder = cart.items
+//         .filter(i => i.productId && i.productId.quantity >= i.quantity)
+//         .map(i => ({
+//           product: i.productId._id,
+//           name: i.productId.productName,
+//           quantity: i.quantity,
+//           price: i.price,
+//           totalPrice: i.totalPrice,
+//           productSnapshot: { image: i.productId.productImage?.[0] || '' },
+//           status: 'Pending'
+//         }));
+
+//       if (itemsToOrder.length === 0) {
+//         return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
+//       }
+
+//       subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
+//     }
+
+//     const tax = subtotal * 0.18;
+//     const shipping = subtotal >= 1000 ? 0 : 79;
+//     const total = subtotal + tax + shipping;
+
+//     // COD limit
+//     if (paymentMethod === 'cod' && total > 100000) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Cash on Delivery not available for orders above ₹100000'
+//       });
+//     }
+
+//     const amountInPaise = Math.round(total * 100);
+
+//     // Address logic (same for both)
+//     const user = await User.findById(userId);
+//     if (!user) return res.status(404).json({ success: false, message: messages.USER_NOT_FOUND });
+
+//     let selectedAddress = getAddressById(user, addressId) || safeDefaultAddress(user);
+//     if (!selectedAddress) {
+//       return res.status(400).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
+//     }
+
+//     const orderAddress = {
+//       fullName: (selectedAddress.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer').trim(),
+//       phone: selectedAddress.phone || user.phone || '',
+//       altPhone: selectedAddress.altPhone || '',
+//       street: selectedAddress.street || selectedAddress.line1 || selectedAddress.address || 'Not provided',
+//       landmark: selectedAddress.landmark || '',
+//       locality: selectedAddress.locality || '',
+//       city: selectedAddress.city || 'Not Available',
+//       state: selectedAddress.state || 'Not Available',
+//       pincode: selectedAddress.pincode || 'PIN Missing',
+//       country: selectedAddress.country || 'India'
+//     };
+
+//     if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
+//       return res.status(400).json({ success: false, message: 'Address missing required fields' });
+//     }
+
+//     // Common order data
+//     let orderData = {
+//       orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
+//       user: userId,
+//       orderedItems: itemsToOrder,
+//       subtotal,
+//       tax,
+//       shipping,
+//       discount: 0,
+//       totalPrice: total,
+//       finalAmount: total,
+//       address: orderAddress,
+//       paymentMethod: paymentMethod.toUpperCase(),
+//       paymentStatus: 'Pending',
+//       status: 'Pending',
+//       pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+//       createdOn: new Date()
+//     };
+
+//     // ── COD FLOW (both normal & direct) ──
+//     if (paymentMethod === 'cod') {
+//       const order = await Order.create(orderData);
+
+//       const stockDeducted = await atomicDeductStock(
+//         orderData.orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
+//       );
+
+//       if (!stockDeducted) {
+//         await Order.findByIdAndDelete(order._id);
+//         return res.status(400).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
+//       }
+
+//       if (!isDirect) await Cart.deleteOne({ user: userId });  // only clear cart for normal checkout
+
+//       return res.json({
+//         success: true,
+//         redirectUrl: `/order-success/${order._id}`
+//       });
+//     }
+
+//     // ── RAZORPAY FLOW (both normal & direct) ──
+//     const rzpOrder = await razorpay.orders.create({
+//       amount: amountInPaise,
+//       currency: 'INR',
+//       receipt: `rcpt_${Date.now()}`,
+//       notes: { userId: userId.toString(), isDirect: isDirect ? 'yes' : 'no' }
+//     });
+
+//     orderData.razorpayOrderId = rzpOrder.id;
+
+//     const order = await Order.create(orderData);
+
+//     // Do NOT delete cart or deduct stock yet!
+
+//     return res.json({
+//       success: true,
+//       razorpay: {
+//         key: process.env.RAZORPAY_KEY_ID,
+//         order_id: rzpOrder.id,
+//         amount: amountInPaise,
+//         currency: 'INR',
+//         name: "Your Store Name",
+//         description: `Payment for Order #${order.orderId}`,
+//         prefill: {
+//           name: user.name || 'Customer',
+//           email: user.email || '',
+//           contact: orderAddress.phone || ''
+//         }
+//       },
+//       orderMongoId: order._id.toString()
+//     });
+
+//   } catch (err) {
+//     console.error('Place Order Error:', err);
+//     return res.status(500).json({
+//       success: false,
+//       message: messages.ORDER_FAILED || 'Order placement failed'
+//     });
+//   }
+// };
+
 const placeOrder = async (req, res) => {
-    try {
-        const userId = req.session.user._id;
-        const { addressId, paymentMethod } = req.body;
+  try {
+    const userId = req.session.user._id;
+    const { addressId, paymentMethod, productId, quantity } = req.body;
 
-        if (!['cod', 'razorpay'].includes(paymentMethod)) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Invalid payment method. Use 'cod' or 'razorpay'"
-            });
-        }
-
-        const cart = await Cart.findOne({ userId }).populate('items.productId');
-        if (!cart || cart.items.length === 0) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: messages.CART_EMPTY
-            });
-        }
-
-        // Prepare items (your original filtering logic)
-        const itemsToOrder = cart.items
-            .filter(i => i.productId && i.productId.quantity >= i.quantity)
-            .map(i => ({
-                product: i.productId._id,
-                quantity: i.quantity,
-                price: i.price,
-                totalPrice: i.totalPrice
-            }));
-
-        if (itemsToOrder.length === 0) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: messages.OUT_OF_STOCK
-            });
-        }
-
-        const subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
-        const tax = subtotal * 0.18;
-        const shipping = subtotal >= 1000 ? 0 : 79;
-        const total = subtotal + tax + shipping;
-
-        // Check COD limit
-        if (paymentMethod === 'cod' && total > 100000) {
-            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Cash on Delivery is not available for orders above ₹100000' });
-        }
-
-        // Final amount in paise (Razorpay needs integers)
-        const amountInPaise = Math.round(total * 100);
-
-        // ── Address logic (your original code) ──
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(statusCodes.NOT_FOUND).json({
-                success: false,
-                message: messages.USER_NOT_FOUND
-            });
-        }
-
-        let selectedAddress = getAddressById(user, addressId);
-        if (!selectedAddress) {
-            selectedAddress = safeDefaultAddress(user);
-        }
-        if (!selectedAddress) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: messages.PLEASE_ADD_DELIVERY_ADDRESS
-            });
-        }
-
-        const orderAddress = {
-            fullName: (selectedAddress.fullName || selectedAddress.name ||
-                `${(user.firstName || '').trim()} ${(user.lastName || '').trim()}`.trim() ||
-                user.name || 'Customer').replace(/undefined/g, '').trim() || 'Customer',
-            phone: selectedAddress.phone || selectedAddress.mobile || user.phone || '',
-            altPhone: selectedAddress.altPhone || selectedAddress.mobile2 || '',
-            street: selectedAddress.street || selectedAddress.line1 || selectedAddress.house ||
-                selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
-            landmark: selectedAddress.landmark || selectedAddress.addressLine2 || '',
-            locality: selectedAddress.locality || selectedAddress.area || '',
-            city: selectedAddress.city || selectedAddress.town || 'Not Available',
-            state: selectedAddress.state || selectedAddress.stateName || 'Not Available',
-            pincode: selectedAddress.pincode || selectedAddress.postalCode ||
-                selectedAddress.zip || selectedAddress.pin || 'PIN Missing',
-            country: selectedAddress.country || 'India'
-        };
-
-        if (!orderAddress.fullName.trim() || !orderAddress.city.trim() ||
-            !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
-            return res.status(statusCodes.BAD_REQUEST).json({
-                success: false,
-                message: 'Please ensure your delivery address has all required fields (name, city, state, pincode).'
-            });
-        }
-
-        // ── Prepare orderedItems with names & images ──
-        const orderedItems = itemsToOrder.map(item => {
-            const cartItem = cart.items.find(ci => ci.productId._id.toString() === item.product.toString());
-            return {
-                product: item.product,
-                name: cartItem?.productId?.productName || 'Product',
-                quantity: item.quantity,
-                price: item.price,
-                totalPrice: item.totalPrice,
-                productSnapshot: {
-                    image: cartItem?.productId?.productImage?.[0] || ''
-                },
-                status: 'Pending'
-            };
-        });
-
-        // Common base for order
-        let orderData = {
-            orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
-            user: userId,
-            orderedItems,
-            subtotal,
-            tax,
-            shipping,
-            discount: 0,
-            totalPrice: total,
-            finalAmount: total,
-            address: orderAddress,
-            paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
-            paymentStatus: 'Pending',
-            status: 'Pending',
-            pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            createdOn: new Date()
-        };
-
-        // ──────────────────────────────
-        //        COD FLOW
-        // ──────────────────────────────
-        if (paymentMethod === 'cod') {
-            const order = await Order.create(orderData);
-
-            // For COD → deduct stock immediately
-            const stockDeducted = await atomicDeductStock(
-                orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
-            );
-
-            if (!stockDeducted) {
-                // rollback
-                await Order.findByIdAndDelete(order._id);
-                return res.status(statusCodes.BAD_REQUEST).json({
-                    success: false,
-                    message: messages.STOCK_CHANGED_TRY_AGAIN
-                });
-            }
-
-            await Cart.deleteOne({ userId });
-
-            return res.json({
-                success: true,
-                redirectUrl: `/order-success/${order._id}`
-            });
-        }
-
-        // ──────────────────────────────
-        //      RAZORPAY FLOW
-        // ──────────────────────────────
-        const rzpOrder = await razorpay.orders.create({
-            amount: amountInPaise,
-            currency: 'INR',
-            receipt: `rcpt_${Date.now()}`,
-            notes: {
-                userId: userId.toString()
-            }
-        });
-
-        orderData.razorpayOrderId = rzpOrder.id;
-        // paymentStatus stays 'Pending'
-
-        const order = await Order.create(orderData);
-
-        // IMPORTANT: do NOT clear cart or deduct stock here!
-
-        return res.json({
-            success: true,
-            razorpay: {
-                key: process.env.RAZORPAY_KEY_ID,
-                order_id: rzpOrder.id,
-                amount: amountInPaise,
-                currency: 'INR',
-                name: "Your Store Name",           // change to your brand
-                description: `Payment for Order #${order.orderId}`,
-                prefill: {
-                    name: user.name || 'Customer',
-                    email: user.email || '',
-                    contact: orderAddress.phone || ''
-                }
-            },
-            orderMongoId: order._id.toString(),
-            redirectIfCOD: false
-        });
-
-    } catch (err) {
-        console.error('Place Order Error:', err);
-        return res.status(statusCodes.INTERNAL_ERROR).json({
-            success: false,
-            message: messages.ORDER_FAILED
-        });
+    // Allow 'wallet' now
+    if (!['cod', 'razorpay', 'wallet'].includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment method. Use 'cod', 'razorpay', or 'wallet'"
+      });
     }
+
+    let itemsToOrder = [];
+    let subtotal = 0;
+    let isDirect = !!productId;
+
+    if (isDirect) {
+      // Direct buy logic (unchanged)
+      if (!productId || !quantity) {
+        return res.status(400).json({ success: false, message: "Product ID and quantity required" });
+      }
+
+      const product = await Product.findById(productId);
+      if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+      const qty = parseInt(quantity);
+      if (qty < 1 || product.quantity < qty) {
+        return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
+      }
+
+      const price = product.salesPrice || product.price;
+      const totalPrice = price * qty;
+
+      itemsToOrder = [{
+        product: product._id,
+        name: product.productName,
+        quantity: qty,
+        price,
+        totalPrice,
+        productSnapshot: { image: product.productImage?.[0] || '' },
+        status: 'Pending'
+      }];
+
+      subtotal = totalPrice;
+    } else {
+      // Normal cart logic (unchanged)
+      const cart = await Cart.findOne({ userId }).populate('items.productId');
+      if (!cart || cart.items.length === 0) {
+        return res.status(400).json({ success: false, message: messages.CART_EMPTY });
+      }
+
+      itemsToOrder = cart.items
+        .filter(i => i.productId && i.productId.quantity >= i.quantity)
+        .map(i => ({
+          product: i.productId._id,
+          name: i.productId.productName,
+          quantity: i.quantity,
+          price: i.price,
+          totalPrice: i.totalPrice,
+          productSnapshot: { image: i.productId.productImage?.[0] || '' },
+          status: 'Pending'
+        }));
+
+      if (itemsToOrder.length === 0) {
+        return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
+      }
+
+      subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
+    }
+
+    const tax = subtotal * 0.18;
+    const shipping = subtotal >= 1000 ? 0 : 79;
+    const total = subtotal + tax + shipping;
+
+    // COD limit
+    if (paymentMethod === 'cod' && total > 100000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cash on Delivery not available for orders above ₹100000'
+      });
+    }
+
+    const amountInPaise = Math.round(total * 100);
+
+    // Address logic (unchanged)
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: messages.USER_NOT_FOUND });
+
+    let selectedAddress = getAddressById(user, addressId) || safeDefaultAddress(user);
+    if (!selectedAddress) {
+      return res.status(400).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
+    }
+
+    const orderAddress = {
+      fullName: (selectedAddress.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer').trim(),
+      phone: selectedAddress.phone || user.phone || '',
+      altPhone: selectedAddress.altPhone || '',
+      street: selectedAddress.street || selectedAddress.line1 || selectedAddress.address || 'Not provided',
+      landmark: selectedAddress.landmark || '',
+      locality: selectedAddress.locality || '',
+      city: selectedAddress.city || 'Not Available',
+      state: selectedAddress.state || 'Not Available',
+      pincode: selectedAddress.pincode || 'PIN Missing',
+      country: selectedAddress.country || 'India'
+    };
+
+    if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
+      return res.status(400).json({ success: false, message: 'Address missing required fields' });
+    }
+
+    let orderData = {
+      orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
+      user: userId,
+      orderedItems: itemsToOrder,
+      subtotal,
+      tax,
+      shipping,
+      discount: 0,
+      totalPrice: total,
+      finalAmount: total,
+      address: orderAddress,
+      paymentMethod: paymentMethod.toUpperCase(),
+      paymentStatus: 'Pending',
+      status: 'Pending',
+      pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      createdOn: new Date()
+    };
+
+    // ── WALLET PAYMENT ──
+    if (paymentMethod === 'wallet') {
+      if (user.wallet.balance < total) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Insufficient wallet balance. Please choose another payment method.' 
+        });
+      }
+
+      orderData.paymentMethod = 'WALLET';
+      orderData.paymentStatus = 'Paid';
+
+      const order = await Order.create(orderData);
+
+      const stockDeducted = await atomicDeductStock(
+        order.orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
+      );
+
+      if (!stockDeducted) {
+        await Order.findByIdAndDelete(order._id);
+        return res.status(400).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
+      }
+
+      // Debit wallet
+      await addToWallet(userId, total, 'debit', 'Order Payment', order._id);
+
+      if (!isDirect) await Cart.deleteOne({ user: userId });
+
+      return res.json({
+        success: true,
+        redirectUrl: `/order-success/${order._id}`
+      });
+    }
+
+    // ── COD FLOW ──
+    if (paymentMethod === 'cod') {
+      const order = await Order.create(orderData);
+
+      const stockDeducted = await atomicDeductStock(
+        order.orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
+      );
+
+      if (!stockDeducted) {
+        await Order.findByIdAndDelete(order._id);
+        return res.status(400).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
+      }
+
+      if (!isDirect) await Cart.deleteOne({ user: userId });
+
+      return res.json({
+        success: true,
+        redirectUrl: `/order-success/${order._id}`
+      });
+    }
+
+    // ── RAZORPAY FLOW ──
+    const rzpOrder = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `rcpt_${Date.now()}`,
+      notes: { userId: userId.toString(), isDirect: isDirect ? 'yes' : 'no' }
+    });
+
+    orderData.razorpayOrderId = rzpOrder.id;
+
+    const order = await Order.create(orderData);
+
+    return res.json({
+      success: true,
+      razorpay: {
+        key: process.env.RAZORPAY_KEY_ID,
+        order_id: rzpOrder.id,
+        amount: amountInPaise,
+        currency: 'INR',
+        name: "Your Store Name",
+        description: `Payment for Order #${order.orderId}`,
+        prefill: {
+          name: user.name || 'Customer',
+          email: user.email || '',
+          contact: orderAddress.phone || ''
+        }
+      },
+      orderMongoId: order._id.toString()
+    });
+
+  } catch (err) {
+    console.error('Place Order Error:', err);
+    return res.status(500).json({
+      success: false,
+      message: messages.ORDER_FAILED || 'Order placement failed'
+    });
+  }
 };
+
 
 const verifyPayment = async (req, res) => {
   try {
@@ -386,7 +597,7 @@ const verifyPayment = async (req, res) => {
     order.razorpayPaymentId = razorpay_payment_id;
     order.razorpaySignature = razorpay_signature;
     order.paidAt = new Date();
-    order.status = 'Processing'; // or 'Placed' — your choice
+    order.status = 'Pending'; // or 'Placed' — your choice
 
     await order.save();
 
@@ -414,103 +625,6 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-
-const directPlaceOrder = async (req, res) => {
-  try {
-    const userId = req.session.user._id;
-    const { productId, quantity = 1, addressId, paymentMethod } = req.body;
-
-
-    const product = await Product.findById(productId);
-    if (!product || product.quantity < quantity) {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.OUT_OF_STOCK });
-    }
-
-    const qty = parseInt(quantity);
-    const subtotal = product.salesPrice * qty;
-    const tax = subtotal * 0.18;
-    const shipping = subtotal >= 1000 ? 0 : 79;
-    const total = subtotal + tax + shipping;
-
-    const itemsToOrder = [{
-      product: productId,
-      quantity: qty,
-      price: product.salesPrice,
-      totalPrice: subtotal
-    }];
-
-    const stockOk = await atomicDeductStock(itemsToOrder);
-    if (!stockOk) {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.USER_NOT_FOUND });
-    }
-
-    // Get address safely
-    let selectedAddress = getAddressById(user, addressId);
-    if (!selectedAddress) {
-      selectedAddress = safeDefaultAddress(user);
-    }
-    if (!selectedAddress) {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
-    }
-
-    // BUILD ADDRESS OBJECT WITH PROPER FALLBACKS
-    const orderAddress = {
-      fullName: (selectedAddress.fullName || selectedAddress.name || 
-                  `${(user.firstName || '').trim()} ${(user.lastName || '').trim()}`.trim() || 
-                  user.name || 'Customer').replace(/undefined/g, '').trim() || 'Customer',
-      phone: selectedAddress.phone || selectedAddress.mobile || user.phone || '',
-      altPhone: selectedAddress.altPhone || selectedAddress.mobile2 || '',
-      street: selectedAddress.street || selectedAddress.line1 || selectedAddress.house || selectedAddress.address || selectedAddress.addressLine1 || 'Not provided',
-      landmark: selectedAddress.landmark || selectedAddress.addressLine2 || '',
-      locality: selectedAddress.locality || selectedAddress.area || '',
-      city: selectedAddress.city || selectedAddress.town || 'Not Available',
-      state: selectedAddress.state || selectedAddress.stateName || 'Not Available',
-      pincode: selectedAddress.pincode || selectedAddress.postalCode || selectedAddress.zip || selectedAddress.pin || 'PIN Missing',
-      country: selectedAddress.country || 'India'
-    };
-
-    // Validate required address fields
-    if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Please ensure your delivery address has all required fields (name, city, state, pincode).' });
-    }
-
-    const order = await Order.create({
-      orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
-      user: userId,
-      orderedItems: [{
-        product: productId,
-        name: product.productName,
-        quantity: qty,
-        price: product.salesPrice,
-        totalPrice: subtotal,
-        productSnapshot: { image: product.productImage[0] },
-        status: 'Pending'
-      }],
-      totalPrice: total,
-      finalAmount: total,
-      subtotal,
-      tax,
-      shipping,
-      discount: 0,
-      paymentMethod: paymentMethod === 'cod' ? 'COD' : 'RAZORPAY',
-      paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Paid',
-      status: 'Pending',
-      address: orderAddress,
-      pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      createdOn: new Date()
-    });
-
-    res.json({ success: true, redirectUrl: `/order-success/${order._id}` });
-  } catch (err) {
-    console.error('Direct place order error:', err);
-    res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.ORDER_PLACE_FAILED });
-  }
-};
 
 
 //-----------
@@ -693,7 +807,6 @@ module.exports = {
      verifyPayment,
       orderSuccess,
         directCheckout,
-          directPlaceOrder,
           atomicDeductStock,
           addAddressFromCheckout
      };

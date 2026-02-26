@@ -352,7 +352,7 @@
 
                 <!-- Payment Method Selector + Place Order Button -->
                 <form id="checkoutForm"
-                      action="<%= isDirect ? '/checkout/direct-place-order' : '/checkout/place-order' %>"
+                      action="/checkout/order-success"
                       method="POST">
                     <input type="hidden" name="addressId" id="selectedAddressId" value="">
                     <% if (isDirect) { %>
@@ -369,6 +369,15 @@
                         <label class="payment__option">
                             <input type="radio" name="paymentMethod" value="razorpay" checked />
                             <span>Razorpay</span>
+                        </label>
+
+                        <% 
+                            const walletBalance = Number((user && user.wallet && user.wallet.balance) || 0);
+                            const walletDisabled = walletBalance <= 0 || walletBalance < total;
+                        %>
+                        <label class="payment__option <%= walletDisabled ? 'disabled' : '' %>">
+                            <input type="radio" name="paymentMethod" value="wallet" <%= walletDisabled ? 'disabled' : '' %> />
+                            <span>Wallet (Balance: ₹<%= walletBalance.toLocaleString('en-IN') %>)</span>
                         </label>
                     </div>
 

@@ -6,6 +6,7 @@ const Address = require('../../models/addressSchema');
 const mongoose = require('mongoose');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
+const { addToWallet } = require('../user/walletController');
 
 // GET /admin/orders
 exports.getOrders = async (req, res) => {
@@ -251,7 +252,7 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-
+// PATCH /admin/orders/:id/approve-request (or whatever your route is)
 exports.approveRequest = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
@@ -296,18 +297,30 @@ exports.approveRequest = async (req, res) => {
 
         order.refunded = Math.round(((Number(order.refunded || 0) + totalRefund) + Number.EPSILON) * 100) / 100;
 
+        // === WALLET REFUND ONLY FOR RETURNS (not cancellations) ===
+        if (isReturn && totalRefund > 0) {
+          await addToWallet(order.user, totalRefund, 'credit', 'Full Order Return Refund', order._id);
+        }
+
         order.status = isCancel ? 'Cancelled' : (isReturn ? 'Returned' : order.status);
         order.approvedAt = new Date();
 
-        // Persist refund info; keep finalAmount/subtotal unchanged for audit
         await order.save();
-        return res.status(statusCodes.OK).json({ success: true, message: messages.FULL_ORDER_REQUEST_APPROVED, newStatus: order.status });
+        return res.status(statusCodes.OK).json({ 
+          success: true, 
+          message: messages.FULL_ORDER_REQUEST_APPROVED, 
+          newStatus: order.status 
+        });
       } else {
         // Reject → revert status
         order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Pending';
         order.requestedAt = null;
         await order.save();
-        return res.status(statusCodes.OK).json({ success: true, message: messages.REQUEST_REJECTED, newStatus: order.status });
+        return res.status(statusCodes.OK).json({ 
+          success: true, 
+          message: messages.REQUEST_REJECTED, 
+          newStatus: order.status 
+        });
       }
     }
 
@@ -320,12 +333,15 @@ exports.approveRequest = async (req, res) => {
         await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
       }
 
-      if (itemType === 'Cancellation Request') item.status = 'Cancelled';
-      else if (itemType === 'Return Request') item.status = 'Returned';
+      if (itemType === 'Cancellation Request') {
+        item.status = 'Cancelled';
+      } else if (itemType === 'Return Request') {
+        item.status = 'Returned';
+      }
 
       item.approvedAt = new Date();
 
-      // Calculate and persist refund for this item and update order.refunded
+      // Calculate and persist refund for this item
       const subtotal = Number(order.subtotal || 0);
       const totalTax = Number(order.tax || 0);
       const totalDiscount = Number(order.discount || 0);
@@ -333,10 +349,14 @@ exports.approveRequest = async (req, res) => {
       const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
       const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
       const refundForItem = Math.round((itemSubtotal + taxShare - discountShare + Number.EPSILON) * 100) / 100;
+
       item.refundAmount = refundForItem;
       order.refunded = Math.round(((Number(order.refunded || 0) + refundForItem) + Number.EPSILON) * 100) / 100;
 
-      // DO NOT reduce finalAmount or subtotal → keep original
+      // === WALLET REFUND ONLY FOR RETURNS (not cancellations) ===
+      if (itemType === 'Return Request' && refundForItem > 0) {
+        await addToWallet(order.user, refundForItem, 'credit', 'Item Return Refund', order._id);
+      }
     } else if (action === 'reject') {
       if (itemType === 'Cancellation Request') {
         item.status = 'Pending';
@@ -352,7 +372,6 @@ exports.approveRequest = async (req, res) => {
     const allReturned = order.orderedItems.every(it => it.status === 'Returned');
     const allCancelled = order.orderedItems.every(it => it.status === 'Cancelled');
     
-    // Update order status if all items have same final status
     if (allReturned) {
       order.status = 'Returned';
     } else if (allCancelled) {
@@ -366,7 +385,7 @@ exports.approveRequest = async (req, res) => {
       success: true,
       message: itemMessage,
       itemId,
-      newStatus: item.status
+      newStatus: item ? item.status : order.status
     });
 
   } catch (err) {

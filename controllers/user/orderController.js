@@ -5,6 +5,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
+const { addToWallet } = require('./walletController');
 
 const listOrders = async (req, res) => {
     try {
@@ -213,6 +214,14 @@ const cancelOrder = async (req, res) => {
     // DO NOT modify order.subtotal or order.finalAmount - keep them as original
     // The view will handle display logic based on item cancellation status
 
+
+    //refund to wallet only if it was a paid (online) order
+    if (totalRemoved > 0 && order.paymentMethod && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
+       await addToWallet(userId, totalRemoved, 'credit', 'Full Order Cancel Refund', order._id);
+
+       order.refunded = (order.refunded || 0) + totalRemoved;
+    }
+
     await order.save();
 
     return res.json({ success: true, message: messages.ORDER_CANCELLED_SUCCESS, orderId, newStatus: order.status });
@@ -394,59 +403,101 @@ const downloadInvoice = async (req, res) => {
 
 
 
-const requestCancelItem = async (req, res) => {
+const cancelOrderItem  = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
       return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.AUTH_REQUIRED });
     }
+
     const userId = req.session.user._id;
     const { orderId, itemId } = req.params;
     const { reason } = req.body;
 
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
+    if (!order) {
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
+    }
 
     const item = order.orderedItems.id(itemId);
-    if (!item) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
+    if (!item) {
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
+    }
 
     // Ensure parent order is still pending before allowing item cancel
     if ((order.status || '').toLowerCase() !== 'pending') {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ORDER_CANNOT_CANCEL_STAGE });
+      return res.status(statusCodes.BAD_REQUEST).json({ 
+        success: false, 
+        message: messages.ORDER_CANNOT_CANCEL_STAGE 
+      });
     }
 
-    const status = (item.status || '').toLowerCase();
-    if (status === 'cancelled') {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ITEM_ALREADY_CANCELLED });
-    }
-    if (['delivered', 'returned', 'shipped'].includes(status)) {
-      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANNOT_CANCEL_AFTER_SHIPPED });
+    const itemStatus = (item.status || '').toLowerCase();
+    if (itemStatus === 'cancelled') {
+      return res.status(statusCodes.BAD_REQUEST).json({ 
+        success: false, 
+        message: messages.ITEM_ALREADY_CANCELLED 
+      });
     }
 
-    // Immediately cancel item (no admin approval)
+    if (['delivered', 'returned', 'shipped'].includes(itemStatus)) {
+      return res.status(statusCodes.BAD_REQUEST).json({ 
+        success: false, 
+        message: messages.CANNOT_CANCEL_AFTER_SHIPPED 
+      });
+    }
+
+    // Immediately cancel the item (no admin approval needed for cancellation)
     item.status = 'Cancelled';
     item.cancelReason = reason || 'No reason provided';
     item.approvedAt = new Date();
     item.requestedAt = new Date();
 
-    // Restore stock for the product
+    // Restore stock for this item
     if (item.product) {
       await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
     }
 
-    // DO NOT modify order.subtotal or order.finalAmount - keep them as original
-    // The view will handle display logic based on item cancellation status
+    // Calculate refund for this single item
+    const itemSubtotal = Number(item.totalPrice || (item.price * item.quantity) || 0);
+    const taxShare = (order.subtotal > 0) 
+      ? (itemSubtotal / order.subtotal) * Number(order.tax || 0) 
+      : 0;
+    const refundAmount = Math.round((itemSubtotal + taxShare) * 100) / 100;  // round to 2 decimals
 
-    // If all items cancelled -> mark full order cancelled
+    // Refund to wallet ONLY if it was a paid online order (NOT COD)
+    if (refundAmount > 0 && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
+      await addToWallet(userId, refundAmount, 'credit', 'Item Cancel Refund', order._id);
+      
+      // Optional: Record refund on the item for display/invoice
+      item.refundAmount = refundAmount;
+    }
+
+    // If all items are cancelled → mark full order as cancelled
     const allCancelled = order.orderedItems.every(it => (it.status || '').toLowerCase() === 'cancelled');
-    if (allCancelled) order.status = 'Cancelled';
+    if (allCancelled) {
+      order.status = 'Cancelled';
+      order.cancelReason = reason || 'All items cancelled';
+      order.approvedAt = new Date();
+    }
 
     await order.save();
 
     const updatedItem = order.orderedItems.id(itemId);
-    return res.json({ success: true, message: messages.ITEM_CANCELLED_SUCCESS, itemId, itemStatus: updatedItem.status });
+    
+    return res.json({ 
+      success: true, 
+      message: messages.ITEM_CANCELLED_SUCCESS, 
+      itemId, 
+      itemStatus: updatedItem.status,
+      refundAmount: refundAmount > 0 ? refundAmount : 0
+    });
+
   } catch (err) {
-    console.error('requestCancelItem error:', err);
-    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
+    console.error('cancelOrderItem error:', err);
+    return res.status(statusCodes.INTERNAL_ERROR).json({ 
+      success: false, 
+      message: messages.SERVER_ERROR 
+    });
   }
 };
 
@@ -535,7 +586,7 @@ module.exports = {
     returnOrder,
     searchOrders,
     downloadInvoice,
-      requestCancelItem,
+      cancelOrderItem,
     requestReturnItem
     // getDeliveredOrdersByPrice
 

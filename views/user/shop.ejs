@@ -1,7 +1,29 @@
 <%- include('../partials/user/header') %>
 
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-/* Enhanced Product Page Styles with Green Theme */
+/* Enhanced Product Page Styles with Forest Green Theme */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green:      #4a5e4a;
+  --green-dk:   #3a4a3a;
+  --green-lt:   #5a7a5a;
+  --bg:         #f0f4f0;
+  --text:       #2a3a2a;
+  --muted:      #7a9080;
+  --line:       rgba(74,94,74,.12);
+  --red:        #e8435a;
+  --success:    #2ecc71;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
 .container { max-width: 1400px; }
 
 /* Custom animations */
@@ -17,56 +39,66 @@
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.02); }
 }
-@keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
-}
 
-/* Page header styling */
+/* Page header styling - Updated Colors */
 .page-header {
-    background: linear-gradient(135deg, rgb(71, 92, 83) 0%, rgb(71, 92, 83)100%);
+    background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
     color: white;
-    padding: 2rem 0;
+    padding: 2.5rem 2rem;
     margin-bottom: 2rem;
-    border-radius: 1rem;
+    border-radius: 1.25rem;
     animation: fadeInUp 0.6s ease-out;
-    box-shadow: 0 10px 30px rgba(5, 150, 105, 0.2);
+    box-shadow: 0 10px 30px rgba(74,94,74, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+.page-header::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    top: -150px;
+    right: -100px;
+    pointer-events: none;
 }
 .page-header h1 {
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
     text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    position: relative;
+    z-index: 1;
 }
 .page-header p {
     font-size: 1.1rem;
-    opacity: 0.95;
+    opacity: 0.85;
+    position: relative;
+    z-index: 1;
 }
 
-/* ============================================
-   FILTER SIDEBAR STYLING (SEARCH NOW VISIBLE)
-   ============================================ */
+/* Filter Sidebar - Updated Colors */
 .filter-section {
     background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(74,94,74, 0.08);
     padding: 0;
     margin-bottom: 2rem;
     overflow: visible;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--line);
 }
 .filter-section form {
     padding: 1.75rem 1.5rem;
 }
 
-/* SEARCH BAR IS NOW VISIBLE */
+/* Search Bar */
 .filter-section form > div.flex.gap-4 {
-    display: flex !important; /* Force show */
+    display: flex !important;
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
 
-/* Search Container */
 .search-container {
     position: relative;
     margin-bottom: 2rem;
@@ -76,13 +108,13 @@
 .filter-section form > div.grid {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
     margin-top: 0;
 }
 .filter-section form > div.grid > div.space-y-2 {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
     padding: 0;
     background: transparent;
     border-radius: 0;
@@ -92,31 +124,32 @@
 
 /* Labels */
 .filter-section label {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 1rem;
-    text-transform: none;
-    letter-spacing: normal;
+    font-weight: 700;
+    color: var(--green-dk);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
     margin-bottom: 0;
     display: block;
 }
 
-/* Inputs & Selects */
+/* Inputs & Selects - Updated Colors */
 .filter-section select,
 .filter-section input[type="text"],
 .filter-section input[type="number"] {
     width: 100%;
-    padding: 0.875rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    border: 2px solid #c8d8c8;
+    border-radius: 0.625rem;
+    font-size: 0.875rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    background: #fff;
     transition: all 0.2s ease;
-    color: #6b7280;
-    font-weight: 400;
+    color: var(--text);
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5e4a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 1.25rem;
@@ -130,16 +163,38 @@
 .filter-section select:hover,
 .filter-section input[type="text"]:hover,
 .filter-section input[type="number"]:hover {
-    border-color: #d1d5db;
-    background: white;
+    border-color: var(--green-lt);
+    background: #fafcfa;
 }
 .filter-section select:focus,
 .filter-section input[type="text"]:focus,
 .filter-section input[type="number"]:focus {
     outline: none;
-    border-color: #9ca3af;
-    background: white;
-    box-shadow: none;
+    border-color: var(--green);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(74,94,74,.1);
+}
+
+/* Search Button - Updated Colors */
+.filter-section button[type="submit"] {
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    color: white;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    border-radius: 0.625rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+}
+.filter-section button[type="submit"]:hover {
+    background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74,94,74, 0.35);
 }
 
 /* Price Range */
@@ -177,377 +232,19 @@
         background: transparent;
     }
     .filter-section::-webkit-scrollbar-thumb {
-        background: #e5e7eb;
+        background: #c8d8c8;
         border-radius: 2px;
     }
     .filter-section::-webkit-scrollbar-thumb:hover {
-        background: #d1d5db;
+        background: var(--green);
     }
 }
 @media (max-width: 768px) {
     .filter-section form { padding: 1.5rem 1.25rem; }
-    .filter-section form > div.grid { gap: 1.75rem; }
+    .filter-section form > div.grid { gap: 1.5rem; }
 }
 
-/* Price Range Styling */
-.price-range {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-.price-range input { width: 50%; }
-.price-range::after {
-    content: '—';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    color: rgb(8, 129, 121);
-    font-weight: bold;
-    pointer-events: none;
-}
-
-/* ============================================
-   ENHANCED PRODUCTS GRID
-   ============================================ */
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
-}
-
-/* Enhanced Product Card */
-.product-card {
-    background: white;
-    border-radius: 1.25rem;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(8, 129, 121, 0.08);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(233, 246, 235, 0.5);
-    animation: fadeInUp 0.6s ease-out;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.product-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(8, 129, 121, 0.05), transparent);
-    transition: left 0.5s ease;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.product-card:hover::before {
-    left: 100%;
-}
-
-.product-card:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(8, 129, 121, 0.15);
-    border-color: rgb(8, 129, 121);
-}
-
-.product-image-container {
-    position: relative;
-    overflow: hidden;
-    height: 20rem;
-    background: linear-gradient(135deg, rgb(233, 246, 235) 0%, rgb(240, 253, 244) 100%);
-}
-
-.product-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.product-card:hover .product-image {
-    transform: scale(1.1) rotate(2deg);
-}
-
-.discount-badge {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    color: white;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    animation: pulse 2s infinite;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
-    z-index: 2;
-}
-
-.product-info {
-    padding: 1.75rem;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.product-title {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: #111827;
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 3.5rem;
-    transition: color 0.3s ease;
-}
-
-.product-card:hover .product-title {
-    color: rgb(8, 129, 121);
-}
-
-.product-category {
-    font-size: 0.875rem;
-    color: rgb(8, 129, 121);
-    margin-bottom: 1.25rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: rgba(8, 129, 121, 0.1);
-    border-radius: 0.5rem;
-    width: fit-content;
-}
-
-.product-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(8, 129, 121, 0.1);
-}
-
-.price-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.current-price {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: rgb(8, 129, 121);
-    letter-spacing: -0.025em;
-}
-
-.original-price {
-    font-size: 0.875rem;
-    color: #9ca3af;
-    text-decoration: line-through;
-    font-weight: 500;
-}
-
-.product-card-footer {
-    padding: 0 1.75rem 1.75rem;
-}
-
-.add-to-cart-btn {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
-    color: white;
-    font-weight: 600;
-    border-radius: 0.75rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 0.9375rem;
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
-    position: relative;
-    overflow: hidden;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
-}
-
-.add-to-cart-btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.add-to-cart-btn:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.add-to-cart-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(8, 129, 121, 0.35);
-    background: linear-gradient(135deg, #047857, #065f46);
-}
-
-.add-to-cart-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
-}
-
-/* Wishlist button styles (match home) */
-.wishlist-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid #ef4444;
-    color: #ef4444;
-    cursor: pointer;
-    transition: all 180ms ease;
-    box-shadow: 0 4px 10px rgba(239,68,68,0.08);
-}
-.wishlist-btn:hover {
-    transform: translateY(-3px) scale(1.04);
-    background: linear-gradient(135deg,#ef4444,#dc2626);
-    color: #fff;
-    border-color: transparent;
-}
-.wishlist-btn:active { transform: scale(0.98); }
-.wishlist-btn svg { width: 18px; height: 18px; transition: transform 180ms ease, fill 180ms ease; }
-.wishlist-btn:hover svg { transform: scale(1.08); }
-.wishlist-btn .heart-fill { fill: transparent; }
-.wishlist-btn.added { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border-color:transparent; }
-.wishlist-btn.added svg .heart-fill { fill: #fff; }
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 5rem 2rem;
-    background: linear-gradient(135deg, rgb(240, 253, 244) 0%, rgb(233, 246, 235) 100%);
-    border-radius: 1.5rem;
-    box-shadow: 0 4px 16px rgba(8, 129, 121, 0.1);
-    border: 2px dashed rgba(8, 129, 121, 0.3);
-}
-
-.empty-state-icon {
-    width: 5rem;
-    height: 5rem;
-    margin: 0 auto 1.5rem;
-    color: rgb(8, 129, 121);
-    opacity: 0.6;
-}
-
-.empty-state-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: rgb(8, 129, 121);
-    margin-bottom: 0.75rem;
-}
-
-.empty-state-description {
-    color: #6b7280;
-    font-size: 1.125rem;
-}
-
-/* Pagination */
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 3rem;
-}
-
-.pagination-link {
-    padding: 0.875rem 1.25rem;
-    border: 2px solid rgb(8, 129, 121);
-    border-radius: 0.75rem;
-    color: rgb(8, 129, 121);
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 3rem;
-    text-align: center;
-    background: white;
-}
-
-.pagination-link:hover {
-    background: rgb(233, 246, 235);
-    border-color: #047857;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.2);
-}
-
-.pagination-link.active {
-    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
-    color: white;
-    border-color: rgb(8, 129, 121);
-    box-shadow: 0 6px 16px rgba(8, 129, 121, 0.3);
-    transform: translateY(-2px);
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-    .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .container { padding: 0 1rem; }
-    .page-header { padding: 1.5rem 1rem; margin: 1rem 0; }
-    .page-header h1 { font-size: 2rem; }
-    .products-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.25rem;
-    }
-    .product-info { padding: 1.5rem; }
-    .product-card-footer { padding: 0 1.5rem 1.5rem; }
-    .pagination { flex-wrap: wrap; gap: 0.375rem; }
-    .pagination-link { padding: 0.625rem 1rem; font-size: 0.875rem; }
-    .product-image-container { height: 16rem; }
-}
-
-@media (max-width: 480px) {
-    .products-grid {
-        grid-template-columns: 1fr;
-    }
-    .product-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-    .add-to-cart-btn {
-        width: 100%;
-        padding: 1rem;
-    }
-}
-
-.bg-gray-50 { background-color: rgb(240, 253, 244) !important; }
-html { scroll-behavior: smooth; }
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: rgb(233, 246, 235); }
-::-webkit-scrollbar-thumb { background: rgb(8, 129, 121); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #047857; }
-
-/* Styles taken from search-results grid to match home UI */
+/* Products Grid (search-results style) - Updated Colors */
 .products__container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -556,17 +253,28 @@ html { scroll-behavior: smooth; }
 }
 .product__item {
     background: #fff;
-    border-radius: 12px;
+    border-radius: 1rem;
     overflow: hidden;
-    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    box-shadow: 0 2px 12px rgba(74,94,74,0.08);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--line);
 }
-.product__item:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.08); }
+.product__item:hover { 
+    transform: translateY(-6px); 
+    box-shadow: 0 12px 32px rgba(74,94,74,0.15);
+    border-color: var(--green);
+}
 .product__banner { position: relative; overflow: hidden; }
 .product__images { display: block; position: relative; }
-.product__img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.product__img { 
+    width: 100%; 
+    height: 220px; 
+    object-fit: cover; 
+    display: block;
+    background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+}
 .product__img.hover { position: absolute; inset: 0; top: 0; left: 0; opacity: 0; transition: opacity 220ms ease; }
 .product__item:hover .product__img.hover { opacity: 1; }
 .product__actions {
@@ -591,40 +299,166 @@ html { scroll-behavior: smooth; }
     padding: 0;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 6px 14px rgba(2,6,23,0.06);
-    transition: transform 0.15s ease;
+    box-shadow: 0 6px 14px rgba(74,94,74,0.12);
+    transition: transform 0.15s ease, background 0.15s ease;
 }
-.action__btn:hover { transform: translateY(-4px); }
-.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
-.product__content { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.product__category { font-size: 0.75rem; color: #047857; font-weight: 700; text-transform: uppercase; }
-.product__title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; line-height: 1.25; }
-.product__price { display: flex; align-items: center; gap: 8px; }
-.new__price { font-weight: 800; color: #047857; }
-.old__price { color: #9ca3af; text-decoration: line-through; font-weight: 500; }
+.action__btn:hover { 
+    transform: translateY(-4px); 
+    background: var(--green);
+    color: white;
+}
+.product__badge { 
+    position: absolute; 
+    top: 12px; 
+    left: 12px; 
+    background: linear-gradient(135deg,#dc2626,#b91c1c); 
+    color: #fff; 
+    padding: 6px 10px; 
+    border-radius: 0.5rem; 
+    font-weight: 700; 
+    z-index: 6;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+.product__content { 
+    padding: 16px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+    flex: 1; 
+}
+.product__category { 
+    font-size: 0.75rem; 
+    color: var(--green); 
+    font-weight: 700; 
+    text-transform: uppercase;
+    background: rgba(74,94,74, 0.1);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.375rem;
+    width: fit-content;
+}
+.product__title { 
+    font-size: 1rem; 
+    font-weight: 700; 
+    color: #111827; 
+    margin: 0; 
+    line-height: 1.3;
+    transition: color 0.2s ease;
+}
+.product__item:hover .product__title {
+    color: var(--green);
+}
+.product__price { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin-top: auto;
+}
+.new__price { 
+    font-weight: 800; 
+    color: var(--green);
+    font-size: 1.125rem;
+}
+.old__price { 
+    color: #9ca3af; 
+    text-decoration: line-through; 
+    font-weight: 500;
+    font-size: 0.875rem;
+}
 
 @media (max-width: 900px) {
     .product__img { height: 180px; }
 }
 
-/* Clear Filters Button Styles */
+/* Empty State - Updated Colors */
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: linear-gradient(135deg, #f0f4f0 0%, #dde8dd 100%);
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 16px rgba(74,94,74, 0.1);
+    border: 2px dashed rgba(74,94,74, 0.3);
+}
+
+.empty-state-icon {
+    width: 5rem;
+    height: 5rem;
+    margin: 0 auto 1.5rem;
+    color: var(--green);
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+}
+
+.empty-state-description {
+    color: var(--muted);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+/* Pagination - Updated Colors */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+}
+
+.pagination-link {
+    padding: 0.75rem 1.125rem;
+    border: 2px solid var(--green);
+    border-radius: 0.625rem;
+    color: var(--green);
+    text-decoration: none;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.3s ease;
+    min-width: 3rem;
+    text-align: center;
+    background: white;
+    font-size: 0.875rem;
+}
+
+.pagination-link:hover {
+    background: #dde8dd;
+    border-color: var(--green-dk);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.2);
+}
+
+.pagination-link.active {
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    color: white;
+    border-color: var(--green);
+    box-shadow: 0 6px 16px rgba(74,94,74, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Clear Filters Button - Updated Colors */
 .clear-filters-btn {
     width: 100%;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
     color: white;
-    font-weight: 600;
-    border-radius: 0.75rem;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    border-radius: 0.625rem;
     border: none;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 0.9375rem;
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
     position: relative;
     overflow: hidden;
     letter-spacing: 0.025em;
     text-transform: uppercase;
-    margin: 12px 0 0 0;;
+    margin: 1rem 0 0 0;
 }
 
 .clear-filters-btn::before {
@@ -647,22 +481,51 @@ html { scroll-behavior: smooth; }
 
 .clear-filters-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(8, 129, 121, 0.35);
-    background: linear-gradient(135deg, #047857, #065f46);
+    box-shadow: 0 8px 20px rgba(74,94,74, 0.35);
+    background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
 }
 
 .clear-filters-btn:active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container { padding: 0 1rem; }
+    .page-header { 
+        padding: 1.75rem 1.25rem; 
+        margin: 1rem 0; 
+    }
+    .page-header h1 { font-size: 2rem; }
+    .products__container {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+    }
+    .pagination { flex-wrap: wrap; gap: 0.375rem; }
+    .pagination-link { padding: 0.625rem 1rem; font-size: 0.875rem; }
+}
+
+@media (max-width: 480px) {
+    .products__container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bg-gray-50 { background-color: var(--bg) !important; }
+html { scroll-behavior: smooth; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #dde8dd; }
+::-webkit-scrollbar-thumb { background: var(--green); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green-dk); }
 </style>
 
 <main class="bg-gray-50 min-h-screen py-8">
     <div class="container mx-auto px-4">
         <!-- Page Header -->
         <div class="page-header mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Our Products</h1>
-            <p class="text-gray-600">Discover our amazing collection</p>
+            <h1 class="text-3xl font-bold">Our Products</h1>
+            <p>Discover our amazing collection</p>
         </div> 
 
         <!-- Main Shop Layout -->
@@ -670,18 +533,17 @@ html { scroll-behavior: smooth; }
             <!-- Filter Sidebar -->
             <aside class="filter-section bg-white rounded-xl shadow-sm p-6 mb-8">
                 <form id="filterForm" class="space-y-6">
-                    <!-- SEARCH BAR (NOW VISIBLE) -->
+                    <!-- SEARCH BAR -->
                     <div class="flex gap-4">
                         <div class="relative flex-1">
                             <input type="text" 
                                    name="search" 
                                    value="<%= query.search || '' %>"
                                    placeholder="Search products..." 
-                                   class="w-full pl-12 pr-4 py-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                           
+                                   class="w-full pl-4 pr-4 py-4 border rounded-lg focus:ring-2 focus:outline-none">
                         </div>
                         <button type="submit" 
-                                class="px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                class="px-8 py-4 font-medium rounded-lg transition-colors">
                             Search
                         </button>
                     </div>
@@ -690,7 +552,7 @@ html { scroll-behavior: smooth; }
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Sort -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Sort By</label>
+                            <label class="block text-sm font-medium">Sort By</label>
                             <select name="sort" class="w-full p-4 border rounded-lg" onchange="this.form.submit()">
                                 <option value="">Default</option>
                                 <option value="price-asc" <%= query.sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
@@ -704,7 +566,7 @@ html { scroll-behavior: smooth; }
                         </div>
                         <!-- Category -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Category</label>
+                            <label class="block text-sm font-medium">Category</label>
                             <select name="category" class="w-full p-4 border rounded-lg" onchange="this.form.submit()">
                                 <option value="">All Categories</option>
                                 <% categories.forEach(category => { %>
@@ -714,7 +576,7 @@ html { scroll-behavior: smooth; }
                         </div>
                         <!-- Price Range -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Price Range</label>
+                            <label class="block text-sm font-medium">Price Range</label>
                             <div class="flex gap-3">
                                 <input type="number" name="minPrice" value="<%= query.minPrice || '' %>" placeholder="Min Price" min="<%= priceRange.minPrice %>" max="<%= priceRange.maxPrice %>" class="w-1/2 p-4 border rounded-lg">
                                 <input type="number" name="maxPrice" value="<%= query.maxPrice || '' %>" placeholder="Max Price" min="<%= priceRange.minPrice %>" max="<%= priceRange.maxPrice %>" class="w-1/2 p-4 border rounded-lg">
@@ -722,7 +584,7 @@ html { scroll-behavior: smooth; }
                         </div>
                         <!-- Brand -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Brand</label>
+                            <label class="block text-sm font-medium">Brand</label>
                             <select name="brand" class="w-full p-4 border rounded-lg" onchange="this.form.submit()">
                                 <option value="">All Brands</option>
                                 <% brands.forEach(brand => { %>
@@ -741,63 +603,63 @@ html { scroll-behavior: smooth; }
                 </form>
             </aside>
 
-                        <!-- Products Grid (search-results style) -->
-                        <section>
-    <% if (products && products.length > 0) { %>
-        <div class="products__container grid">
-            <% products.forEach(product => { %>
-                <div class="product__item" data-product-id="<%= product._id %>">
-                    <div class="product__banner">
-                        <a href="/product/<%= product._id %>" class="product__images">
-                            <img src="<%= product.productImage[0] %>" alt="" class="product__img default">
-                            <img src="<%= product.productImage[1] || product.productImage[0] %>" alt="" class="product__img hover">
-                        </a>
+            <!-- Products Grid -->
+            <section>
+                <% if (products && products.length > 0) { %>
+                    <div class="products__container grid">
+                        <% products.forEach(product => { %>
+                            <div class="product__item" data-product-id="<%= product._id %>">
+                                <div class="product__banner">
+                                    <a href="/product/<%= product._id %>" class="product__images">
+                                        <img src="<%= product.productImage[0] %>" alt="" class="product__img default">
+                                        <img src="<%= product.productImage[1] || product.productImage[0] %>" alt="" class="product__img hover">
+                                    </a>
 
-                        <div class="product__actions">
-                            <button onclick="toggleWishlist('<%= product._id %>', this, event)" class="action__btn" aria-label="Toggle Wishlist">
-                                <i class="fi fi-rs-heart"></i>
-                            </button>
+                                    <div class="product__actions">
+                                        <button onclick="toggleWishlist('<%= product._id %>', this, event)" class="action__btn" aria-label="Toggle Wishlist">
+                                            <i class="fi fi-rs-heart"></i>
+                                        </button>
 
-                            <button onclick="addToCart('<%= product._id %>', event)" class="action__btn" aria-label="Add to Cart">
-                                <i class="fi fi-rs-shopping-cart"></i>
-                            </button>
-                        </div>
+                                        <button onclick="addToCart('<%= product._id %>', event)" class="action__btn" aria-label="Add to Cart">
+                                            <i class="fi fi-rs-shopping-cart"></i>
+                                        </button>
+                                    </div>
 
-                        <% if (product.productOffer && product.productOffer > 0) { %>
-                            <div class="product__badge"><%= product.productOffer %>% OFF</div>
-                        <% } else if (product.regularPrice > product.salesPrice) { %>
-                            <div class="product__badge">
-                                <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
+                                    <% if (product.productOffer && product.productOffer > 0) { %>
+                                        <div class="product__badge"><%= product.productOffer %>% OFF</div>
+                                    <% } else if (product.regularPrice > product.salesPrice) { %>
+                                        <div class="product__badge">
+                                            <%- Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
+                                        </div>
+                                    <% } %>
+                                </div>
+
+                                <div class="product__content">
+                                    <span class="product__category"><%= product.category && product.category.name ? product.category.name : '' %></span>
+                                    <a href="/product/<%= product._id %>">
+                                        <h3 class="product__title"><%= product.productName %></h3>
+                                    </a>
+                                    <div class="product__price flex">
+                                        <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
+                                        <% if (product.productOffer && product.productOffer > 0) { %>
+                                            <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                                        <% } else if (product.regularPrice > product.salesPrice) { %>
+                                            <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                                        <% } %>
+                                    </div>
+                                </div>
                             </div>
-                        <% } %>
+                        <% }); %>
                     </div>
-
-                    <div class="product__content">
-                        <span class="product__category"><%= product.category && product.category.name ? product.category.name : '' %></span>
-                        <a href="/product/<%= product._id %>">
-                            <h3 class="product__title"><%= product.productName %></h3>
-                        </a>
-                        <div class="product__price flex">
-                            <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-                            <% if (product.productOffer && product.productOffer > 0) { %>
-                                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
-                            <% } else if (product.regularPrice > product.salesPrice) { %>
-                                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
-                            <% } %>
-                        </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <svg class="empty-state-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="empty-state-title">No products found</h3>
+                        <p class="empty-state-description">Try adjusting your search or filter criteria</p>
                     </div>
-                </div>
-            <% }); %>
-        </div>
-    <% } else { %>
-        <div class="empty-state">
-            <svg class="empty-state-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="empty-state-title">No products found</h3>
-            <p class="empty-state-description">Try adjusting your search or filter criteria</p>
-        </div>
-    <% } %>
+                <% } %>
 
                 <!-- Pagination -->
                 <% if (totalPages > 1) { %>
@@ -815,6 +677,7 @@ html { scroll-behavior: smooth; }
     </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById('filterForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -828,14 +691,12 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
     window.location.href = `/shop?${params.toString()}`;
 });
 
-// Auto-submit on select change
 document.querySelectorAll('select').forEach(select => {
     select.addEventListener('change', function() {
         document.getElementById('filterForm').submit();
     });
 });
 
-// Price validation
 const minPrice = document.querySelector('input[name="minPrice"]');
 const maxPrice = document.querySelector('input[name="maxPrice"]');
 
@@ -850,12 +711,10 @@ maxPrice?.addEventListener('change', function() {
     }
 });
 
-// Clear all filters function
 function clearAllFilters() {
     window.location.href = '/shop';
 }
 
-// Prevent cart button from triggering link
 document.querySelectorAll('.add-to-cart-btn').forEach(button => {
     button.addEventListener('click', (e) => {
         e.preventDefault();
@@ -868,7 +727,7 @@ async function addToCart(productId, event) {
     const originalHTML = button ? button.innerHTML : null;
     if (button) {
         button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         button.style.opacity = '0.7';
     }
 
@@ -883,8 +742,8 @@ async function addToCart(productId, event) {
 
         if (data.success) {
             if (button) {
-                button.innerHTML = '<i class="fas fa-check"></i> Added!';
-                button.style.backgroundColor = '#10b981';
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.style.backgroundColor = '#4a5e4a';
             }
 
             Swal.fire({
@@ -901,7 +760,6 @@ async function addToCart(productId, event) {
                 cartCount.textContent = data.cartCount;
                 cartCount.style.display = 'flex';
             }
-            // update wishlist badge if server returned it (add-to-cart removes from wishlist)
             const wishlistCount = document.querySelector('.wishlist-count');
             if (wishlistCount && data.wishlistCount !== undefined) {
                 wishlistCount.textContent = data.wishlistCount;
@@ -955,7 +813,6 @@ async function addToCart(productId, event) {
     }
 }
 
-// Toggle wishlist (add/remove) — updated to match home.ejs behavior
 async function toggleWishlist(productId, btn, event) {
     try {
         event?.preventDefault?.();
@@ -996,7 +853,6 @@ async function toggleWishlist(productId, btn, event) {
                     console.warn('Wishlist DOM cleanup failed', err);
                 }
             }
-            // update header wishlist count if provided
             const wishlistBadge = document.querySelector('.wishlist-count');
             if (wishlistBadge && data.wishlistCount !== undefined) {
                 wishlistBadge.textContent = data.wishlistCount;

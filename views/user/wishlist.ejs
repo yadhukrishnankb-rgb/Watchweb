@@ -1,23 +1,269 @@
 <%- include('../partials/user/header') %>
 
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-  .wishlist-container { max-width: 1100px; margin: 2.5rem auto; padding: 0 1rem; }
-  .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
-  .wish-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(2,6,23,0.06); padding: 0.75rem; position: relative; }
-  .wish-image { width: 100%; height: 190px; object-fit: cover; border-radius: 8px; background:#f7faf7; }
-  .wish-body { padding: 0.75rem; }
-  .wish-title { font-weight: 700; font-size: 1rem; margin: 0 0 0.25rem; color:#111827; min-height: 2.6rem; }
-  .wish-price { color:#059669; font-weight:800; font-size:1.05rem; }
-  .wish-actions { display:flex; gap:0.5rem; margin-top:0.75rem; }
-  .btn { flex:1; padding:0.6rem 0.8rem; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
-  .btn-add { background:linear-gradient(135deg,#10b981,#047857); color:white; }
-  .btn-remove { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
-  .empty-wishlist { text-align:center; padding:4rem 1rem; background:#fff; border-radius:12px; box-shadow:0 6px 18px rgba(2,6,23,0.04); }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green:      #4a5e4a;
+  --green-dk:   #3a4a3a;
+  --green-lt:   #5a7a5a;
+  --bg:         #f0f4f0;
+  --text:       #2a3a2a;
+  --muted:      #7a9080;
+  --line:       rgba(74,94,74,.12);
+  --red:        #e8435a;
+  --success:    #2ecc71;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ─── TOP BANNER ─── */
+.profile-banner {
+  background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+  padding: 56px 0 40px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+}
+.profile-banner::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+  top: -200px; right: -100px;
+  pointer-events: none;
+}
+.profile-banner::after {
+  content: '';
+  position: absolute;
+  width: 250px; height: 250px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.03);
+  bottom: 30px; left: -80px;
+  pointer-events: none;
+}
+
+.banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-title {
+  padding: 32px 0;
+  text-align: center;
+}
+.banner-title h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* Wishlist Container */
+.wishlist-container { 
+  max-width: 1100px; 
+  margin: 0 auto; 
+  padding: 0 40px 80px; 
+}
+
+.wishlist-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+  gap: 1.5rem; 
+}
+
+/* Wishlist Card - Updated Colors */
+.wish-card { 
+  background: #fff; 
+  border-radius: 1rem; 
+  overflow: hidden; 
+  box-shadow: 0 2px 12px rgba(74,94,74,0.08); 
+  padding: 0.875rem; 
+  position: relative;
+  border: 1px solid var(--line);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.wish-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(74,94,74,0.15);
+  border-color: var(--green);
+}
+
+.wish-image { 
+  width: 100%; 
+  height: 200px; 
+  object-fit: cover; 
+  border-radius: 0.75rem; 
+  background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+  transition: transform 0.3s ease;
+}
+
+.wish-card:hover .wish-image {
+  transform: scale(1.05);
+}
+
+.wish-body { 
+  padding: 1rem 0.5rem 0.5rem; 
+}
+
+.wish-title { 
+  font-weight: 700; 
+  font-size: 1rem; 
+  margin: 0 0 0.5rem; 
+  color: var(--text); 
+  min-height: 2.6rem;
+  line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.wish-card:hover .wish-title {
+  color: var(--green);
+}
+
+.wish-price { 
+  color: var(--green); 
+  font-weight: 800; 
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.wish-actions { 
+  display: flex; 
+  gap: 0.625rem; 
+  margin-top: 1rem; 
+}
+
+.btn { 
+  flex: 1; 
+  padding: 0.75rem 1rem; 
+  border-radius: 0.625rem; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.btn-add { 
+  background: linear-gradient(135deg, var(--green), var(--green-dk)); 
+  color: white;
+  box-shadow: 0 4px 12px rgba(74,94,74,0.25);
+}
+
+.btn-add:hover {
+  background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74,94,74,0.35);
+}
+
+.btn-remove { 
+  background: #fde8ec; 
+  color: var(--red); 
+  border: 1px solid rgba(232,67,90,0.3);
+}
+
+.btn-remove:hover {
+  background: #fbd0d8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(232,67,90,0.2);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Empty State - Updated Colors */
+.empty-wishlist { 
+  text-align: center; 
+  padding: 5rem 2rem; 
+  background: linear-gradient(135deg, #f0f4f0 0%, #dde8dd 100%); 
+  border-radius: 1.5rem; 
+  box-shadow: 0 4px 16px rgba(74,94,74, 0.1);
+  border: 2px dashed rgba(74,94,74, 0.3);
+}
+
+.empty-wishlist h3 {
+  margin-bottom: 12px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.empty-wishlist p {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.empty-wishlist .btn {
+  width: 220px;
+  margin-top: 16px;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  padding: 0.875rem 1.5rem;
+}
+
+/* Empty Icon */
+.empty-icon {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1.5rem;
+  color: var(--green);
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .banner-inner { padding: 0 20px; }
+  .wishlist-container { padding: 0 20px 60px; }
+  .banner-title h1 { font-size: 24px; }
+  .wishlist-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+  .wish-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .wishlist-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 
-<main class="wishlist-container">
-  <h2 style="margin-bottom:1rem; font-size:1.5rem; font-weight:800;">My Wishlist</h2>
+<div class="profile-banner">
+  <div class="banner-inner">
+    <div class="banner-title">
+      <h1>My Wishlist</h1>
+    </div>
+  </div>
+</div>
 
+<main class="wishlist-container">
   <% if (wishlist && wishlist.products && wishlist.products.length > 0) { %>
     <div class="wishlist-grid">
       <% wishlist.products.forEach(item => { const p = item.productId; %>
@@ -36,18 +282,24 @@
     </div>
   <% } else { %>
     <div class="empty-wishlist">
-      <h3 style="margin-bottom:8px;">Your wishlist is empty</h3>
-      <p style="color:#6b7280;">Browse our collection and add items you love.</p>
-      <a href="/shop" class="btn btn-add" style="width:220px; margin-top:16px; display:inline-block; text-align:center;">Shop now</a>
+      <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+      </svg>
+      <h3>Your wishlist is empty</h3>
+      <p>Browse our collection and add items you love.</p>
+      <a href="/shop" class="btn btn-add">Shop now</a>
     </div>
   <% } %>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 async function addToCartFromWishlist(productId, btn) {
   if (!productId) return;
   const original = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = 'Adding...';
+  btn.disabled = true; 
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+  
   try {
     const res = await fetch('/cart/add', {
       method: 'POST',
@@ -55,35 +307,75 @@ async function addToCartFromWishlist(productId, btn) {
       body: JSON.stringify({ productId, quantity: 1 })
     });
     const data = await res.json();
+    
     if (data.success) {
-      Swal.fire({ icon: 'success', title: 'Added to cart', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
-      // remove card from DOM
-      const card = btn.closest('.wish-card'); if (card) card.remove();
-      // update header badges if server returned counts
+      Swal.fire({ 
+        icon: 'success', 
+        title: 'Added to cart', 
+        toast: true, 
+        position: 'top-end', 
+        timer: 1500, 
+        showConfirmButton: false 
+      });
+      
+      const card = btn.closest('.wish-card'); 
+      if (card) card.remove();
+      
       const cartBadge = document.querySelector('.cart-count');
       if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
       const wishlistBadge = document.querySelector('.wishlist-count');
       if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
       return;
     }
+    
     if (data.alreadyInCart) {
-      Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || 'This product is already in your cart.', toast: true, position: 'top-end', timer: 1800, showConfirmButton: false });
-      // also remove wishlist entry client-side for consistency
-      const card = btn.closest('.wish-card'); if (card) card.remove();
+      Swal.fire({ 
+        icon: 'info', 
+        title: 'Already in cart', 
+        text: data.message || 'This product is already in your cart.', 
+        toast: true, 
+        position: 'top-end', 
+        timer: 1800, 
+        showConfirmButton: false 
+      });
+      
+      const card = btn.closest('.wish-card'); 
+      if (card) card.remove();
       return;
     }
+    
     throw new Error(data.message || 'Failed to add to cart');
   } catch (err) {
-    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2500, showConfirmButton: false });
-    btn.disabled = false; btn.innerHTML = original;
+    Swal.fire({ 
+      icon: 'error', 
+      title: 'Error', 
+      text: err.message || 'Something went wrong', 
+      toast: true, 
+      position: 'top-end', 
+      timer: 2500, 
+      showConfirmButton: false 
+    });
+    btn.disabled = false; 
+    btn.innerHTML = original;
   }
 }
 
 async function removeFromWishlist(productId, btn) {
   if (!productId) return;
   const card = btn.closest('.wish-card');
-  const result = await Swal.fire({ title: 'Remove item?', text: 'Remove this item from your wishlist?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, remove' });
+  
+  const result = await Swal.fire({ 
+    title: 'Remove item?', 
+    text: 'Remove this item from your wishlist?', 
+    icon: 'question', 
+    showCancelButton: true, 
+    confirmButtonText: 'Yes, remove',
+    confirmButtonColor: '#e8435a',
+    cancelButtonColor: '#6b7280'
+  });
+  
   if (!result.isConfirmed) return;
+  
   try {
     const res = await fetch('/wishlist/remove', {
       method: 'POST',
@@ -91,17 +383,34 @@ async function removeFromWishlist(productId, btn) {
       body: JSON.stringify({ productId })
     });
     const data = await res.json();
+    
     if (data.success) {
       if (card) card.remove();
-      Swal.fire({ icon: 'success', title: 'Removed', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
-      // update header wishlist badge
+      Swal.fire({ 
+        icon: 'success', 
+        title: 'Removed', 
+        toast: true, 
+        position: 'top-end', 
+        timer: 1500, 
+        showConfirmButton: false 
+      });
+      
       const wishlistBadge = document.querySelector('.wishlist-count');
       if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
       return;
     }
+    
     throw new Error(data.message || 'Failed to remove');
   } catch (err) {
-    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2500, showConfirmButton: false });
+    Swal.fire({ 
+      icon: 'error', 
+      title: 'Error', 
+      text: err.message || 'Something went wrong', 
+      toast: true, 
+      position: 'top-end', 
+      timer: 2500, 
+      showConfirmButton: false 
+    });
   }
 }
 </script>

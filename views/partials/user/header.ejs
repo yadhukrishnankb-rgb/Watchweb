@@ -24,7 +24,7 @@
 
     <style>
       /* ============================================
-         EVERTIME LOGO STYLES
+         EVERTIME LOGO STYLES (Updated Colors)
          ============================================ */
       
       .nav__logo {
@@ -50,12 +50,12 @@
         justify-content: center;
       }
       
-      /* Animated Clock Circle */
+      /* Animated Clock Circle - Updated Color */
       .clock-circle {
         position: absolute;
         width: 100%;
         height: 100%;
-        border: 3px solid rgb(8, 129, 121);
+        border: 3px solid #4a5e4a;
         border-radius: 50%;
         animation: rotateClock 20s linear infinite;
       }
@@ -68,7 +68,7 @@
         transform: translateX(-50%);
         width: 4px;
         height: 4px;
-        background: rgb(8, 129, 121);
+        background: #4a5e4a;
         border-radius: 50%;
       }
       
@@ -77,11 +77,11 @@
         to { transform: rotate(360deg); }
       }
       
-      /* Center E Letter */
+      /* Center E Letter - Updated Color */
       .logo-letter {
         font-size: 1.5rem;
         font-weight: 800;
-        color: rgb(8, 129, 121);
+        color: #4a5e4a;
         font-family: 'Arial', sans-serif;
         z-index: 1;
       }
@@ -101,8 +101,9 @@
         font-family: 'Arial', sans-serif;
       }
       
+      /* Updated Accent Color */
       .logo-text-main .text-accent {
-        color: rgb(8, 129, 121);
+        color: #4a5e4a;
       }
       
       .logo-text-tagline {
@@ -114,20 +115,20 @@
         margin-top: 2px;
       }
       
-      /* Hover Effects */
+      /* Hover Effects - Updated Colors */
       .nav__logo:hover .clock-circle {
-        border-color: #047857;
+        border-color: #3a4a3a;
         animation: rotateClock 2s linear infinite;
       }
       
       .nav__logo:hover .logo-letter {
-        color: #047857;
+        color: #3a4a3a;
         transform: scale(1.1);
         transition: all 0.3s ease;
       }
       
       .nav__logo:hover .logo-text-main {
-        color: rgb(8, 129, 121);
+        color: #4a5e4a;
         transition: color 0.3s ease;
       }
       
@@ -177,10 +178,9 @@
         }
       }
 
-
-
-
-
+      /* ============================================
+         SEARCH INPUT STYLES
+         ============================================ */
 
       .search-input-wrapper {
         position: relative;
@@ -225,7 +225,7 @@
       }
 
       /* ============================================
-         WISHLIST & CART ICON STYLES
+         WISHLIST & CART ICON STYLES (Updated Colors)
          ============================================ */
       
       .header__action-btn i {
@@ -235,7 +235,115 @@
       }
       
       .header__action-btn:hover i {
-        color: rgb(8, 129, 121);
+        color: #4a5e4a;
+      }
+
+      /* ============================================
+         USER DROPDOWN STYLES (Updated Colors)
+         ============================================ */
+      
+      .user-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .dropbtn {
+        background-color: transparent;
+        color: #1f2937;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .dropbtn:hover {
+        background-color: #f0f4f0;
+        color: #4a5e4a;
+      }
+
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #fff;
+        min-width: 200px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.12);
+        border-radius: 12px;
+        z-index: 1000;
+        margin-top: 8px;
+        border: 1px solid rgba(74,94,74,.1);
+        overflow: hidden;
+      }
+
+      .dropdown-content a {
+        color: #1f2937;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .dropdown-content a:hover {
+        background-color: #f0f4f0;
+        color: #4a5e4a;
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background-color: rgba(74,94,74,.1);
+        margin: 4px 0;
+      }
+
+      .user-dropdown:hover .dropdown-content {
+        display: block;
+      }
+
+      /* Auth Links (Updated Colors) */
+      .auth-links {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .sign-in-link {
+        color: #1f2937;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .sign-in-link:hover {
+        background-color: #f0f4f0;
+        color: #4a5e4a;
+      }
+
+      /* Header Top Bar (Updated Background) */
+      .header__top {
+        background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+        border-bottom: 1px solid rgba(255,255,255,.1);
+      }
+
+      /* Navigation Links (Updated Hover Color) */
+      .nav__link:hover {
+        color: #4a5e4a !important;
+      }
+
+      /* Count Badges (Updated Background) */
+      .count {
+        background-color: #4a5e4a !important;
       }
     </style>
 
@@ -375,10 +483,6 @@
 function clearSearch() {
   window.location.href = '/'; // Redirect to home page
 }
-
-
-
-
 </script>
 
 <script src="/js/debounce-search.js"></script>

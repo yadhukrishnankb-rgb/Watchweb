@@ -164,6 +164,10 @@
         background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
         border: 2px solid #e5e7eb;
     }
+    .text-success { color: #10b981 !important; }
+.text-danger   { color: #ef4444 !important; }
+.text-warning  { color: #f59e0b !important; }
+.fw-bold       { font-weight: 700 !important; }
     
     .status-badge {
         display: inline-block;
@@ -454,7 +458,7 @@
 
                                 <% if (canCancel) { %>
                                     <button class="action-btn btn-cancel" 
-                                            onclick="requestCancelItem('<%= order._id %>','<%= item._id %>', this)">
+                                            onclick="cancelOrderItem('<%= order._id %>','<%= item._id %>', this)">
                                          Cancel Order
                                     </button>
                                 <% } %>
@@ -561,10 +565,10 @@
             <div class="card status-card">
                 <h2 class="card-title">Order Status</h2>
                 <% 
-                    const statusClass = orderStatusClass;
+                    const orderStatusClassForBadge = orderStatusClass;
                     const statusDisplay = orderStatusDisplay;
                 %>
-                <span class="status-badge status-<%= statusClass %>"><%= statusDisplay %></span>
+                <span class="status-badge status-<%= orderStatusClassForBadge %>"><%= statusDisplay %></span>
                 <p class="status-date">
                     <%= new Date(order.createdOn).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                 </p>
@@ -574,29 +578,56 @@
                 <h2 class="card-title">Payment Details</h2>
                 <div class="info-grid">
                     <div class="info-row">
-                        <span class="info-label">Payment Method</span>
-                        <span class="payment-method">₹ <%= order.paymentMethod %></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Payment Status</span>
-                        <% 
-                            const _stat = (order.status || derivedOrderStatus || '').toString().trim().toLowerCase();
-                            let paymentLabel = 'Unknown';
-                            if (['pending','processing','shipped','out for delivery','placed'].includes(_stat)) {
-                                paymentLabel = 'Pending';
-                            } else if (_stat === 'delivered') {
-                                paymentLabel = 'Succeeded';
-                            } else if (_stat === 'cancelled') {
-                                paymentLabel = 'Refunded / Cancelled';
-                            } else if (_stat === 'returned') {
-                                paymentLabel = 'Refunded / Partially Refunded';
-                            }
-                        %>
-                        <span class="payment-status" style="display:inline-block; font-weight:700;">
-                            <%= paymentLabel %>
-                        </span>
-                    </div>
-                </div>
+    <span class="info-label">Payment Method</span>
+    <span class="payment-method"><%= order.paymentMethod || 'Unknown' %></span>
+</div>
+
+<div class="info-row">
+    <span class="info-label">Payment Status</span>
+    <% 
+        // Declare variables ONLY ONCE here
+        let displayStatus = 'Pending';
+        let paymentStatusClass = 'text-warning fw-bold';
+        let extraText = '';
+
+        const realPayStatus = (order.paymentStatus || 'Pending').trim().toLowerCase();
+        const orderStat = (order.status || '').trim().toLowerCase();
+        const payMethod = (order.paymentMethod || '').toUpperCase();
+
+        if (payMethod === 'COD') {
+            if (orderStat === 'delivered') {
+                displayStatus = 'Paid on Delivery';
+                paymentStatusClass = 'text-success fw-bold';
+            } else if (['cancelled', 'returned'].includes(orderStat)) {
+                displayStatus = 'Refunded / Cancelled';
+                paymentStatusClass = 'text-danger fw-bold';
+            } else {
+                displayStatus = 'Pending (Cash on Delivery)';
+                paymentStatusClass = 'text-warning fw-bold';
+            }
+        } else {
+            // Razorpay / Wallet / other online payments
+            if (realPayStatus === 'paid') {
+                displayStatus = 'Paid Successfully';
+                paymentStatusClass = 'text-success fw-bold';
+            } else if (realPayStatus === 'failed') {
+                displayStatus = 'Payment Failed';
+                paymentStatusClass = 'text-danger fw-bold';
+            } else {
+                displayStatus = 'Pending';
+                paymentStatusClass = 'text-warning fw-bold';
+            }
+        }
+    %>
+    <span class="payment-status <%= paymentStatusClass %>">
+        <%= displayStatus %>
+        <% if (extraText) { %>
+            <small class="d-block mt-1 text-muted">(<%= extraText %>)</small>
+        <% } %>
+    </span>
+</div>
+
+
             </div>
 
            <div class="card amount-card">
@@ -721,7 +752,7 @@ const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 're
 </div>
 <script>
 // Beautiful Cancel/Return Popups - EXACTLY LIKE YOUR PHOTO!
-async function requestCancelItem(orderId, itemId, btn) {
+async function cancelOrderItem(orderId, itemId, btn) {
     const { value: reason } = await Swal.fire({
         title: 'Cancel Order',
         html: `

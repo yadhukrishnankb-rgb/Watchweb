@@ -11,10 +11,10 @@
     50% { transform: scale(1.02); }
 }
 
-/* Featured Products Section */
+/* Featured Products Section - Updated Colors */
 .products.section {
     padding: 4rem 0;
-    background: rgb(240, 253, 244);
+    background: #f0f4f0;
 }
 
 .section__title {
@@ -35,7 +35,7 @@
     transform: translateX(-50%);
     width: 100px;
     height: 4px;
-    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    background: linear-gradient(135deg, #4a5e4a, #3a4a3a);
     border-radius: 2px;
 }
 
@@ -47,14 +47,14 @@
     margin-bottom: 3rem;
 }
 
-/* Enhanced Product Card */
+/* Enhanced Product Card - Updated Colors */
 .product-card {
     background: white;
     border-radius: 1.25rem;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(8, 129, 121, 0.08);
+    box-shadow: 0 2px 8px rgba(74,94,74, 0.08);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(233, 246, 235, 0.5);
+    border: 1px solid rgba(74,94,74, 0.1);
     animation: fadeInUp 0.6s ease-out;
     position: relative;
     display: flex;
@@ -69,7 +69,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(8, 129, 121, 0.05), transparent);
+    background: linear-gradient(90deg, transparent, rgba(74,94,74, 0.05), transparent);
     transition: left 0.5s ease;
     pointer-events: none;
     z-index: 1;
@@ -81,15 +81,15 @@
 
 .product-card:hover {
     transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(8, 129, 121, 0.15);
-    border-color: rgb(8, 129, 121);
+    box-shadow: 0 20px 40px rgba(74,94,74, 0.15);
+    border-color: #4a5e4a;
 }
 
 .product-image-container {
     position: relative;
     overflow: hidden;
     height: 20rem;
-    background: linear-gradient(135deg, rgb(233, 246, 235) 0%, rgb(240, 253, 244) 100%);
+    background: linear-gradient(135deg, #dde8dd 0%, #e8f0e8 100%);
 }
 
 .product-image {
@@ -141,19 +141,19 @@
 }
 
 .product-card:hover .product-title {
-    color: rgb(8, 129, 121);
+    color: #4a5e4a;
 }
 
 .product-category {
     font-size: 0.875rem;
-    color: rgb(8, 129, 121);
+    color: #4a5e4a;
     margin-bottom: 1.25rem;
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.05em;
     display: inline-block;
     padding: 0.25rem 0.75rem;
-    background: rgba(8, 129, 121, 0.1);
+    background: rgba(74,94,74, 0.1);
     border-radius: 0.5rem;
     width: fit-content;
 }
@@ -164,7 +164,7 @@
     align-items: center;
     margin-top: auto;
     padding-top: 1rem;
-    border-top: 1px solid rgba(8, 129, 121, 0.1);
+    border-top: 1px solid rgba(74,94,74, 0.1);
 }
 
 .price-container {
@@ -176,7 +176,7 @@
 .current-price {
     font-size: 1.5rem;
     font-weight: 800;
-    color: rgb(8, 129, 121);
+    color: #4a5e4a;
     letter-spacing: -0.025em;
 }
 
@@ -194,7 +194,7 @@
 .add-to-cart-btn {
     width: 100%;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, rgb(8, 129, 121), #047857);
+    background: linear-gradient(135deg, #4a5e4a, #3a4a3a);
     color: white;
     font-weight: 600;
     border-radius: 0.75rem;
@@ -202,7 +202,7 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.9375rem;
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
     position: relative;
     overflow: hidden;
     letter-spacing: 0.025em;
@@ -229,13 +229,13 @@
 
 .add-to-cart-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(8, 129, 121, 0.35);
-    background: linear-gradient(135deg, #047857, #065f46);
+    box-shadow: 0 8px 20px rgba(74,94,74, 0.35);
+    background: linear-gradient(135deg, #3a4a3a, #2a3a2a);
 }
 
 .add-to-cart-btn:active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(8, 129, 121, 0.25);
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
 }
 
 .add-to-cart-btn:disabled {
@@ -271,14 +271,14 @@
 .wishlist-btn.added { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border-color:transparent; }
 .wishlist-btn.added svg .heart-fill { fill: #fff; }
 
-/* Empty State */
+/* Empty State - Updated Colors */
 .empty-state {
     text-align: center;
     padding: 5rem 2rem;
-    background: linear-gradient(135deg, rgb(240, 253, 244) 0%, rgb(233, 246, 235) 100%);
+    background: linear-gradient(135deg, #f0f4f0 0%, #dde8dd 100%);
     border-radius: 1.5rem;
-    box-shadow: 0 4px 16px rgba(8, 129, 121, 0.1);
-    border: 2px dashed rgba(8, 129, 121, 0.3);
+    box-shadow: 0 4px 16px rgba(74,94,74, 0.1);
+    border: 2px dashed rgba(74,94,74, 0.3);
     grid-column: 1 / -1;
 }
 
@@ -286,14 +286,14 @@
     width: 5rem;
     height: 5rem;
     margin: 0 auto 1.5rem;
-    color: rgb(8, 129, 121);
+    color: #4a5e4a;
     opacity: 0.6;
 }
 
 .empty-state-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: rgb(8, 129, 121);
+    color: #4a5e4a;
     margin-bottom: 0.75rem;
 }
 
@@ -345,7 +345,7 @@
     }
 }
 
-/* Styles taken from search-results grid to match that UI */
+/* Styles for search-results grid - Updated Colors */
 .products__container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -356,12 +356,12 @@
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  box-shadow: 0 6px 18px rgba(74,94,74,0.06);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
 }
-.product__item:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.08); }
+.product__item:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(74,94,74,0.08); }
 .product__banner { position: relative; overflow: hidden; }
 .product__images { display: block; position: relative; }
 .product__img { width: 100%; height: 220px; object-fit: cover; display: block; }
@@ -393,12 +393,12 @@
   transition: transform 0.15s ease;
 }
 .action__btn:hover { transform: translateY(-4px); }
-.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
+.product__badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; padding: 6px 8px; border-radius: 8px; font-weight: 700; z-index: 6; }
 .product__content { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.product__category { font-size: 0.75rem; color: #047857; font-weight: 700; text-transform: uppercase; }
+.product__category { font-size: 0.75rem; color: #4a5e4a; font-weight: 700; text-transform: uppercase; }
 .product__title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; line-height: 1.25; }
 .product__price { display: flex; align-items: center; gap: 8px; }
-.new__price { font-weight: 800; color: #047857; }
+.new__price { font-weight: 800; color: #4a5e4a; }
 .old__price { color: #9ca3af; text-decoration: line-through; font-weight: 500; }
 
 @media (max-width: 900px) {
@@ -413,13 +413,6 @@
       <section class="hero section--lg" aria-label="Featured promotions">
         <div class="hero-carousel" id="heroCarousel">
           <div class="hero-slides">
-            <!--
-              To change carousel banners, replace these files in your project:
-              public/assets/img/banner1.jpg
-              public/assets/img/banner2.jpg
-              public/assets/img/banner3.jpg
-              You can keep file names or update the paths below.
-            -->
             <div class="hero-slide" style="background-image: url('/assets/img/banner.jpg')">
               <div class="hero-overlay">
                 <span class="hero-sub">Hot Promotions</span>
@@ -453,19 +446,17 @@
         </div>
       </section>
 
-       
-
       <style>
-        /* Hero carousel styles */
+        /* Hero carousel styles - Updated Colors */
         .hero-carousel { max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; border-radius: 14px; }
         .hero-slides { display: flex; width: 100%; transition: transform 0.7s cubic-bezier(.22,.9,.35,1); }
         .hero-slide { min-width: 100%; background-size: cover; background-position: center; position: relative; height: 420px; display: flex; align-items: center; }
         .hero-overlay { max-width: 680px; padding: 32px; margin-left: 6%; background: linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15)); color: #fff; border-radius: 8px; }
         .hero-sub { display:block; color: #f8fafc; font-weight:700; letter-spacing:0.06em; margin-bottom:8px; font-size:0.95rem; }
         .hero-title { font-size:2.2rem; margin:0 0 10px; line-height:1.05; font-weight:800; }
-        .hero-title span{ font-weight:600; color:#d1fae5; }
+        .hero-title span{ font-weight:600; color:#dde8dd; }
         .hero-desc { margin-bottom:16px; opacity:0.95; }
-        .hero-cta { display:inline-block; background:linear-gradient(135deg,#10b981,#047857); color:white; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:700; }
+        .hero-cta { display:inline-block; background:linear-gradient(135deg,#4a5e4a,#3a4a3a); color:white; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:700; }
 
         .hero-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:white; border:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; z-index:30; }
         .hero-prev { left:12px; }
@@ -552,10 +543,7 @@
         })();
       </script>
 
-
-      
-    
-<!-- Featured Products Section (uses search-results grid style) -->
+<!-- Featured Products Section -->
 <section class="products container section">
   <h3 class="section__title">Featured Products</h3>
   <% if (featuredProducts && featuredProducts.length > 0) { %>
@@ -613,21 +601,7 @@
       <p class="empty-state-description">Try adjusting your search or filter criteria</p>
     </div>
   <% } %>
-
-    
-   
-
-      
-  
 </section>
-
-
-
-
-  
-
-     
- 
 
       <!--=============== DEALS ===============-->
       <section class="deals section">
@@ -705,10 +679,6 @@
         </div>
       </section>
 
-      
-
-      
-
       <!--=============== NEWSLETTER ===============-->
       <section class="newsletter section home__newsletter">
         <div class="newsletter__container container grid">
@@ -741,7 +711,6 @@ async function addToCart(productId, event) {
     const button = event.target.closest('button');
     if (button.disabled) return;
 
-    // Save original button content
     const originalHTML = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -757,11 +726,9 @@ async function addToCart(productId, event) {
         const data = await response.json();
 
         if (data.success) {
-            // Success: Green checkmark + exact toast like your photo
             button.innerHTML = '<i class="fas fa-check"></i> Added!';
-            button.style.backgroundColor = '#10b981';
+            button.style.backgroundColor = '#4a5e4a';
 
-            // EXACT SAME TOAST AS YOUR PHOTO
             Swal.fire({
                 icon: 'success',
                 title: 'Added to Cart!',
@@ -783,14 +750,12 @@ async function addToCart(productId, event) {
                 }
             });
 
-            // Update cart count
             const cartCount = document.querySelector('.cart-count');
             if (cartCount && data.cartCount !== undefined) {
                 cartCount.textContent = data.cartCount;
                 cartCount.style.display = 'flex';
             }
 
-            // Reset button after 1.5s
             setTimeout(() => {
                 button.innerHTML = originalHTML;
                 button.disabled = false;
@@ -818,7 +783,6 @@ async function addToCart(productId, event) {
     }
 }
 
-// Add to wishlist from home
 async function addToWishlist(productId, event) {
   try {
     const res = await fetch('/wishlist/add', {
@@ -841,7 +805,6 @@ async function addToWishlist(productId, event) {
   }
 }
 
-// Toggle wishlist (add/remove) — updates button UI
 async function toggleWishlist(productId, btn, event) {
   try {
     event?.preventDefault?.();
@@ -871,19 +834,15 @@ async function toggleWishlist(productId, btn, event) {
         showConfirmButton: false
       });
 
-      // If we're on the wishlist page or a wishlist card exists, remove the card(s) from the DOM when item removed
       if (willRemove) {
         try {
-          // match common wishlist card selectors used across templates
           const selector = `[data-product-id="${productId}"]`;
           const cards = Array.from(document.querySelectorAll(selector));
           cards.forEach(c => c.remove());
 
-          // also check for product__item wrappers that may represent the card
           const gridCards = Array.from(document.querySelectorAll(`.product__item[data-product-id="${productId}"]`));
           gridCards.forEach(c => c.remove());
         } catch (err) {
-          // non-fatal DOM cleanup error
           console.warn('Wishlist DOM cleanup failed', err);
         }
       }

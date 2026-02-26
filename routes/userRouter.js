@@ -12,6 +12,8 @@ const checkoutController = require("../controllers/user/checkoutController");
 
 const orderController = require("../controllers/user/orderController")
 
+const walletController = require('../controllers/user/walletController'); // adjust path if needed
+
 const { cancelOrder } = require('../controllers/user/orderController');
 
 
@@ -120,7 +122,7 @@ router.get('/order-failed/:id', isUser, (req, res) => {
 
 
 // Individual item actions - HIGHEST PRIORITY
-router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.requestCancelItem);
+router.post('/orders/:orderId/items/:itemId/cancel', isUser, orderController.cancelOrderItem);
 router.post('/orders/:orderId/items/:itemId/return', isUser, orderController.requestReturnItem);
 
 
@@ -140,10 +142,13 @@ router.get('/orders/:id', isUser, orderController.orderDetails);
 
 // Direct checkout (Buy Now)
 router.post('/checkout/direct', isUser, checkBlockedStatus, checkoutController.directCheckout);
-// Direct order (Buy Now → Place Order)
-router.post('/checkout/direct-order', isUser, checkBlockedStatus, checkoutController.directPlaceOrder);
+// Order placement unified route - handles both cart and direct buy
 // Add address from checkout (AJAX)
 router.post('/checkout/add-address', isUser, checkBlockedStatus, checkoutController.addAddressFromCheckout);
+
+
+//wallet routes
+router.get('/wallet', isUser, walletController.getWallet);
 
 
 
