@@ -502,6 +502,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
+                // Wallet payment was processed server-side; redirect if provided
+                if (paymentMethod === 'wallet') {
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        alert(data.message || 'Wallet payment failed');
+                    }
+                    return;
+                }
+
                 // Razorpay flow
                 if (!data.razorpay || !data.razorpay.key || !data.razorpay.order_id) {
                     throw new Error("Invalid Razorpay order data from server");

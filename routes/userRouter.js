@@ -149,6 +149,11 @@ router.post('/checkout/add-address', isUser, checkBlockedStatus, checkoutControl
 
 //wallet routes
 router.get('/wallet', isUser, walletController.getWallet);
+// Initiate add money (create Razorpay order)
+router.post('/wallet/add-money', isUser, walletController.initiateAddMoney);
+
+// Verify add money payment & credit wallet
+router.post('/wallet/verify-add-money', isUser, walletController.verifyAddMoney);
 
 
 

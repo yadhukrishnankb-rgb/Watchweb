@@ -12,6 +12,7 @@ const customerController = require("../controllers/admin/customerController")
 const productController = require('../controllers/admin/productController')
 const orderController = require('../controllers/admin/orderController')
 const inventoryController = require('../controllers/admin/inventoryController')
+const couponController = require('../controllers/admin/couponController')
 
 // Auth routes
 router.get("/login", adminController.loadLogin);
@@ -53,4 +54,10 @@ router.get('/inventory', adminAuth, inventoryController.getInventory);
 router.patch('/inventory/:id/stock', adminAuth, inventoryController.updateStock);
 
 
+// Coupon management routes
+router.get('/coupons', adminAuth, couponController.getCoupons);
+router.post('/coupons', adminAuth, couponController.createCoupon);
+router.post('/coupons/:id', adminAuth, couponController.editCoupon);
+router.delete('/coupons/:id', adminAuth, couponController.deleteCoupon);
+router.patch('/coupons/:id/toggle', adminAuth, couponController.toggleCoupon);
 module.exports = router;

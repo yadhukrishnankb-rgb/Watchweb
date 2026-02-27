@@ -1,207 +1,33 @@
-<!-- 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body {
-        background: linear-gradient(135deg, #6e8efb, #a777e3);
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .container {
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        width: 90%;
-        max-width: 400px;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        color: #333;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 10px;
-        border: 2px solid #ddd;
-        border-radius: 5px;
-        font-size: 16px;
-    }
-
-    .form-group input:focus {
-        border-color: #6e8efb;
-        outline: none;
-    }
-
-    .btn {
-        width: 100%;
-        padding: 12px;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-
-    .login-btn {
-        background-color: #6e8efb;
-        color: white;
-        margin-bottom: 10px;
-    }
-
-    .login-btn:hover {
-        background-color: #5a7df9;
-    }
-
-    .google-btn {
-        background-color: #DB4437;
-        color: white;
-    }
-
-    .google-btn:hover {
-        background-color: #c13b2f;
-    }
-
-    .signup-link {
-        text-align: center;
-        margin-top: 20px;
-    }
-
-    .signup-link a {
-        color: #6e8efb;
-        text-decoration: none;
-    }
-
-    .signup-link a:hover {
-        text-decoration: underline;
-    }
-</style>
-<body>
-    <div class="container">
-        <h2 style="text-align: center; margin-bottom: 20px;">Login</h2>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-
-            <button type="submit" class="btn login-btn">Login</button>
-        </form>
-        <button onclick="window.location.href='/auth/google'" class="btn google-btn">
-            Sign in with Google
-        </button>
-        <div class="signup-link">
-            Don't have an account? <a href="/signup">Sign up</a>
-        </div>
-
-<div class="signup-link">
-    <a href="/forgot-password">Forgot Password?</a>
-</div>
-
-
-    </div>
-
-   
-
-<script>
-    $(document).ready(function() {
-        $('#loginForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            $.ajax({
-                type: 'POST',
-                url: '/login',
-                data: {
-                    email: $('#email').val(),
-                    password: $('#password').val()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Login Successful',
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            window.location.href = '/';
-                        });
-                    }
-                },
-                error: function(xhr) {
-                    let message = 'An error occurred';
-                    if (xhr.status === 403) {
-                        message = 'Your account has been blocked. Please contact administrator.';
-                    } else if (xhr.status === 401) {
-                        message = 'Invalid email or password';
-                    } else {
-                        message = xhr.responseJSON?.message || 'Login failed';
-                    }
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Login Failed',
-                        text: message
-                    });
-                }
-            });
-        });
-    });
-</script>
-</body>
-</html> -->
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - EverTime</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    * {
+    *, *::before, *::after {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        font-family: 'Inter', sans-serif;
+    }
+
+    :root {
+        --green:      #4a5e4a;
+        --green-dk:   #3a4a3a;
+        --green-lt:   #5a7a5a;
+        --bg:         #f0f4f0;
+        --text:       #2a3a2a;
+        --muted:      #7a9080;
     }
 
     body {
-        background: linear-gradient(135deg, #0a8a7d 0%, #047857 100%);
+        font-family: 'Nunito', sans-serif;
+        background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
         min-height: 100vh;
         display: flex;
         justify-content: center;
@@ -214,26 +40,32 @@
     body::before {
         content: '';
         position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-        background-size: 50px 50px;
-        animation: float 20s linear infinite;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.04);
+        top: -200px;
+        right: -100px;
         pointer-events: none;
     }
 
-    @keyframes float {
-        0% { transform: translate(0, 0); }
-        100% { transform: translate(50px, 50px); }
+    body::after {
+        content: '';
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.03);
+        bottom: -80px;
+        left: -50px;
+        pointer-events: none;
     }
 
     .container {
         background-color: white;
         padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(10, 138, 125, 0.3);
+        border-radius: 1.25rem;
+        box-shadow: 0 20px 60px rgba(74,94,74, 0.25);
         width: 90%;
         max-width: 440px;
         position: relative;
@@ -254,33 +86,36 @@
 
     .logo-section {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
     }
 
     .logo-section h2 {
-        color: #0a8a7d;
+        color: var(--green);
         font-size: 2rem;
-        font-weight: 700;
+        font-weight: 800;
         margin-bottom: 8px;
         letter-spacing: -0.02em;
     }
 
     .logo-section p {
-        color: #6b7280;
+        color: var(--muted);
         font-size: 0.95rem;
+        font-weight: 600;
     }
 
     .form-group {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
         position: relative;
     }
 
     .form-group label {
         display: block;
         margin-bottom: 8px;
-        color: #1a1a1a;
-        font-weight: 600;
-        font-size: 0.9rem;
+        color: var(--green-dk);
+        font-weight: 700;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .input-wrapper {
@@ -289,19 +124,27 @@
 
     .form-group input {
         width: 100%;
-        padding: 14px 16px;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        font-size: 15px;
+        padding: 12px 16px;
+        border: 2px solid #c8d8c8;
+        border-radius: 0.75rem;
+        font-size: 14px;
+        font-family: 'Nunito', sans-serif;
+        font-weight: 600;
         transition: all 0.3s ease;
-        background: #f9fafb;
+        background: #fff;
+        color: var(--text);
+    }
+
+    .form-group input::placeholder {
+        color: #aaa;
+        font-weight: 500;
     }
 
     .form-group input:focus {
-        border-color: #0a8a7d;
+        border-color: var(--green);
         outline: none;
         background: white;
-        box-shadow: 0 0 0 4px rgba(10, 138, 125, 0.1);
+        box-shadow: 0 0 0 3px rgba(74,94,74, 0.1);
     }
 
     .password-toggle {
@@ -311,7 +154,7 @@
         transform: translateY(-50%);
         background: none;
         border: none;
-        color: #6b7280;
+        color: var(--muted);
         cursor: pointer;
         padding: 4px;
         display: flex;
@@ -321,7 +164,7 @@
     }
 
     .password-toggle:hover {
-        color: #0a8a7d;
+        color: var(--green);
     }
 
     .password-toggle i {
@@ -337,13 +180,16 @@
         width: 100%;
         padding: 14px;
         border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: 600;
+        border-radius: 0.75rem;
+        font-size: 15px;
+        font-weight: 700;
+        font-family: 'Nunito', sans-serif;
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
     }
 
     .btn::before {
@@ -365,15 +211,16 @@
     }
 
     .login-btn {
-        background: linear-gradient(135deg, #0a8a7d 0%, #047857 100%);
+        background: linear-gradient(135deg, var(--green), var(--green-dk));
         color: white;
         margin-bottom: 16px;
-        box-shadow: 0 4px 16px rgba(10, 138, 125, 0.3);
+        box-shadow: 0 4px 16px rgba(74,94,74, 0.25);
     }
 
     .login-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(10, 138, 125, 0.4);
+        box-shadow: 0 8px 24px rgba(74,94,74, 0.35);
+        background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
     }
 
     .login-btn:active {
@@ -385,15 +232,16 @@
         align-items: center;
         text-align: center;
         margin: 24px 0;
-        color: #9ca3af;
+        color: var(--muted);
         font-size: 0.875rem;
+        font-weight: 600;
     }
 
     .divider::before,
     .divider::after {
         content: '';
         flex: 1;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid #c8d8c8;
     }
 
     .divider span {
@@ -402,20 +250,20 @@
 
     .google-btn {
         background-color: white;
-        color: #1a1a1a;
-        border: 2px solid #e5e7eb;
+        color: var(--text);
+        border: 2px solid #c8d8c8;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .google-btn:hover {
-        background-color: #f9fafb;
-        border-color: #d1d5db;
+        background-color: var(--bg);
+        border-color: var(--green);
         transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 16px rgba(74,94,74, 0.15);
     }
 
     .google-btn img {
@@ -426,19 +274,20 @@
     .signup-link {
         text-align: center;
         margin-top: 24px;
-        color: #6b7280;
+        color: var(--muted);
         font-size: 0.95rem;
+        font-weight: 600;
     }
 
     .signup-link a {
-        color: #0a8a7d;
+        color: var(--green);
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
         transition: color 0.3s ease;
     }
 
     .signup-link a:hover {
-        color: #047857;
+        color: var(--green-dk);
         text-decoration: underline;
     }
 
@@ -448,15 +297,15 @@
     }
 
     .forgot-password a {
-        color: #0a8a7d;
+        color: var(--green);
         text-decoration: none;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 700;
         transition: color 0.3s ease;
     }
 
     .forgot-password a:hover {
-        color: #047857;
+        color: var(--green-dk);
         text-decoration: underline;
     }
 
@@ -539,7 +388,7 @@
         }
     }
 
-    // Login Form Handler (Your existing code - unchanged)
+    // Login Form Handler
     $(document).ready(function() {
         $('#loginForm').on('submit', function(e) {
             e.preventDefault();
@@ -557,7 +406,8 @@
                             icon: 'success',
                             title: 'Login Successful',
                             showConfirmButton: false,
-                            timer: 1500
+                            timer: 1500,
+                            confirmButtonColor: '#4a5e4a'
                         }).then(() => {
                             window.location.href = '/';
                         });
@@ -576,7 +426,8 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Login Failed',
-                        text: message
+                        text: message,
+                        confirmButtonColor: '#4a5e4a'
                     });
                 }
             });
