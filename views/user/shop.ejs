@@ -175,8 +175,8 @@ body {
     box-shadow: 0 0 0 3px rgba(74,94,74,.1);
 }
 
-/* Search Button - Updated Colors */
-.filter-section button[type="submit"] {
+/* Search and Clear Buttons - Updated Colors */
+.filter-section form > div.flex.gap-4 button {
     padding: 0.875rem 1.5rem;
     background: linear-gradient(135deg, var(--green), var(--green-dk));
     color: white;
@@ -191,7 +191,7 @@ body {
     font-size: 0.875rem;
     letter-spacing: 0.025em;
 }
-.filter-section button[type="submit"]:hover {
+.filter-section form > div.flex.gap-4 button:hover {
     background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(74,94,74, 0.35);
@@ -537,6 +537,7 @@ html { scroll-behavior: smooth; }
                     <div class="flex gap-4">
                         <div class="relative flex-1">
                             <input type="text" 
+                                   id="searchInput"
                                    name="search" 
                                    value="<%= query.search || '' %>"
                                    placeholder="Search products..." 
@@ -546,8 +547,17 @@ html { scroll-behavior: smooth; }
                                 class="px-8 py-4 font-medium rounded-lg transition-colors">
                             Search
                         </button>
+                        
                     </div>
 
+                     <button type="button" 
+                                onclick="clearSearch()" 
+                                class="px-8 py-4 font-medium rounded-lg transition-colors">
+                            Clear
+                        </button>
+                      
+
+                    
                     <!-- Filters Grid -->
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Sort -->
@@ -640,11 +650,20 @@ html { scroll-behavior: smooth; }
                                         <h3 class="product__title"><%= product.productName %></h3>
                                     </a>
                                     <div class="product__price flex">
-                                        <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-                                        <% if (product.productOffer && product.productOffer > 0) { %>
-                                            <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
-                                        <% } else if (product.regularPrice > product.salesPrice) { %>
-                                            <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+                                        <% 
+                                            // figure out displayed price and original price
+                                            let displayPrice = product.salesPrice;
+                                            let originalPrice = null;
+                                            if (product.productOffer && product.productOffer > 0) {
+                                                displayPrice = Math.round(product.salesPrice * (1 - product.productOffer/100) * 100) / 100;
+                                                originalPrice = product.salesPrice;
+                                            } else if (product.regularPrice > product.salesPrice) {
+                                                originalPrice = product.regularPrice;
+                                            }
+                                        %>
+                                        <span class="new__price">₹<%= displayPrice.toLocaleString() %></span>
+                                        <% if (originalPrice) { %>
+                                            <span class="old__price">₹<%= originalPrice.toLocaleString() %></span>
                                         <% } %>
                                     </div>
                                 </div>
@@ -713,6 +732,22 @@ maxPrice?.addEventListener('change', function() {
 
 function clearAllFilters() {
     window.location.href = '/shop';
+}
+
+function clearSearch() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+    
+    // Build params excluding search
+    for (let [key, value] of formData) {
+        if (value && key !== 'search') {
+            params.append(key, value);
+        }
+    }
+    
+    // Navigate with all filters except search
+    window.location.href = `/shop?${params.toString()}`;
 }
 
 document.querySelectorAll('.add-to-cart-btn').forEach(button => {

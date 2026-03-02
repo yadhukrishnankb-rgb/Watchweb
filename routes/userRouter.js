@@ -155,8 +155,9 @@ router.post('/wallet/add-money', isUser, walletController.initiateAddMoney);
 // Verify add money payment & credit wallet
 router.post('/wallet/verify-add-money', isUser, walletController.verifyAddMoney);
 
-
-
+//coupon routes
+router.post('/checkout/apply-coupon', isUser, checkoutController.applyCoupon);
+router.post('/checkout/remove-coupon', isUser, checkoutController.removeCoupon);
 
 router.get('/auth/google',passport.authenticate('google',{scope:['profile','email']}));
 

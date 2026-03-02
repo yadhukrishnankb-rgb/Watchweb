@@ -58,6 +58,9 @@
                   </div>
                   <div>Sale: ₹<%= product.salesPrice %>
                   </div>
+                  <% if (product.productOffer && product.productOffer > 0) { %>
+                    <div class="text-sm text-green-600 font-semibold">Offer: <%= product.productOffer %>%</div>
+                  <% } %>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <%= product.quantity %>
@@ -84,6 +87,16 @@
                   <button onclick="confirmDelete('<%= product._id %>')" class="text-red-600 hover:text-red-900 ml-3">
                     Delete
                   </button>
+                  <!-- Offer buttons -->
+                  <% if (product.productOffer && product.productOffer > 0) { %>
+                    <button onclick="confirmRemoveOffer('<%= product._id %>')" class="text-red-600 hover:text-red-900 ml-3">
+                      Remove Offer
+                    </button>
+                  <% } else { %>
+                    <button onclick="promptSetOffer('<%= product._id %>')" class="text-indigo-600 hover:text-indigo-900 ml-3">
+                      Set Offer
+                    </button>
+                  <% } %>
                 </td>
               </tr>
               <% }); %>
@@ -155,11 +168,7 @@
               <input type="number" id="editSalesPrice" name="salesPrice" required min="0" step="0.01"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
-            <div class="mb-4">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Product Offer (%)</label>
-              <input type="number" id="editProductOffer" name="productOffer" min="0" max="100"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
+            <!-- Product offer managed separately; removed from edit form -->
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Quantity*</label>
               <input type="number" id="editQuantity" name="quantity" required min="0"
@@ -240,11 +249,7 @@
               <input type="number" name="salesPrice" required min="0" step="0.01"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
-            <div class="mb-4">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Product Offer (%)</label>
-              <input type="number" name="productOffer" min="0" max="100"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
+            <!-- Product offer managed separately; removed from add form -->
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Quantity*</label>
               <input type="number" name="quantity" required min="0"
@@ -543,7 +548,7 @@
         document.getElementById('editCategory').value = product.category?._id || '';
         document.getElementById('editRegularPrice').value = product.regularPrice;
         document.getElementById('editSalesPrice').value = product.salesPrice;
-        document.getElementById('editProductOffer').value = product.productOffer;
+        // productOffer is managed outside the add/edit forms; do not populate here
         document.getElementById('editQuantity').value = product.quantity;
         document.getElementById('editColor').value = product.color;
         document.getElementById('editDescription').value = product.description;
@@ -716,6 +721,64 @@
         } else throw new Error(data.message || 'Unblock failed');
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error unblocking product' });
+      }
+    }
+
+    /* === PRODUCT OFFER (Set / Remove) === */
+    async function promptSetOffer(productId) {
+      const { value: offer } = await Swal.fire({
+        title: 'Set Product Offer (%)',
+        input: 'number',
+        inputLabel: 'Enter offer percentage (0-100)',
+        inputAttributes: { min: 0, max: 100, step: 1 },
+        inputValue: 0,
+        showCancelButton: true,
+        confirmButtonText: 'Set Offer',
+        preConfirm: (val) => {
+          const n = Number(val);
+          if (isNaN(n) || n < 0 || n > 100) {
+            Swal.showValidationMessage('Please enter a number between 0 and 100');
+          }
+          return n;
+        }
+      });
+
+      if (offer == null) return;
+
+      try {
+        const data = await fetchJson(`/admin/products/${productId}/offer`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offer })
+        });
+        if (data.success) {
+          Swal.fire({ icon: 'success', title: 'Offer Set', text: data.message || 'Offer updated' })
+            .then(() => location.reload());
+        } else throw new Error(data.message || 'Failed to set offer');
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to set offer' });
+      }
+    }
+
+    async function confirmRemoveOffer(productId) {
+      const res = await Swal.fire({
+        title: 'Remove Offer?',
+        text: 'This will remove any discount applied to the product.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, remove',
+        cancelButtonText: 'Keep'
+      });
+      if (!res.isConfirmed) return;
+
+      try {
+        const data = await fetchJson(`/admin/products/${productId}/offer/remove`, { method: 'PATCH' });
+        if (data.success) {
+          Swal.fire({ icon: 'success', title: 'Removed', text: data.message || 'Offer removed' })
+            .then(() => location.reload());
+        } else throw new Error(data.message || 'Failed to remove offer');
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to remove offer' });
       }
     }
   </script>

@@ -41,6 +41,9 @@ router.delete('/products/:id', adminAuth, productController.deleteProduct);
 router.get('/products/:id', adminAuth, productController.getProductById);
 router.patch('/products/:id/block', adminAuth, productController.blockProduct);
 router.patch('/products/:id/unblock', adminAuth, productController.unblockProduct);
+// Offer management for products
+router.patch('/products/:id/offer', adminAuth, productController.setProductOffer);
+router.patch('/products/:id/offer/remove', adminAuth, productController.removeProductOffer);
 
 // Orders & Requests
 router.get('/orders', adminAuth, orderController.getOrders);

@@ -444,14 +444,24 @@ body {
           <!-- Price and Discounts -->
           <div class="price-section space-y-2">
             <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-bold" style="color: var(--green);">₹<%= product.salesPrice.toLocaleString() %></span>
+              <% 
+                let displayPrice = product.salesPrice;
+                let originalPrice = null;
+                if (product.productOffer && product.productOffer > 0) {
+                    displayPrice = Math.round(product.salesPrice * (1 - product.productOffer/100) * 100) / 100;
+                    originalPrice = product.salesPrice;
+                } else if (product.regularPrice > product.salesPrice) {
+                    originalPrice = product.regularPrice;
+                }
+              %>
+              <span class="text-3xl font-bold" style="color: var(--green);">₹<%= displayPrice.toLocaleString() %></span>
               <% if (product.productOffer && product.productOffer> 0) { %>
-                <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
+                <span class="text-lg text-gray-500 line-through">₹<%= originalPrice.toLocaleString() %></span>
                 <span class="discount-tag text-sm font-medium">
                   <%= product.productOffer %>% OFF
                 </span>
               <% } else if (product.regularPrice> product.salesPrice) { %>
-                <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice.toLocaleString() %></span>
+                <span class="text-lg text-gray-500 line-through">₹<%= originalPrice.toLocaleString() %></span>
                 <span class="discount-tag text-sm font-medium">
                   <%= Math.round((product.regularPrice - product.salesPrice) / product.regularPrice * 100) %>% OFF
                 </span>
@@ -602,7 +612,20 @@ body {
                   <h3 class="font-bold mb-1" style="color: var(--text);">
                     <%= relatedProduct.productName %>
                   </h3>
-                  <p class="font-bold" style="color: var(--green);">₹<%= relatedProduct.salesPrice.toLocaleString() %></p>
+                  <% 
+                      let rpDisplay = relatedProduct.salesPrice;
+                      let rpOriginal = null;
+                      if (relatedProduct.productOffer && relatedProduct.productOffer > 0) {
+                          rpDisplay = Math.round(relatedProduct.salesPrice * (1 - relatedProduct.productOffer/100) * 100) / 100;
+                          rpOriginal = relatedProduct.salesPrice;
+                      } else if (relatedProduct.regularPrice > relatedProduct.salesPrice) {
+                          rpOriginal = relatedProduct.regularPrice;
+                      }
+                  %>
+                  <p class="font-bold" style="color: var(--green);">₹<%= rpDisplay.toLocaleString() %></p>
+                  <% if (rpOriginal) { %>
+                    <p class="text-sm text-gray-500 line-through">₹<%= rpOriginal.toLocaleString() %></p>
+                  <% } %>
                 </div>
               </a>
             </div>

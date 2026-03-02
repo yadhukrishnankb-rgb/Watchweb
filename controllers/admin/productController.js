@@ -355,3 +355,49 @@ exports.unblockProduct = async (req, res) => {
     }
 };
 
+// Set an offer percentage for a specific product
+exports.setProductOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.INVALID_PRODUCT_ID });
+        }
+
+        const offerRaw = req.body.offer ?? req.body.productOffer;
+        if (offerRaw == null) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Offer value required' });
+        }
+
+        const offer = Number(offerRaw);
+        if (isNaN(offer) || offer < 0 || offer > 100) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Offer must be a number between 0 and 100' });
+        }
+
+        const product = await Product.findByIdAndUpdate(id, { productOffer: Math.round(offer) }, { new: true });
+        if (!product) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
+
+        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, product });
+    } catch (err) {
+        console.error('Error setting product offer:', err);
+        return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.PRODUCT_UPDATE_ERROR });
+    }
+};
+
+// Remove offer (set to 0) for a specific product
+exports.removeProductOffer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.INVALID_PRODUCT_ID });
+        }
+
+        const product = await Product.findByIdAndUpdate(id, { productOffer: 0 }, { new: true });
+        if (!product) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
+
+        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, product });
+    } catch (err) {
+        console.error('Error removing product offer:', err);
+        return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.PRODUCT_UPDATE_ERROR });
+    }
+};
+

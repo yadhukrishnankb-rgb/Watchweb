@@ -115,24 +115,25 @@ const orderDetails = async (req, res) => {
       if (it.refundAmount != null) it.refundAmount = Number(it.refundAmount);
     });
 
-    // Reconstruct original subtotal from ordered items (use stored item totals when available)
-    const originalSubtotalFromItems = (plainOrder.orderedItems || []).reduce((acc, it) => {
-      const itemTotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
-      return acc + itemTotal;
+    // Prefer stored original subtotal (saved at order creation). Fall back to summing item totals.
+    const storedOriginalSubtotal = Number(plainOrder.originalSubtotal ?? plainOrder.subtotal ?? 0);
+    const computedItemsSubtotal = (plainOrder.orderedItems || []).reduce((acc, it) => {
+      return acc + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
     }, 0);
 
-    // Preserve original order-level amounts for display (do not rely on mutable order.subtotal)
+    const originalSubtotal = storedOriginalSubtotal > 0 ? storedOriginalSubtotal : computedItemsSubtotal;
     const originalTax = Number(plainOrder.tax || 0);
     const originalShipping = Number(plainOrder.shipping || 0);
-    const originalAmount = Math.round(((originalSubtotalFromItems + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
+
+    const originalAmount = Math.round(((originalSubtotal + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
     // attach for view usage
     plainOrder.originalAmount = originalAmount;
-    plainOrder.originalSubtotal = Math.round((originalSubtotalFromItems + Number.EPSILON) * 100) / 100;
+    plainOrder.originalSubtotal = Math.round((originalSubtotal + Number.EPSILON) * 100) / 100;
     plainOrder.originalTax = originalTax;
     plainOrder.originalShipping = originalShipping;
 
     // Use reconstructed original values for refund allocation (protect against mutated order.subtotal)
-    const subtotal = originalSubtotalFromItems; // original items subtotal
+    const subtotal = originalSubtotal; // original items subtotal (pre-discount)
     const totalTax = originalTax;
     const totalDiscount = Number(plainOrder.discount || 0);
 
@@ -142,10 +143,13 @@ const orderDetails = async (req, res) => {
         const st = ((it.status||'').toString().toLowerCase());
         if (['cancelled','returned'].includes(st)) {
           if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return acc + Number(it.refundAmount);
-          const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
-          const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
-          const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-          return acc + (itemSubtotal + taxShare - discountShare);
+          const itemPaid = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0); // this is post-discount paid amount for the item
+          // tax share should be allocated according to original proportions; because discounts were distributed proportionally,
+          // using the ratio of itemPaid/discountedSubtotal yields the same original proportion. We fall back to computedItemsSubtotal.
+          const discountedSubtotal = computedItemsSubtotal || subtotal || 0;
+          const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
+          // The itemPaid already reflects the coupon share; do NOT subtract discountShare again (prevents double subtracting coupon)
+          return acc + (itemPaid + taxShare);
         }
         return acc;
       }, 0);
@@ -345,7 +349,7 @@ const downloadInvoice = async (req, res) => {
         order.orderedItems.forEach((item, i) => {
             const name = item.name || (item.product?.productName) || 'Unknown Product';
             const price = item.price ?? item.product?.price ?? 0;
-            const total = price * item.quantity;
+            const total = Number(item.totalPrice ?? (price * item.quantity));
 
             doc.text(`${i + 1}. ${name}`, col1, y, { width: 280 });
             doc.text(`₹${price.toFixed(2)}`, col2, y);
@@ -372,14 +376,24 @@ const downloadInvoice = async (req, res) => {
         const labelX = summaryBoxX + 15;
         const valueX = summaryBoxX + summaryBoxWidth - 15;
 
-        doc.text('Subtotal:', labelX, summaryY + 15);
-        doc.text(`₹${(order.subtotal || 0).toFixed(2)}`, valueX - 80, summaryY + 15, { width: 80, align: 'right' });
+        // show subtotal before any coupon (fallback to current subtotal)
+        const origSub = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+        const couponCode = order.couponCode || order.coupon || '';
+        const discountVal = Number(order.couponDiscount ?? order.discount ?? 0);
 
-        doc.text('Discount:', labelX, summaryY + 38);
-        doc.text(`₹${(order.discount || 0).toFixed(2)}`, valueX - 80, summaryY + 38, { width: 80, align: 'right' });
+        let currentY = summaryY + 15;
+        doc.text('Subtotal:', labelX, currentY);
+        doc.text(`₹${origSub.toFixed(2)}`, valueX - 80, currentY, { width: 80, align: 'right' });
+        currentY += 23;
 
-        doc.text('GST (18%):', labelX, summaryY + 61);
-        doc.text(`₹${(order.tax || 0).toFixed(2)}`, valueX - 80, summaryY + 61, { width: 80, align: 'right' });
+        if (discountVal > 0) {
+            doc.text('Coupon Discount:', labelX, currentY);
+            doc.text(`₹${(discountVal).toFixed(2)}${couponCode ? ' ('+couponCode+')' : ''}`, valueX - 80, currentY, { width: 80, align: 'right' });
+            currentY += 23;
+        }
+
+        doc.text('GST (18%):', labelX, currentY);
+        doc.text(`₹${(order.tax || 0).toFixed(2)}`, valueX - 80, currentY, { width: 80, align: 'right' });
 
         // Grand Total in GREEN
         doc.font('Helvetica-Bold').fontSize(12).fillColor('#00cc66');

@@ -284,13 +284,14 @@ exports.approveRequest = async (req, res) => {
         const subtotal = Number(order.subtotal || 0);
         const totalTax = Number(order.tax || 0);
         const totalDiscount = Number(order.discount || 0);
+        // compute discounted subtotal from stored item totals (fallback to subtotal)
+        const discountedSubtotal = (order.orderedItems || []).reduce((s, it) => s + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0), 0) || subtotal;
         let totalRefund = 0;
 
         for (const it of order.orderedItems) {
-          const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
-          const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
-          const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-          const refundForItem = Math.round((itemSubtotal + taxShare - discountShare + Number.EPSILON) * 100) / 100;
+          const itemPaid = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+          const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
+          const refundForItem = Math.round((itemPaid + taxShare + Number.EPSILON) * 100) / 100;
           it.refundAmount = refundForItem;
           totalRefund += refundForItem;
         }
@@ -345,10 +346,10 @@ exports.approveRequest = async (req, res) => {
       const subtotal = Number(order.subtotal || 0);
       const totalTax = Number(order.tax || 0);
       const totalDiscount = Number(order.discount || 0);
-      const itemSubtotal = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
-      const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
-      const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-      const refundForItem = Math.round((itemSubtotal + taxShare - discountShare + Number.EPSILON) * 100) / 100;
+      const discountedSubtotal = (order.orderedItems || []).reduce((s, it) => s + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0), 0) || subtotal;
+      const itemPaid = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
+      const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
+      const refundForItem = Math.round((itemPaid + taxShare + Number.EPSILON) * 100) / 100;
 
       item.refundAmount = refundForItem;
       order.refunded = Math.round(((Number(order.refunded || 0) + refundForItem) + Number.EPSILON) * 100) / 100;

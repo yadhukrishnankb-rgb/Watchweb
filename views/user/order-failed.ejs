@@ -1,14 +1,26 @@
 <%- include('../partials/user/header') %>
 
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
     :root { 
-        --primary: #5a7f72; 
-        --error: #dc2626; 
+        --green:      #4a5e4a;
+        --green-dk:   #3a4a3a;
+        --green-lt:   #5a7a5a;
+        --bg:         #f0f4f0;
+        --text:       #2a3a2a;
+        --muted:      #7a9080;
+        --line:       rgba(74,94,74,.12);
+        --red:        #e8435a;
+        --success:    #2ecc71;
     }
     
     html, body {
-        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        font-family: 'Nunito', sans-serif;
+        color: var(--text);
     }
     
     .page-wrapper {
@@ -38,10 +50,11 @@
         max-width: 600px;
         padding: 3rem;
         background: white;
-        border-radius: 1.5rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border-radius: 1.25rem;
+        box-shadow: 0 10px 30px rgba(74,94,74,0.15);
         animation: slideUp 0.5s ease;
         width: 100%;
+        border: 1px solid var(--line);
     }
     
     @keyframes slideUp {
@@ -58,7 +71,7 @@
     .error-icon {
         width: 120px;
         height: 120px;
-        background: var(--error);
+        background: linear-gradient(135deg, var(--red), #dc2626);
         border-radius: 50%;
         margin: 0 auto 1.5rem;
         display: flex;
@@ -67,7 +80,7 @@
         color: white;
         font-size: 4rem;
         animation: shake 0.6s infinite;
-        box-shadow: 0 15px 30px rgba(220, 38, 38, 0.3);
+        box-shadow: 0 15px 30px rgba(232, 67, 90, 0.3);
     }
     
     @keyframes shake {
@@ -79,49 +92,53 @@
     .error-title {
         font-size: 2.6rem;
         font-weight: 800;
-        color: var(--error);
+        color: var(--red);
         margin-bottom: 1rem;
     }
     
     .error-msg {
-        color: #374151;
+        color: var(--text);
         font-size: 1.2rem;
         line-height: 1.7;
         margin-bottom: 1.5rem;
+        font-weight: 600;
     }
     
     .order-id {
-        background: #fee2e2;
-        color: #7f1d1d;
+        background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+        color: var(--green-dk);
         padding: 0.75rem 1.5rem;
-        border-radius: 9999px;
-        font-weight: 700;
+        border-radius: 2rem;
+        font-weight: 800;
         display: inline-block;
         margin: 1rem 0;
         font-size: 1.1rem;
         font-family: 'Courier New', monospace;
+        border: 2px solid var(--line);
     }
     
     .error-details {
-        background: #fef2f2;
+        background: linear-gradient(135deg, #fde8ec, #fee2e7);
         padding: 1.5rem;
-        border-left: 4px solid var(--error);
-        border-radius: 0.5rem;
+        border-left: 4px solid var(--red);
+        border-radius: 0.75rem;
         margin: 1.5rem 0;
         text-align: left;
     }
     
     .error-details h4 {
         margin: 0 0 0.75rem 0;
-        color: var(--error);
-        font-size: 1rem;
+        color: var(--red);
+        font-size: 1.1rem;
+        font-weight: 800;
     }
     
     .error-details p {
         margin: 0 0 0.5rem 0;
-        color: #7f1d1d;
+        color: #9a1928;
         font-size: 0.95rem;
-        line-height: 1.5;
+        line-height: 1.6;
+        font-weight: 600;
     }
     
     .error-details ul {
@@ -130,9 +147,10 @@
     }
     
     .error-details li {
-        color: #7f1d1d;
+        color: #9a1928;
         margin-bottom: 0.4rem;
         font-size: 0.95rem;
+        font-weight: 600;
     }
     
     .btn-group {
@@ -144,69 +162,108 @@
     }
     
     .btn-retry {
-        background: var(--error);
+        background: linear-gradient(135deg, var(--red), #dc2626);
         color: white;
         padding: 0.875rem 2.5rem;
         border-radius: 0.75rem;
-        font-weight: 700;
+        font-weight: 800;
+        font-family: 'Nunito', sans-serif;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 0.75rem;
-        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+        box-shadow: 0 8px 20px rgba(232, 67, 90, 0.3);
         transition: all 0.3s;
         font-size: 1rem;
         border: none;
         cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
     }
     
     .btn-retry:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 28px rgba(220, 38, 38, 0.35);
-        background: #b91c1c;
+        box-shadow: 0 12px 28px rgba(232, 67, 90, 0.4);
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
     }
     
     .btn-details {
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--green), var(--green-dk));
         color: white;
         padding: 0.875rem 2.5rem;
         border-radius: 0.75rem;
-        font-weight: 700;
+        font-weight: 800;
+        font-family: 'Nunito', sans-serif;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 0.75rem;
-        box-shadow: 0 8px 20px rgba(90, 127, 114, 0.25);
+        box-shadow: 0 8px 20px rgba(74, 94, 74, 0.3);
         transition: all 0.3s;
         font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
     }
     
     .btn-details:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 28px rgba(90, 127, 114, 0.35);
-        background: #4a6f62;
+        box-shadow: 0 12px 28px rgba(74, 94, 74, 0.4);
+        background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
     }
     
     .support-link {
-        color: #9ca3af;
+        color: var(--muted);
         font-size: 0.9rem;
         margin-top: 2.5rem;
+        font-weight: 600;
     }
     
     .support-link a {
-        color: var(--primary);
+        color: var(--green);
         text-decoration: none;
-        font-weight: 700;
+        font-weight: 800;
         transition: color 0.3s;
     }
     
     .support-link a:hover {
-        color: #4a6f62;
+        color: var(--green-dk);
+        text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .error-container {
+            padding: 2rem 1.5rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+        }
+
+        .error-msg {
+            font-size: 1rem;
+        }
+
+        .error-icon {
+            width: 100px;
+            height: 100px;
+            font-size: 3rem;
+        }
+
+        .btn-group {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-retry,
+        .btn-details {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 
 <div class="page-wrapper">
-    <%- include('../partials/user/header') %>
     
     <div class="error-content">
         <div class="error-container">

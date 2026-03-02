@@ -645,6 +645,8 @@ body {
                 const subtotal = Number(order.subtotal || 0);
                 const totalTax = Number(order.tax || 0);
                 const totalDiscount = Number(order.discount || 0);
+                // compute discounted subtotal from stored item totals (fallback to subtotal)
+                const discountedSubtotal = (order.orderedItems || []).reduce((s, it) => s + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0), 0) || subtotal;
 
                 const refundedVal = (() => {
                   if (order.refunded != null && !isNaN(Number(order.refunded)) && Number(order.refunded) > 0) return Number(order.refunded);
@@ -652,10 +654,10 @@ body {
                     const st = ((it.status||'').toString().toLowerCase());
                     if (['cancelled','returned'].includes(st)) {
                       if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return a + Number(it.refundAmount);
-                      const itemSubtotal = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
-                      const taxShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalTax : 0;
-                      const discountShare = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-                      return a + (itemSubtotal + taxShare - discountShare);
+                      const itemPaid = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
+                      const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
+                      // itemPaid already reflects coupon; do not subtract discountShare again
+                      return a + (itemPaid + taxShare);
                     }
                     return a;
                   }, 0);
@@ -669,7 +671,19 @@ body {
 
               <div class="info-item">
                 <span class="info-label">Total Amount</span>
-                <span class="info-value">₹<%= order.finalAmount.toLocaleString() %></span>
+                <% 
+                  const origSubtotalForOrder = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+                  const origTaxForOrder = Number(order.originalTax ?? order.tax ?? 0);
+                  const origShippingForOrder = Number(order.originalShipping ?? order.shipping ?? 0);
+                  const origAmountForDisplay = Math.round(((origSubtotalForOrder + origTaxForOrder + origShippingForOrder) + Number.EPSILON) * 100) / 100;
+                  const paidAmount = Number(order.finalAmount || 0);
+                %>
+                <% if (Math.abs(origAmountForDisplay - paidAmount) > 0.001) { %>
+                  <span class="info-value" style="text-decoration:line-through; color:var(--muted);">₹<%= origAmountForDisplay.toLocaleString() %></span>
+                  <span class="info-value" style="margin-left:8px; color:var(--green); font-weight:800;">₹<%= paidAmount.toLocaleString() %></span>
+                <% } else { %>
+                  <span class="info-value">₹<%= paidAmount.toLocaleString() %></span>
+                <% } %>
 
                 <% if (orderStatusLC === 'cancelled' || orderStatusLC === 'returned') { %>
                   <small style="color: var(--success); font-weight: 700; margin-top: 6px;">Full Refund Processed</small>

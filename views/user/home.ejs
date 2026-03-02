@@ -581,11 +581,19 @@
               <h3 class="product__title"><%= product.productName %></h3>
             </a>
             <div class="product__price flex">
-              <span class="new__price">₹<%= product.salesPrice.toLocaleString() %></span>
-              <% if (product.productOffer && product.productOffer > 0) { %>
-                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
-              <% } else if (product.regularPrice > product.salesPrice) { %>
-                <span class="old__price">₹<%= product.regularPrice.toLocaleString() %></span>
+              <% 
+                let displayPrice = product.salesPrice;
+                let originalPrice = null;
+                if (product.productOffer && product.productOffer > 0) {
+                    displayPrice = Math.round(product.salesPrice * (1 - product.productOffer/100) * 100) / 100;
+                    originalPrice = product.salesPrice;
+                } else if (product.regularPrice > product.salesPrice) {
+                    originalPrice = product.regularPrice;
+                }
+              %>
+              <span class="new__price">₹<%= displayPrice.toLocaleString() %></span>
+              <% if (originalPrice) { %>
+                <span class="old__price">₹<%= originalPrice.toLocaleString() %></span>
               <% } %>
             </div>
           </div>

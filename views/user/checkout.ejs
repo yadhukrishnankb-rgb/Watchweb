@@ -278,7 +278,14 @@
                                 </h4>
                                 <div class="price-line">
                                     <span>Price × Qty</span>
-                                    <span>₹<%= item.price.toLocaleString() %> × <%= item.quantity %></span>
+                                    <span>
+                                        ₹<%= item.price.toLocaleString() %> × <%= item.quantity %>
+                                        <% if (item.productId && item.productId.salesPrice && item.price < item.productId.salesPrice) { %>
+                                            <br><small style="color:#888;text-decoration:line-through;">
+                                                ₹<%= item.productId.salesPrice.toLocaleString() %> × <%= item.quantity %>
+                                            </small>
+                                        <% } %>
+                                    </span>
                                 </div>
                                 <div class="price-line">
                                     <strong>₹<%= item.totalPrice.toLocaleString() %></strong>
@@ -336,11 +343,56 @@
                     </div>
                 </div>
 
+                <!-- Coupon area -->
+                <div id="couponSection" style="margin-top:0.75rem;">
+                    <% if (availableCoupons && availableCoupons.length > 0) { %>
+                        <div class="coupon-list" style="margin-bottom:0.75rem;">
+                            <p style="font-weight:600;color:#164e63;">
+                              <% if (appliedCoupon && appliedCoupon.code) { %>
+                                Available coupons (click a different code to change):
+                              <% } else { %>
+                                Available coupons:
+                              <% } %>
+                            </p>
+                            <% availableCoupons.forEach(c => { %>
+                                <div class="coupon-item" style="display:flex;justify-content:space-between;align-items:center;padding:.5rem;border:1px solid #e2e8f0;border-radius:.5rem;margin-top:.4rem;">
+                                    <div>
+                                        <span style="font-weight:700;"><%= c.code %></span>
+                                        <span style="color:#475569;font-size:.9rem;"> - <% if(c.discountType==='fixed'){ %>₹<%= c.discountValue %><% } else { %><%= c.discountValue %>%<% } %></span>
+                                    </div>
+                                    <button type="button" class="apply-coupon-btn btn-green" data-code="<%= c.code %>" style="padding:.35rem .6rem;font-size:.85rem;">Apply</button>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <p style="color:#6b7280; font-size:0.9rem; margin-bottom:0.75rem;">No coupons available for your order</p>
+                    <% } %>
+
+                    <% if (appliedCoupon && appliedCoupon.code) { %>
+                        <div class="summary-line" style="color:#0c4a6e; font-weight:600;">
+                            <span>Coupon (<%= appliedCoupon.code %>)</span>
+                            <span>-₹<%= discount.toLocaleString() %></span>
+                            <button type="button" id="removeCouponBtn" style="background:transparent;border:none;color:#dc2626;font-size:0.9rem;">remove</button>
+                        </div>
+                    <% } %>
+
+                    <% if (!(appliedCoupon && appliedCoupon.code)) { %>
+                        <form id="couponForm" style="display:flex;gap:0.5rem;align-items:center;">
+                            <input type="text" name="code" placeholder="Have a coupon?" style="flex:1;padding:0.5rem;border:1px solid #d1d5db;border-radius:0.5rem;" />
+                            <% if (isDirect) { %>
+                                <input type="hidden" name="productId" value="<%= directProductId %>">
+                                <input type="hidden" name="quantity" value="1">
+                            <% } %>
+                            <button type="submit" class="btn-green" style="padding:0.5rem 0.75rem;">Apply</button>
+                        </form>
+                        <p id="couponMsg" style="margin:0.25rem 0 0;color:#dc2626;font-size:0.9rem;"></p>
+                    <% } %>
+                </div>
                 <div style="margin-top:.5rem;">
                     <div class="summary-line"><span>Subtotal</span> <strong>₹<%= subtotal.toLocaleString() %></strong></div>
                     <div class="summary-line"><span>Tax (18% GST)</span> <span>₹<%= (typeof tax !== 'undefined' ? tax.toFixed(2) : '0.00') %></span></div>
                     <% if (typeof discount !== 'undefined' && discount > 0) { %>
-                        <div class="summary-line" style="color:#b91c1c; font-weight:700;"><span>Discount</span> <span>-₹<%= discount.toLocaleString() %></span></div>
+                        <div class="summary-line" style="color:#b91c1c; font-weight:700;"><span>Coupon Discount</span> <span>-₹<%= discount.toLocaleString() %></span></div>
                     <% } %>
                     <div class="summary-line"><span>Shipping</span> <span class="<%= shipping === 0 ? 'text-green-600' : '' %>"><%= shipping === 0 ? 'FREE' : '₹' + shipping %></span></div>
                 </div>
@@ -411,6 +463,7 @@
 
 <script>
 // Payment method selection visual feedback + COD limit check
+<% const orderTotal = (typeof total === 'number' ? total : 0); %>
 document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', function() {
         document.querySelectorAll('.payment__option').forEach(opt => {
@@ -419,7 +472,7 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         this.closest('.payment__option').classList.add('selected');
 
         const codWarning = document.getElementById('cod-warning');
-        if (this.value === 'cod' && <%= total %> > 100000) {
+        if (this.value === 'cod' && orderTotal > 100000) {
             codWarning.classList.remove('hidden');
         } else {
             codWarning.classList.add('hidden');
@@ -430,6 +483,77 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 // Trigger initial state
 document.querySelector('input[name="paymentMethod"]:checked')?.dispatchEvent(new Event('change'));
 
+        // coupon form handlers
+        const couponForm = document.getElementById('couponForm');
+        async function submitCoupon(form) {
+            const fd = new FormData(form);
+            const payload = {};
+            for (let [k,v] of fd.entries()) payload[k] = v;
+            try {
+                const resp = await fetch('/checkout/apply-coupon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (resp.ok && data.success) {
+                    location.reload();
+                } else {
+                    document.getElementById('couponMsg').textContent = data.message || 'Invalid coupon';
+                }
+            } catch (err) {
+                console.error('Coupon apply error', err);
+                document.getElementById('couponMsg').textContent = 'Server error';
+            }
+        }
+
+        if (couponForm) {
+            couponForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = couponForm.querySelector('button');
+                btn.disabled = true;
+                await submitCoupon(couponForm);
+                btn.disabled = false;
+            });
+        }
+        // buttons from available coupon list
+        document.querySelectorAll('.apply-coupon-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const code = this.getAttribute('data-code');
+                if (!code) return;
+                // construct a temporary form to reuse submit logic
+                const temp = document.createElement('form');
+                temp.appendChild(Object.assign(document.createElement('input'), {name:'code',value:code}));
+                if (isDirect) {
+                    const pid = "<%= isDirect ? directProductId : '' %>";
+                    if (pid) {
+                        temp.appendChild(Object.assign(document.createElement('input'), {name:'productId',value:pid}));
+                        temp.appendChild(Object.assign(document.createElement('input'), {name:'quantity',value:'1'}));
+                    }
+                }
+                submitCoupon(temp);
+            });
+        });
+
+        const removeBtn = document.getElementById('removeCouponBtn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', async () => {
+                try {
+                    const resp = await fetch('/checkout/remove-coupon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin'
+                    });
+                    const data = await resp.json();
+                    if (data.success) location.reload();
+                    else alert(data.message);
+                } catch (err) {
+                    console.error('remove coupon error', err);
+                    alert('Could not remove coupon');
+                }
+            });
+        }
 // Address selection sync + form intercept
 document.addEventListener('DOMContentLoaded', function() {
     // Set default address in hidden field

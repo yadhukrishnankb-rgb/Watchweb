@@ -271,7 +271,21 @@ body {
           <img src="<%= (p && p.productImage && p.productImage[0]) ? p.productImage[0] : '/assets/img/smart-watch-realistic-image-black_1284-11873.avif' %>" alt="<%= p ? p.productName : 'Product' %>" class="wish-image">
           <div class="wish-body">
             <h3 class="wish-title"><%= p ? p.productName : 'Unknown product' %></h3>
-            <div class="wish-price">₹<%= p ? (p.salesPrice || 0).toLocaleString() : '0' %></div>
+            <% 
+                let wishPrice = p ? (p.salesPrice || 0) : 0;
+                let wishOriginal = null;
+                if (p && p.productOffer && p.productOffer > 0) {
+                    wishPrice = Math.round(wishPrice * (1 - p.productOffer/100) * 100) / 100;
+                    wishOriginal = p.salesPrice;
+                } else if (p && p.regularPrice > p.salesPrice) {
+                    wishOriginal = p.regularPrice;
+                }
+            %>
+            <div class="wish-price">₹<%= wishPrice.toLocaleString() %>
+                <% if (wishOriginal) { %>
+                    <span style="text-decoration:line-through; font-size:0.85rem; color:#888; margin-left:4px;">₹<%= wishOriginal.toLocaleString() %></span>
+                <% } %>
+            </div>
             <div class="wish-actions">
               <button class="btn btn-add" onclick="addToCartFromWishlist('<%= p ? p._id : '' %>', this)">Add to cart</button>
               <button class="btn btn-remove" onclick="removeFromWishlist('<%= p ? p._id : '' %>', this)">Remove</button>

@@ -7,6 +7,20 @@ const statusCodes = require('../../constants/statusCodes');
 
 const MAX_QUANTITY_PER_ITEM = 10;
 
+// --- pricing helper -------------------------------------------------------
+// returns the price the customer should pay after applying any product-level
+// offer.  The offer value is a percentage and is applied to the current
+// salesPrice. Rounds to two decimals.
+function getEffectivePrice(product) {
+    if (!product) return 0;
+    const base = typeof product.salesPrice === 'number' ? product.salesPrice : (product.price || 0);
+    if (product.productOffer && product.productOffer > 0) {
+        return Math.round(base * (1 - product.productOffer / 100) * 100) / 100;
+    }
+    return base;
+}
+
+
 // View Cart
 exports.viewCart = async (req, res) => {
     try {
@@ -105,12 +119,14 @@ exports.addToCart = async (req, res) => {
             // Prevent duplicate cart entries: inform caller that item already exists
             return res.status(statusCodes.OK).json({ success: false, alreadyInCart: true, message: messages.PRODUCT_ALREADY_IN_CART });
         } else {
-            // Push new item
+            // Push new item; use discount if applicable
+            const effectivePrice = getEffectivePrice(product);
+            const qtyInt = parseInt(quantity, 10);
             cart.items.push({
                 productId,
-                quantity: parseInt(quantity, 10),
-                price: product.salesPrice,
-                totalPrice: product.salesPrice * parseInt(quantity, 10)
+                quantity: qtyInt,
+                price: effectivePrice,
+                totalPrice: effectivePrice * qtyInt
             });
         }
 
@@ -183,7 +199,9 @@ exports.updateQuantity = async (req, res) => {
         }
 
         cartItem.quantity = newQuantity;
-        cartItem.totalPrice = product.salesPrice * newQuantity;
+        const effectivePrice = getEffectivePrice(product);
+        cartItem.price = effectivePrice;
+        cartItem.totalPrice = effectivePrice * newQuantity;
         await cart.save();
 
         res.json({ success: true, quantity: newQuantity, totalPrice: cartItem.totalPrice });

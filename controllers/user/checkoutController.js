@@ -4,11 +4,22 @@ const Cart = require('../../models/cartSchema');
 const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
 const Order = require('../../models/orderSchema'); 
+const Coupon = require('../../models/couponSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const razorpay = require('../../config/razorpay')
 const crypto = require('crypto');
 const { addToWallet } = require('./walletController');
+
+// --- pricing helper (mirrors cartController) --------------------------------
+function getEffectivePrice(product) {
+    if (!product) return 0;
+    const base = typeof product.salesPrice === 'number' ? product.salesPrice : (product.price || 0);
+    if (product.productOffer && product.productOffer > 0) {
+        return Math.round(base * (1 - product.productOffer / 100) * 100) / 100;
+    }
+    return base;
+}
 
 // --- Safe address helpers 
 function _safeAddresses(user) {
@@ -83,7 +94,9 @@ const loadCheckout = async (req, res) => {
                     // Product quantity reduced - auto-adjust
                     const oldQty = item.quantity;
                     item.quantity = p.quantity;
-                    item.totalPrice = p.salesPrice * p.quantity;
+                    const eff = getEffectivePrice(p);
+                    item.price = eff;
+                    item.totalPrice = eff * p.quantity;
                     
                     adjustedItems.push({
                         name: p.productName,
@@ -100,12 +113,15 @@ const loadCheckout = async (req, res) => {
         // Save cart if adjustments were made
         if (adjustedItems.length > 0) {
             // Update the actual cart in database
-            const updatedItems = cart.items.map(item => ({
-                productId: item.productId._id,
-                quantity: item.quantity,
-                price: item.productId.salesPrice,
-                totalPrice: item.totalPrice
-            }));
+            const updatedItems = cart.items.map(item => {
+                const eff = getEffectivePrice(item.productId);
+                return {
+                    productId: item.productId._id,
+                    quantity: item.quantity,
+                    price: eff,
+                    totalPrice: item.quantity * eff
+                };
+            });
             await Cart.findByIdAndUpdate(cart._id, { items: updatedItems });
         }
 
@@ -120,11 +136,40 @@ const loadCheckout = async (req, res) => {
         const subtotal = cart.items.reduce((sum, i) => sum + i.totalPrice, 0);
         const taxRate = 0.18;
         const tax = subtotal * taxRate;
-        const discount = 0; // Add coupon logic later
+
+        // coupon from session
+        let discount = 0;
+        let appliedCoupon = req.session.appliedCoupon;
+        if (appliedCoupon && typeof appliedCoupon.discountAmount === 'number') {
+            // if current subtotal is below required minimum, drop coupon
+            if (subtotal < (appliedCoupon.minAmount || 0)) {
+                delete req.session.appliedCoupon;
+                appliedCoupon = null;
+            } else {
+                discount = appliedCoupon.discountAmount;
+                if (discount > subtotal) discount = subtotal;
+            }
+        }
+
         const shipping = subtotal >= 1000 ? 0 : 79;
         const total = subtotal + tax + shipping - discount;
 
         const defaultAddress = safeDefaultAddress(user);
+
+        // fetch available coupons matching subtotal / validity
+        const now = new Date();
+        let availableCoupons = await Coupon.find({
+            isActive: true,
+            expiryDate: { $gt: now },
+            minAmount: { $lte: subtotal }
+        }).lean();
+        // filter based on usage limits
+        availableCoupons = availableCoupons.filter(c => {
+            if (c.usageLimit && c.usedCount >= c.usageLimit) return false;
+            const usedByCount = c.usedBy?.filter(u => u.user.toString() === userId.toString()).length || 0;
+            if (usedByCount >= (c.userUsageLimit || 1)) return false;
+            return true;
+        });
 
         // Pass adjustment data to view
         res.render('user/checkout', {
@@ -136,6 +181,8 @@ const loadCheckout = async (req, res) => {
             shipping,
             total,
             defaultAddress,
+            appliedCoupon,
+            availableCoupons,
             isDirect: false,
             adjustedItems,
             itemsRemoved: itemsToRemove,
@@ -150,197 +197,6 @@ const loadCheckout = async (req, res) => {
     }
 };
 
-
-// const placeOrder = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const { addressId, paymentMethod, productId, quantity } = req.body;
-
-//     if (!['cod', 'razorpay'].includes(paymentMethod)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid payment method. Use 'cod' or 'razorpay'"
-//       });
-//     }
-
-//     let itemsToOrder = [];
-//     let subtotal = 0;
-//     let isDirect = !!productId;  // if productId exists → direct buy
-
-//     if (isDirect) {
-//       // ── DIRECT BUY (Buy Now) ──
-//       if (!productId || !quantity) {
-//         return res.status(400).json({ success: false, message: "Product ID and quantity required" });
-//       }
-
-//       const product = await Product.findById(productId);
-//       if (!product) return res.status(404).json({ success: false, message: "Product not found" });
-
-//       const qty = parseInt(quantity);
-//       if (qty < 1 || product.quantity < qty) {
-//         return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
-//       }
-
-//       const price = product.salesPrice || product.price;
-//       const totalPrice = price * qty;
-
-//       itemsToOrder = [{
-//         product: product._id,
-//         name: product.productName,
-//         quantity: qty,
-//         price,
-//         totalPrice,
-//         productSnapshot: { image: product.productImage?.[0] || '' },
-//         status: 'Pending'
-//       }];
-
-//       subtotal = totalPrice;
-//     } else {
-//       // ── NORMAL CART CHECKOUT ──
-//       const cart = await Cart.findOne({ userId }).populate('items.productId');
-//       if (!cart || cart.items.length === 0) {
-//         return res.status(400).json({ success: false, message: messages.CART_EMPTY });
-//       }
-
-//       itemsToOrder = cart.items
-//         .filter(i => i.productId && i.productId.quantity >= i.quantity)
-//         .map(i => ({
-//           product: i.productId._id,
-//           name: i.productId.productName,
-//           quantity: i.quantity,
-//           price: i.price,
-//           totalPrice: i.totalPrice,
-//           productSnapshot: { image: i.productId.productImage?.[0] || '' },
-//           status: 'Pending'
-//         }));
-
-//       if (itemsToOrder.length === 0) {
-//         return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
-//       }
-
-//       subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
-//     }
-
-//     const tax = subtotal * 0.18;
-//     const shipping = subtotal >= 1000 ? 0 : 79;
-//     const total = subtotal + tax + shipping;
-
-//     // COD limit
-//     if (paymentMethod === 'cod' && total > 100000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Cash on Delivery not available for orders above ₹100000'
-//       });
-//     }
-
-//     const amountInPaise = Math.round(total * 100);
-
-//     // Address logic (same for both)
-//     const user = await User.findById(userId);
-//     if (!user) return res.status(404).json({ success: false, message: messages.USER_NOT_FOUND });
-
-//     let selectedAddress = getAddressById(user, addressId) || safeDefaultAddress(user);
-//     if (!selectedAddress) {
-//       return res.status(400).json({ success: false, message: messages.PLEASE_ADD_DELIVERY_ADDRESS });
-//     }
-
-//     const orderAddress = {
-//       fullName: (selectedAddress.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer').trim(),
-//       phone: selectedAddress.phone || user.phone || '',
-//       altPhone: selectedAddress.altPhone || '',
-//       street: selectedAddress.street || selectedAddress.line1 || selectedAddress.address || 'Not provided',
-//       landmark: selectedAddress.landmark || '',
-//       locality: selectedAddress.locality || '',
-//       city: selectedAddress.city || 'Not Available',
-//       state: selectedAddress.state || 'Not Available',
-//       pincode: selectedAddress.pincode || 'PIN Missing',
-//       country: selectedAddress.country || 'India'
-//     };
-
-//     if (!orderAddress.fullName.trim() || !orderAddress.city.trim() || !orderAddress.state.trim() || !orderAddress.pincode.trim()) {
-//       return res.status(400).json({ success: false, message: 'Address missing required fields' });
-//     }
-
-//     // Common order data
-//     let orderData = {
-//       orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
-//       user: userId,
-//       orderedItems: itemsToOrder,
-//       subtotal,
-//       tax,
-//       shipping,
-//       discount: 0,
-//       totalPrice: total,
-//       finalAmount: total,
-//       address: orderAddress,
-//       paymentMethod: paymentMethod.toUpperCase(),
-//       paymentStatus: 'Pending',
-//       status: 'Pending',
-//       pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-//       createdOn: new Date()
-//     };
-
-//     // ── COD FLOW (both normal & direct) ──
-//     if (paymentMethod === 'cod') {
-//       const order = await Order.create(orderData);
-
-//       const stockDeducted = await atomicDeductStock(
-//         orderData.orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
-//       );
-
-//       if (!stockDeducted) {
-//         await Order.findByIdAndDelete(order._id);
-//         return res.status(400).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
-//       }
-
-//       if (!isDirect) await Cart.deleteOne({ user: userId });  // only clear cart for normal checkout
-
-//       return res.json({
-//         success: true,
-//         redirectUrl: `/order-success/${order._id}`
-//       });
-//     }
-
-//     // ── RAZORPAY FLOW (both normal & direct) ──
-//     const rzpOrder = await razorpay.orders.create({
-//       amount: amountInPaise,
-//       currency: 'INR',
-//       receipt: `rcpt_${Date.now()}`,
-//       notes: { userId: userId.toString(), isDirect: isDirect ? 'yes' : 'no' }
-//     });
-
-//     orderData.razorpayOrderId = rzpOrder.id;
-
-//     const order = await Order.create(orderData);
-
-//     // Do NOT delete cart or deduct stock yet!
-
-//     return res.json({
-//       success: true,
-//       razorpay: {
-//         key: process.env.RAZORPAY_KEY_ID,
-//         order_id: rzpOrder.id,
-//         amount: amountInPaise,
-//         currency: 'INR',
-//         name: "Your Store Name",
-//         description: `Payment for Order #${order.orderId}`,
-//         prefill: {
-//           name: user.name || 'Customer',
-//           email: user.email || '',
-//           contact: orderAddress.phone || ''
-//         }
-//       },
-//       orderMongoId: order._id.toString()
-//     });
-
-//   } catch (err) {
-//     console.error('Place Order Error:', err);
-//     return res.status(500).json({
-//       success: false,
-//       message: messages.ORDER_FAILED || 'Order placement failed'
-//     });
-//   }
-// };
 
 const placeOrder = async (req, res) => {
   try {
@@ -359,6 +215,11 @@ const placeOrder = async (req, res) => {
     let subtotal = 0;
     let isDirect = !!productId;
 
+    // coupon from session
+    let discount = 0;
+    let appliedCoupon = req.session.appliedCoupon;
+    // we will recalc discount later once subtotal known
+
     if (isDirect) {
       // Direct buy logic (unchanged)
       if (!productId || !quantity) {
@@ -373,7 +234,7 @@ const placeOrder = async (req, res) => {
         return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
       }
 
-      const price = product.salesPrice || product.price;
+      const price = getEffectivePrice(product);
       const totalPrice = price * qty;
 
       itemsToOrder = [{
@@ -413,9 +274,47 @@ const placeOrder = async (req, res) => {
       subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
     }
 
-    const tax = subtotal * 0.18;
-    const shipping = subtotal >= 1000 ? 0 : 79;
-    const total = subtotal + tax + shipping;
+    // preserve the original subtotal before coupon for later display/refund logic
+    const preCouponSubtotal = subtotal;
+
+    // re-evaluate coupon now that we know subtotal
+    if (appliedCoupon && typeof appliedCoupon.discountAmount === 'number') {
+      if (subtotal < (appliedCoupon.minAmount || 0)) {
+        // invalid coupon – drop it
+        delete req.session.appliedCoupon;
+        appliedCoupon = null;
+        discount = 0;
+      } else {
+        discount = appliedCoupon.discountAmount;
+        if (discount > subtotal) discount = subtotal;
+
+        // distribute discount across items proportionally so item.totalPrice reflects coupon
+        if (discount > 0 && subtotal > 0) {
+          const ratio = discount / subtotal;
+          let adjusted = 0;
+          itemsToOrder = itemsToOrder.map((it, idx) => {
+            const orig = Number(it.totalPrice || 0);
+            const reduction = Math.round(orig * ratio * 100) / 100;
+            // ensure we don't overshoot on last item due to rounding
+            const newPrice = Math.round((orig - reduction) * 100) / 100;
+            adjusted += newPrice;
+            return { ...it, totalPrice: newPrice };
+          });
+          // recompute subtotal to reflect adjusted values (may differ due to rounding)
+          subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
+        }
+      }
+    }
+
+    // calculate tax/shipping/total based on original (pre-discount) subtotal
+    const originalSubtotal = preCouponSubtotal;
+    const tax = originalSubtotal * 0.18;
+    const shipping = originalSubtotal >= 1000 ? 0 : 79;
+    const total = originalSubtotal + tax + shipping - discount;
+
+    // for rendering we may want both values
+    const displaySubtotal = originalSubtotal; // shown on summary
+    const postDiscountSubtotal = subtotal;    // not used directly but kept in case
 
     // COD limit
     if (paymentMethod === 'cod' && total > 100000) {
@@ -453,22 +352,29 @@ const placeOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Address missing required fields' });
     }
 
+    // prepare orderData with coupon if applied
     let orderData = {
       orderId: `ORD${Date.now()}${Math.floor(Math.random() * 9000) + 1000}`,
       user: userId,
       orderedItems: itemsToOrder,
-      subtotal,
+      subtotal: originalSubtotal,          // store pre-discount amount
+      discountedSubtotal: subtotal,        // keep post-discount value if needed
       tax,
       shipping,
-      discount: 0,
+      discount: discount || 0,            // generic discount field
+      couponDiscount: discount || 0,
       totalPrice: total,
       finalAmount: total,
+      // store original subtotal for display/refund calculations (duplicate of subtotal for clarity)
+      originalSubtotal: preCouponSubtotal,
       address: orderAddress,
       paymentMethod: paymentMethod.toUpperCase(),
       paymentStatus: 'Pending',
       status: 'Pending',
       pendingCancelTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      createdOn: new Date()
+      createdOn: new Date(),
+      couponApplied: !!appliedCoupon,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined
     };
 
     // ── WALLET PAYMENT ──
@@ -497,6 +403,15 @@ const placeOrder = async (req, res) => {
       // Debit wallet
       await addToWallet(userId, total, 'debit', 'Order Payment', order._id);
 
+      // coupon usage tracking
+      if (appliedCoupon) {
+        await Coupon.findByIdAndUpdate(appliedCoupon.couponId, {
+          $inc: { usedCount: 1 },
+          $push: { usedBy: { user: userId } }
+        });
+        delete req.session.appliedCoupon;
+      }
+
       if (!isDirect) await Cart.deleteOne({ user: userId });
 
       return res.json({
@@ -516,6 +431,15 @@ const placeOrder = async (req, res) => {
       if (!stockDeducted) {
         await Order.findByIdAndDelete(order._id);
         return res.status(400).json({ success: false, message: messages.STOCK_CHANGED_TRY_AGAIN });
+      }
+
+      // coupon tracking
+      if (appliedCoupon) {
+        await Coupon.findByIdAndUpdate(appliedCoupon.couponId, {
+          $inc: { usedCount: 1 },
+          $push: { usedBy: { user: userId } }
+        });
+        delete req.session.appliedCoupon;
       }
 
       if (!isDirect) await Cart.deleteOne({ user: userId });
@@ -545,7 +469,7 @@ const placeOrder = async (req, res) => {
         order_id: rzpOrder.id,
         amount: amountInPaise,
         currency: 'INR',
-        name: "Your Store Name",
+        name: "EverTime",
         description: `Payment for Order #${order.orderId}`,
         prefill: {
           name: user.name || 'Customer',
@@ -581,7 +505,7 @@ const verifyPayment = async (req, res) => {
       .digest('hex');
 
     if (generatedSignature !== razorpay_signature) {
-      // ❌ Invalid signature → payment failed / tampered
+      //  Invalid signature → payment failed / tampered
       await Order.findByIdAndUpdate(orderMongoId, {
         paymentStatus: 'Failed',
         status: 'Pending' // or 'Payment Failed' if you add that enum
@@ -589,7 +513,7 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
-    // ✅ Valid payment
+    //  Valid payment
     const order = await Order.findById(orderMongoId);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
@@ -600,6 +524,18 @@ const verifyPayment = async (req, res) => {
     order.status = 'Pending'; // or 'Placed' — your choice
 
     await order.save();
+
+    // coupon tracking after successful payment
+    if (order.couponApplied && order.couponCode) {
+      const sessionCoupon = req.session.appliedCoupon;
+      if (sessionCoupon && sessionCoupon.couponId) {
+        await Coupon.findByIdAndUpdate(sessionCoupon.couponId, {
+          $inc: { usedCount: 1 },
+          $push: { usedBy: { user: order.user } }
+        });
+      }
+      delete req.session.appliedCoupon;
+    }
 
     // Now reduce stock
     const items = order.orderedItems.map(item => ({
@@ -682,20 +618,51 @@ const directCheckout = async (req, res) => {
     const subtotal = fakeCart.items.reduce((s, i) => s + i.totalPrice, 0);
     const tax = subtotal * 0.18;
     const shipping = subtotal >= 1000 ? 0 : 79;
-    const total = subtotal + tax + shipping;
+
+    // coupon from session
+    let discount = 0;
+    let appliedCoupon = req.session.appliedCoupon;
+    if (appliedCoupon && typeof appliedCoupon.discountAmount === 'number') {
+      if (subtotal < (appliedCoupon.minAmount || 0)) {
+        delete req.session.appliedCoupon;
+        appliedCoupon = null;
+      } else {
+        discount = appliedCoupon.discountAmount;
+        if (discount > subtotal) discount = subtotal;
+      }
+    }
+
+    // for direct purchase subtotal is pre-discount; tax calculated on it
+    const total = subtotal + tax + shipping - discount;
 
     const user = await User.findById(userId).lean();
     const defaultAddress = safeDefaultAddress(user);
+
+    // available coupons for direct purchase
+    const now = new Date();
+    let availableCoupons = await Coupon.find({
+        isActive: true,
+        expiryDate: { $gt: now },
+        minAmount: { $lte: subtotal }
+    }).lean();
+    availableCoupons = availableCoupons.filter(c => {
+        if (c.usageLimit && c.usedCount >= c.usageLimit) return false;
+        const usedByCount = c.usedBy?.filter(u => u.user.toString() === userId.toString()).length || 0;
+        if (usedByCount >= (c.userUsageLimit || 1)) return false;
+        return true;
+    });
 
     res.render('user/checkout', {
       user,
       cart: fakeCart,
       subtotal,
       tax,
-      discount: 0,
+      discount,
       shipping,
       total,
       defaultAddress,
+      appliedCoupon,
+      availableCoupons,
       isDirect: true,
       directProductId: productId,
       hasAdjustments: false,
@@ -801,6 +768,110 @@ const addAddressFromCheckout = async (req, res) => {
 }
 
 
+const applyCoupon = async (req, res) => {
+  try {
+    const { code, productId, quantity } = req.body;
+    const userId = req.session.user._id;
+
+    if (!code || typeof code !== 'string' || code.trim() === ''){
+      return res.status(400).json({ success: false, message: 'Please enter a coupon code'});
+    }
+
+    const coupon = await Coupon.findOne({
+      code: code.trim().toUpperCase(),
+      isActive: true,
+    });
+
+    if(!coupon) {
+      return res.status(400).json({ success: false, message: 'Invalid or inactive coupon code'})
+    }
+   
+    //check expiry
+    if (new Date() > new Date(coupon.expiryDate)) {
+      return res.status(400).json({ success: false, message: 'Coupon code has expired'})
+    }
+
+    //Get current cart subtotal (or direct-buy)
+    let subtotal = 0;
+
+    if (productId) {
+      // direct purchase
+      const product = await Product.findById(productId);
+      if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+      const qty = parseInt(quantity) || 1;
+      if (qty < 1 || product.quantity < qty) {
+        return res.status(400).json({ success: false, message: messages.OUT_OF_STOCK });
+      }
+      const price = getEffectivePrice(product);
+      subtotal = price * qty;
+    } else {
+      const cart = await Cart.findOne({ user: userId}).populate('items.productId');
+      if (!cart || cart.items.length === 0) {
+        return res.status(400).json({ success: false, message: 'Your cart is empty' });
+      }
+      subtotal = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    }
+
+      //min amount check
+      if (subtotal < coupon.minAmount) {
+        return res.status(400).json({ success: false, message: `Minimum order amount of ₹${coupon.minAmount} required to use this coupon `})
+      }
+
+      //Global usage limit chceck
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+        return res.status(400).json({success: false, message: 'Coupon usage limit reached'})
+      }
+
+      //per-user limit
+      const userUsed = coupon.usedBy?.filter(u => u.user.toString() === userId.toString()).length || 0;
+    if (userUsed >= coupon.userUsageLimit) {
+      return res.status(400).json({ success: false, message: 'You have already used this coupon' });
+    }
+
+    // Calculate discount
+    let discount = 0;
+    if (coupon.discountType === 'fixed') {
+      discount = coupon.discountValue;
+    } else { // percentage
+      discount = (subtotal * coupon.discountValue) / 100;
+      if (coupon.maxDiscount) {
+        discount = Math.min(discount, coupon.maxDiscount);
+      }
+    }
+
+    // Store in session
+    req.session.appliedCoupon = {
+      code: coupon.code,
+      couponId: coupon._id.toString(),
+      discountAmount: discount,
+      minAmount: coupon.minAmount || 0
+    };
+
+    res.json({
+      success: true,
+      discount: discount.toFixed(2),
+      message: `Coupon applied! ₹${discount.toFixed(2)} off`
+    });
+
+
+  }catch(err){
+    console.error('Apply coupon error:', err);
+    res.status(500).json({ success: false, message: 'Something went wrong' });
+  
+
+  }
+}
+
+// Remove Coupon
+const removeCoupon = (req, res) => {
+  if (req.session.appliedCoupon) {
+    delete req.session.appliedCoupon;
+    return res.json({ success: true, message: 'Coupon removed' });
+  }
+  res.json({ success: false, message: 'No coupon applied' });
+};
+
+
 module.exports = { 
     loadCheckout,
      placeOrder,
@@ -808,7 +879,9 @@ module.exports = {
       orderSuccess,
         directCheckout,
           atomicDeductStock,
-          addAddressFromCheckout
+          addAddressFromCheckout,
+          applyCoupon,
+          removeCoupon
      };
 
 

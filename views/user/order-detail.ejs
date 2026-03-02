@@ -1,402 +1,459 @@
-<!-- views/user/order-detail.ejs -->
 <%- include('../partials/user/header') %>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-    .order-detail-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-    }
-    
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6b7280;
-        text-decoration: none;
-        margin-bottom: 1.5rem;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-    
-    .back-link:hover {
-        color: #3b82f6;
-        transform: translateX(-4px);
-    }
-    
-    .page-header {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        padding: 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-    }
-    
-    .page-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 0.5rem;
-    }
-    
-    .page-subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.95rem;
-    }
-    
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green:      #4a5e4a;
+  --green-dk:   #3a4a3a;
+  --green-lt:   #5a7a5a;
+  --bg:         #f0f4f0;
+  --text:       #2a3a2a;
+  --muted:      #7a9080;
+  --line:       rgba(74,94,74,.12);
+  --red:        #e8435a;
+  --success:    #2ecc71;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.order-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: var(--green);
+    transform: translateX(-4px);
+}
+
+.page-header {
+    background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(74,94,74, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    top: -100px;
+    right: -80px;
+    pointer-events: none;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.95rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+.order-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+@media (min-width: 768px) {
     .order-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 2rem;
+        grid-template-columns: 2fr 1fr;
     }
-    
-    @media (min-width: 768px) {
-        .order-grid {
-            grid-template-columns: 2fr 1fr;
-        }
-    }
-    
-    .card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.75rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 1.5rem;
-        transition: all 0.3s;
-    }
-    
-    .card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .card-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .card-icon {
-        font-size: 1.5rem;
-    }
-    
-    .order-item {
-        display: flex;
-        gap: 1.25rem;
-        padding: 1.25rem;
-        border: 2px solid #f3f4f6;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        transition: all 0.2s;
-    }
-    
-    .order-item:hover {
-        border-color: #3b82f6;
-        background: #f9fafb;
-        transform: translateX(4px);
-    }
-    
-    .order-item:last-child {
-        margin-bottom: 0;
-    }
-    
-    .item-image {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .item-details {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    
-    .item-name {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 0.25rem;
-    }
-    
-    .item-price {
-        color: #6b7280;
-        font-size: 0.95rem;
-    }
-    
-    .item-total {
-        font-weight: 700;
-        color: #3b82f6;
-        font-size: 1.1rem;
-        margin-top: 0.25rem;
-    }
-    
-    .address-card {
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-        border-radius: 12px;
-        border: 2px solid #e5e7eb;
-    }
-    
-    .address-name {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 0.75rem;
-    }
-    
-    .address-line {
-        color: #4b5563;
-        margin-bottom: 0.4rem;
-        line-height: 1.6;
-    }
-    
-    .status-card {
-        text-align: center;
-        padding: 2rem 1.5rem;
-        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-        border: 2px solid #e5e7eb;
-    }
-    .text-success { color: #10b981 !important; }
-.text-danger   { color: #ef4444 !important; }
+}
+
+.card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.75rem;
+    box-shadow: 0 2px 8px rgba(74,94,74, 0.08);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s;
+    border: 1px solid var(--line);
+}
+
+.card:hover {
+    box-shadow: 0 6px 16px rgba(74,94,74, 0.12);
+}
+
+.card-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-icon {
+    font-size: 1.5rem;
+}
+
+.order-item {
+    display: flex;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    border: 2px solid var(--line);
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+}
+
+.order-item:hover {
+    border-color: var(--green);
+    background: #fafcfa;
+    transform: translateX(4px);
+}
+
+.order-item:last-child {
+    margin-bottom: 0;
+}
+
+.item-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(74,94,74, 0.15);
+}
+
+.item-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.item-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+}
+
+.item-price {
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.item-total {
+    font-weight: 800;
+    color: var(--green);
+    font-size: 1.1rem;
+    margin-top: 0.25rem;
+}
+
+.address-card {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+    border-radius: 1rem;
+    border: 2px solid var(--line);
+}
+
+.address-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+}
+
+.address-line {
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+.status-card {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(135deg, #dde8dd 0%, #ffffff 100%);
+    border: 2px solid var(--line);
+}
+
+.text-success { color: var(--success) !important; }
+.text-danger   { color: var(--red) !important; }
 .text-warning  { color: #f59e0b !important; }
 .fw-bold       { font-weight: 700 !important; }
-    
-    .status-badge {
-        display: inline-block;
-        padding: 0.75rem 1.5rem;
-        border-radius: 25px;
-        font-size: 1rem;
-        font-weight: 700;
-        text-transform: capitalize;
-        margin-bottom: 1rem;
-    }
-    
-    .status-pending { 
-        background: #fef3c7; 
-        color: #92400e;
-        border: 2px solid #fbbf24;
-    }
-    
-    .status-processing { 
-        background: #dbeafe; 
-        color: #1e40af;
-        border: 2px solid #3b82f6;
-    }
-    
-    .status-shipped { 
-        background: #dcfce7; 
-        color: #166534;
-        border: 2px solid #22c55e;
-    }
-    
-    .status-delivered { 
-        background: #d1fae5; 
-        color: #047857;
-        border: 2px solid #10b981;
-    }
-    
-    .status-cancelled { 
-        background: #fee2e2; 
-        color: #991b1b;
-        border: 2px solid #ef4444;
-    }
-    
-    .status-date {
-        font-size: 0.9rem;
-        color: #6b7280;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    
-    .info-grid {
-        display: grid;
-        gap: 1rem;
-    }
-    
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    
-    .info-label {
-        color: #6b7280;
-        font-weight: 500;
-    }
-    
-    .info-value {
-        color: #111827;
-        font-weight: 600;
-    }
-    
-    .amount-card {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        border: 2px solid #bae6fd;
-    }
-    
-    .amount-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        font-size: 0.95rem;
-    }
-    
-    .amount-label {
-        color: #0c4a6e;
-        font-weight: 500;
-    }
-    
-    .amount-value {
-        color: #0c4a6e;
-        font-weight: 600;
-    }
-    
-    .amount-divider {
-        height: 1px;
-        background: #7dd3fc;
-        margin: 0.75rem 0;
-    }
-    
-    .amount-total {
-        display: flex;
-        justify-content: space-between;
-        padding: 1rem 0 0;
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #0c4a6e;
-    }
-    
-    .btn-invoice {
-        display: block;
-        width: 100%;
-        padding: 1rem;
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: all 0.3s;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
-    }
-    
-    .btn-invoice:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
-    }
-    
-    .payment-method {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: #f3f4f6;
-        border-radius: 8px;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 0.75rem;
-    }
-    
-    .payment-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.5rem;
-        background: transparent;
-        border-radius: 8px;
-        font-weight: 700;
-        color: inherit;
-    }
 
+.status-badge {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: capitalize;
+    margin-bottom: 1rem;
+}
+
+.status-pending { 
+    background: #fef3c7; 
+    color: #92400e;
+    border: 2px solid #fbbf24;
+}
+
+.status-processing { 
+    background: #e0f2fe; 
+    color: #075985;
+    border: 2px solid #0ea5e9;
+}
+
+.status-shipped { 
+    background: #dcfce7; 
+    color: #166534;
+    border: 2px solid #22c55e;
+}
+
+.status-delivered { 
+    background: #d5f5e3; 
+    color: #1a7a45;
+    border: 2px solid var(--success);
+}
+
+.status-cancelled { 
+    background: #fde8ec; 
+    color: #9a1928;
+    border: 2px solid var(--red);
+}
+
+.status-returned {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #fbbf24;
+}
+
+.status-date {
+    font-size: 0.9rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.info-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.info-value {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.amount-card {
+    background: linear-gradient(135deg, #dde8dd 0%, #e8f0e8 100%);
+    border: 2px solid var(--line);
+}
+
+.amount-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    font-size: 0.95rem;
+}
+
+.amount-label {
+    color: var(--green-dk);
+    font-weight: 700;
+}
+
+.amount-value {
+    color: var(--green-dk);
+    font-weight: 700;
+}
+
+.amount-divider {
+    height: 1px;
+    background: var(--green);
+    margin: 0.75rem 0;
+}
+
+.amount-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--green);
+}
+
+.btn-invoice {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    font-weight: 800;
+    font-size: 1rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.btn-invoice:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74,94,74, 0.35);
+    background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
+}
+
+.payment-method {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #dde8dd, #e8f0e8);
+    border-radius: 0.625rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+}
+
+.payment-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    color: inherit;
+}
 
 .action-btn {
-    padding: 8px 16px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 0.625rem;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    font-family: 'Nunito', sans-serif;
     transition: all 0.3s;
     margin-right: 8px;
     margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
 .btn-cancel {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background: #fde8ec;
+    color: var(--red);
+    border: 2px solid rgba(232,67,90,0.3);
 }
 
 .btn-cancel:hover {
-    background: #fecaca;
+    background: var(--red);
+    color: white;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(232,67,90,0.3);
 }
 
 .btn-return {
     background: #fef3c7;
     color: #b45309;
-    border: 1px solid #fcd34d;
+    border: 2px solid #fcd34d;
 }
 
 .btn-return:hover {
-    background: #fcd34d;
+    background: #fbbf24;
+    color: white;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(251,191,36,0.3);
 }
 
-    
-    @media (max-width: 768px) {
-        .order-detail-container {
-            padding: 1rem 0.5rem;
-        }
-        
-        .page-header {
-            padding: 1.5rem;
-        }
-        
-        .page-title {
-            font-size: 1.5rem;
-        }
-        
-        .order-item {
-            flex-direction: column;
-        }
-        
-        .item-image {
-            width: 100%;
-            height: 200px;
-        }
-        
-        .card {
-            padding: 1.25rem;
-        }
-        
-        .card-title {
-            font-size: 1.2rem;
-        }
+@media (max-width: 768px) {
+    .order-detail-container {
+        padding: 1rem 0.5rem;
     }
+    
+    .page-header {
+        padding: 1.5rem;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .order-item {
+        flex-direction: column;
+    }
+    
+    .item-image {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .card {
+        padding: 1.25rem;
+    }
+    
+    .card-title {
+        font-size: 1.2rem;
+    }
+}
 </style>
 
 <div class="order-detail-container">
     <% 
-        // Top-level normalized order status (simple, robust fallback)
         const rawFromOrder = (order && (order.status || order.orderStatus || order.currentStatus || order.state) || '').toString().trim().toLowerCase();
-        // derive from item statuses when appropriate
         const itemStatuses = (order.orderedItems || []).map(i => ((i.status||'').toString().trim().toLowerCase())).filter(Boolean);
         let derivedOrderStatus = rawFromOrder || '';
         if (itemStatuses.length > 0) {
@@ -408,8 +465,10 @@
         const orderRaw = (derivedOrderStatus || rawFromOrder || 'pending').toString().trim();
         const orderStatusClass = (orderRaw || 'pending').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
         const orderStatusDisplay = orderRaw ? orderRaw.split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ') : 'Pending';
+        const couponDiscount = Number(order.couponDiscount ?? order.discount ?? 0);
+        const couponCode = order.couponCode || order.coupon || '';
     %>
-    <a href="/orders" class="back-link">Back to Orders</a>
+    <a href="/orders" class="back-link">← Back to Orders</a>
 
     <div class="page-header">
         <h1 class="page-title">Order #<%= order.orderId %></h1>
@@ -420,42 +479,47 @@
         <!-- Order Items -->
         <div>
             <div class="card">
-                <h2 class="card-title">Order Items</h2>
+                <h2 class="card-title">📦 Order Items</h2>
 
-                <!-- ONLY THIS PART IS REPLACED — REST OF YOUR CODE IS EXACTLY SAME -->
                 <% order.orderedItems.forEach(item => { %>
-                                                                <% 
-                                                                    // Inline per-item normalization (fall back to orderRaw)
-                                                                    const itemRaw = (item && (item.status || item.itemStatus || item.state) || '').toString().trim();
-                                                                    const itemStatus = (itemRaw || '').toLowerCase();
-                                                                    // Prefer order status when item status is empty or is the generic 'Placed'
-                                                                    const rawForDisplay = (itemRaw && itemRaw.toLowerCase() !== 'placed') ? itemRaw : (orderRaw || 'Pending');
-                                                                    const displayStatus = rawForDisplay.toString().split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
-                                                                    const canCancel = orderStatusClass === 'pending' && itemStatus !== 'cancelled';
-                                                                    const canReturn = (itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered') && itemStatus !== 'cancelled' && itemStatus !== 'returned';
-                                                                %>
+                    <% 
+                        const itemRaw = (item && (item.status || item.itemStatus || item.state) || '').toString().trim();
+                        const itemStatus = (itemRaw || '').toLowerCase();
+                        const rawForDisplay = (itemRaw && itemRaw.toLowerCase() !== 'placed') ? itemRaw : (orderRaw || 'Pending');
+                        const displayStatus = rawForDisplay.toString().split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
+                        const canCancel = orderStatusClass === 'pending' && itemStatus !== 'cancelled';
+                        const canReturn = (itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered') && itemStatus !== 'cancelled' && itemStatus !== 'returned';
+                    %>
 
                     <div class="order-item" data-item-id="<%= item._id %>">
                         <img src="<%= item.productSnapshot.image %>" alt="<%= item.name %>" class="item-image">
                         
                         <div class="item-details">
                             <h3 class="item-name"><%= item.name %></h3>
+                            <% 
+                                // Determine original unit price (prefer product's stored price if populated)
+                                const origUnit = Number(item.product?.price ?? item.price ?? 0);
+                                const origLine = Math.round((origUnit * (item.quantity || 0) + Number.EPSILON) * 100) / 100;
+                                // Paid amount for this item (item.totalPrice is post-discount if present)
+                                const paidLine = Math.round((Number(item.totalPrice ?? (item.price * item.quantity) ?? 0) + Number.EPSILON) * 100) / 100;
+                            %>
                             <p class="item-price">
-                                Quantity: <%= item.quantity %> × ₹<%= item.price.toLocaleString() %>
+                                Quantity: <%= item.quantity %> × ₹<%= origUnit.toLocaleString() %>
                             </p>
-                            <p class="item-total">Total: ₹<%= (item.price * item.quantity).toLocaleString() %></p>
+                            <p class="item-total">Total: ₹<%= origLine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                            <% if (paidLine < origLine) { %>
+                                <p style="color:var(--success); font-weight:700; margin-top:6px;">You paid: ₹<%= paidLine.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                                <p style="color:var(--success); font-weight:700; margin-top:6px;">You saved ₹<%= (origLine - paidLine).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></p>
+                            <% } %>
 
-                            <!-- Item Status -->
-                                <div style="margin-top:8px; font-weight:700; color:#374151;">
+                            <div style="margin-top:8px; font-weight:700; color:var(--text);">
                                 Status: 
-                                <span style="color:#0a5f5f; text-transform:capitalize;">
+                                <span style="color:var(--green); text-transform:capitalize;">
                                     <%= displayStatus %>
                                 </span>
                             </div>
 
-                            <!-- Action Buttons & Status Messages -->
                             <div style="margin-top:12px;">
-
                                 <% if (canCancel) { %>
                                     <button class="action-btn btn-cancel" 
                                             onclick="cancelOrderItem('<%= order._id %>','<%= item._id %>', this)">
@@ -483,376 +547,313 @@
                                 <% } %>
 
                                 <% if (itemStatus === 'cancelled') { %>
-                                    <div style="margin-top:8px; color:#10b981; font-weight:700;">
+                                    <div style="margin-top:8px; color:var(--success); font-weight:700;">
                                         Order Cancelled
                                     </div>
                                 <% } %>
 
                                 <% if (itemStatus === 'returned') { %>
-                                    <div style="margin-top:8px; color:#10b981; font-weight:700;">
+                                    <div style="margin-top:8px; color:var(--success); font-weight:700;">
                                         Return approved
                                     </div>
                                 <% } %>
-
                             </div>
                         </div>
                     </div>
                 <% }) %>
-                <!-- END OF REPLACED SECTION -->
-
             </div>
 
-       <div class="card">
-  <h2 class="card-title">Shipping Address</h2>
-  <div class="address-card" style="background:#f8fafc; padding:1.5rem; border-radius:12px; border:1px solid #e2e8f0;">
-        <% 
+            <div class="card">
+                <h2 class="card-title">📍 Shipping Address</h2>
+                <div class="address-card">
+                    <% 
                         const a = order.address || order.shippingAddress || {};
-            const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
-            const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
-            const altPhone = a.altPhone || '';
+                        const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
+                        const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
+                        const altPhone = a.altPhone || '';
+                        let addr = '';
+                        if (typeof a === 'string') {
+                            addr = a;
+                        } else {
+                            addr = a.street || a.address || a.line1 || a.addressLine1 || '';
+                            if (!addr && a.address && typeof a.address === 'object') {
+                                addr = a.address.line1 || a.address.street || a.address.addressLine1 || '';
+                            }
+                        }
+                        let landmark = '';
+                        if (a.landmark) landmark = a.landmark;
+                        else if (a.addressLine2) landmark = a.addressLine2;
+                        else if (a.address && typeof a.address === 'object' && a.address.landmark) landmark = a.address.landmark;
+                        const locality = a.locality || a.area || '';
+                        const city = a.city || a.town || a.district || 'Not Available';
+                        const state = a.state || a.stateName || 'Not Available';
+                        const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
+                    %>
 
-            // Robust street extraction (handles different shapes: string, nested object, various keys)
-            let addr = '';
-            if (typeof a === 'string') {
-                addr = a;
-            } else {
-                addr = a.street || a.address || a.line1 || a.addressLine1 || '';
-                if (!addr && a.address && typeof a.address === 'object') {
-                    addr = a.address.line1 || a.address.street || a.address.addressLine1 || '';
-                }
-            }
+                    <div style="font-size:0.95rem; line-height:1.9;">
+                        <p><strong>Name:</strong> <span style="font-weight:700; color:var(--text);"><%= name %></span></p>
+                        
+                        <% if (addr) { %>
+                            <p><strong>Address:</strong> <span style="color:var(--text);"><%= addr %><%= locality ? ', ' + locality : '' %></span></p>
+                        <% } %>
 
-            // Robust landmark extraction
-            let landmark = '';
-            if (a.landmark) landmark = a.landmark;
-            else if (a.addressLine2) landmark = a.addressLine2;
-            else if (a.address && typeof a.address === 'object' && a.address.landmark) landmark = a.address.landmark;
+                        <% if (landmark) { %>
+                            <p><strong>Landmark:</strong> <span style="color:var(--text);"><%= landmark %></span></p>
+                        <% } %>
 
-            const locality = a.locality || a.area || '';
-            const city = a.city || a.town || a.district || 'Not Available';
-            const state = a.state || a.stateName || 'Not Available';
-            const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
-        %>
+                        <p><strong>City:</strong> <%= city %></p>
+                        <p><strong>State:</strong> <%= state %></p>
+                        <p><strong>Pincode:</strong> <strong><%= pincode %></strong></p>
+                        <p><strong>Mobile:</strong> <span style="color:var(--green); font-weight:700;"><%= phone %></span></p>
+                        
+                        <% if (altPhone) { %>
+                            <p><strong>Alt Phone:</strong> <span style="color:var(--green);"><%= altPhone %></span></p>
+                        <% } %>
 
-    <div style="font-size:0.95rem; line-height:1.9;">
-      <p><strong>Name:</strong> <span style="font-weight:600; color:#1f2937;"><%= name %></span></p>
-      
-      <% if (addr) { %>
-        <p><strong>Address:</strong> <span style="color:#374151;"><%= addr %><%= locality ? ', ' + locality : '' %></span></p>
-      <% } %>
-
-      <% if (landmark) { %>
-        <p><strong>Landmark:</strong> <span style="color:#374151;"><%= landmark %></span></p>
-      <% } %>
-
-      <p><strong>City:</strong> <%= city %></p>
-      <p><strong>State:</strong> <%= state %></p>
-      <p><strong>Pincode:</strong> <strong><%= pincode %></strong></p>
-      <p><strong>Mobile:</strong> <span style="color:#059669; font-weight:600;"><%= phone %></span></p>
-      
-      <% if (altPhone) { %>
-        <p><strong>Alt Phone:</strong> <span style="color:#059669;"><%= altPhone %></span></p>
-      <% } %>
-
-      <p><strong>Country:</strong> India</p>
-    </div>
-  </div>
-</div>
+                        <p><strong>Country:</strong> India</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Right Column: Status, Payment, Amount, Invoice (100% unchanged) -->
+        <!-- Right Column -->
         <div>
             <div class="card status-card">
-                <h2 class="card-title">Order Status</h2>
-                <% 
-                    const orderStatusClassForBadge = orderStatusClass;
-                    const statusDisplay = orderStatusDisplay;
-                %>
-                <span class="status-badge status-<%= orderStatusClassForBadge %>"><%= statusDisplay %></span>
+                <h2 class="card-title">📊 Order Status</h2>
+                <span class="status-badge status-<%= orderStatusClass %>"><%= orderStatusDisplay %></span>
                 <p class="status-date">
-                    <%= new Date(order.createdOn).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                    📅 <%= new Date(order.createdOn).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                 </p>
             </div>
 
             <div class="card">
-                <h2 class="card-title">Payment Details</h2>
+                <h2 class="card-title">💳 Payment Details</h2>
                 <div class="info-grid">
                     <div class="info-row">
-    <span class="info-label">Payment Method</span>
-    <span class="payment-method"><%= order.paymentMethod || 'Unknown' %></span>
-</div>
+                        <span class="info-label">Payment Method</span>
+                        <span class="payment-method"><%= order.paymentMethod || 'Unknown' %></span>
+                    </div>
 
-<div class="info-row">
-    <span class="info-label">Payment Status</span>
-    <% 
-        // Declare variables ONLY ONCE here
-        let displayStatus = 'Pending';
-        let paymentStatusClass = 'text-warning fw-bold';
-        let extraText = '';
-
-        const realPayStatus = (order.paymentStatus || 'Pending').trim().toLowerCase();
-        const orderStat = (order.status || '').trim().toLowerCase();
-        const payMethod = (order.paymentMethod || '').toUpperCase();
-
-        if (payMethod === 'COD') {
-            if (orderStat === 'delivered') {
-                displayStatus = 'Paid on Delivery';
-                paymentStatusClass = 'text-success fw-bold';
-            } else if (['cancelled', 'returned'].includes(orderStat)) {
-                displayStatus = 'Refunded / Cancelled';
-                paymentStatusClass = 'text-danger fw-bold';
-            } else {
-                displayStatus = 'Pending (Cash on Delivery)';
-                paymentStatusClass = 'text-warning fw-bold';
-            }
-        } else {
-            // Razorpay / Wallet / other online payments
-            if (realPayStatus === 'paid') {
-                displayStatus = 'Paid Successfully';
-                paymentStatusClass = 'text-success fw-bold';
-            } else if (realPayStatus === 'failed') {
-                displayStatus = 'Payment Failed';
-                paymentStatusClass = 'text-danger fw-bold';
-            } else {
-                displayStatus = 'Pending';
-                paymentStatusClass = 'text-warning fw-bold';
-            }
-        }
-    %>
-    <span class="payment-status <%= paymentStatusClass %>">
-        <%= displayStatus %>
-        <% if (extraText) { %>
-            <small class="d-block mt-1 text-muted">(<%= extraText %>)</small>
-        <% } %>
-    </span>
-</div>
-
-
+                    <div class="info-row">
+                        <span class="info-label">Payment Status</span>
+                        <% 
+                            let displayStatus = 'Pending';
+                            let paymentStatusClass = 'text-warning fw-bold';
+                            let extraText = '';
+                            const realPayStatus = (order.paymentStatus || 'Pending').trim().toLowerCase();
+                            const orderStat = (order.status || '').trim().toLowerCase();
+                            const payMethod = (order.paymentMethod || '').toUpperCase();
+                            if (payMethod === 'COD') {
+                                if (orderStat === 'delivered') {
+                                    displayStatus = 'Paid on Delivery';
+                                    paymentStatusClass = 'text-success fw-bold';
+                                } else if (['cancelled', 'returned'].includes(orderStat)) {
+                                    displayStatus = 'Refunded / Cancelled';
+                                    paymentStatusClass = 'text-danger fw-bold';
+                                } else {
+                                    displayStatus = 'Pending (Cash on Delivery)';
+                                    paymentStatusClass = 'text-warning fw-bold';
+                                }
+                            } else {
+                                if (realPayStatus === 'paid') {
+                                    displayStatus = 'Paid Successfully';
+                                    paymentStatusClass = 'text-success fw-bold';
+                                } else if (realPayStatus === 'failed') {
+                                    displayStatus = 'Payment Failed';
+                                    paymentStatusClass = 'text-danger fw-bold';
+                                } else {
+                                    displayStatus = 'Pending';
+                                    paymentStatusClass = 'text-warning fw-bold';
+                                }
+                            }
+                        %>
+                        <span class="payment-status <%= paymentStatusClass %>">
+                            <%= displayStatus %>
+                            <% if (extraText) { %>
+                                <small class="d-block mt-1 text-muted">(<%= extraText %>)</small>
+                            <% } %>
+                        </span>
+                    </div>
+                </div>
             </div>
 
-           <div class="card amount-card">
-    <h2 class="card-title">Order Summary</h2>
-    
-        <%
-/* -----------------------------
-     STEP 1: Original values
---------------------------------*/
-const originalSubtotal  = Number(order.originalSubtotal ?? order.subtotal ?? 0);
-const originalTax       = Number(order.originalTax ?? order.tax ?? 0);
-const originalShipping  = Number(order.originalShipping ?? order.shipping ?? 0);
-const originalAmount    = Number(order.originalAmount ?? order.finalAmount ?? 0);
+            <div class="card amount-card">
+                <h2 class="card-title">💰 Order Summary</h2>
+                
+                <%
+                    const originalSubtotal  = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+                    const originalTax       = Number(order.originalTax ?? order.tax ?? 0);
+                    const originalShipping  = Number(order.originalShipping ?? order.shipping ?? 0);
+                    const originalAmount    = Math.round(((originalSubtotal + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
+                    const paidAmount = Math.round((Number(order.finalAmount ?? (originalAmount - couponDiscount)) + Number.EPSILON) * 100) / 100;
+                    let refundedAmount = 0;
+                    const baseSubtotal = Number(order.subtotal ?? order.originalSubtotal ?? 0);
 
-/* -----------------------------
-     STEP 2: Calculate refunded amount from items
---------------------------------*/
-let refundedAmount = 0;
+                    (order.orderedItems || []).forEach(item => {
+                        const status = (item.status || '').toLowerCase();
+                        if (status === 'cancelled' || status === 'returned') {
+                            const itemSubtotal = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
+                            const taxShare = baseSubtotal > 0 ? (itemSubtotal / baseSubtotal) * originalTax : 0;
+                            refundedAmount += itemSubtotal + taxShare;
+                        }
+                    });
 
-(order.orderedItems || []).forEach(item => {
-    const status = (item.status || '').toLowerCase();
+                    // Cap refunds to what was actually paid (paidAmount), not the original pre-discount total
+                    refundedAmount = Math.min(Math.round(refundedAmount * 100) / 100, paidAmount);
+                    const finalPaidAmount = Math.max(0, Math.round((paidAmount - refundedAmount) * 100) / 100);
+                    const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
+                    const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
+                    const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
+                    const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 'returned');
+                %>
+                
+                <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Subtotal</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= (originalSubtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Tax</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= (originalTax).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Shipping</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= (originalShipping).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <% if (couponDiscount > 0) { %>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Coupon Discount <%= couponCode ? '(' + couponCode + ')' : '' %></td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= couponDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <% } %>
+                    <tr style="border-bottom: 2px solid var(--green);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green); font-weight:800; font-size:1.1rem;">Total Amount</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green); font-weight:800; font-size:1.1rem;">
+                            <% if (Math.abs(originalAmount - paidAmount) > 0.001) { %>
+                                <span style="text-decoration:line-through; color:var(--muted);">₹<%= originalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                <span style="margin-left:8px;">₹<%= paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                            <% } else { %>
+                                ₹<%= paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Refunded Amount</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--success); font-weight:700;">₹<%= (refundedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <tr style="background-color:#f0f9ff; border-bottom: 2px solid var(--green);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green); font-weight:800; font-size:1.1rem;">Final Paid Amount</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green); font-weight:800; font-size:1.1rem;">₹<%= (finalPaidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                </table>
 
-    if (status === 'cancelled' || status === 'returned') {
-        const itemSubtotal = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
-
-        // proportional tax & discount
-        const taxShare =
-            originalSubtotal > 0
-                ? (itemSubtotal / originalSubtotal) * originalTax
-                : 0;
-
-        const discountShare =
-            originalSubtotal > 0
-                ? (itemSubtotal / originalSubtotal) * Number(order.discount || 0)
-                : 0;
-
-        refundedAmount += itemSubtotal + taxShare - discountShare;
-    }
-});
-
-/* -----------------------------
-     STEP 3: Round + cap refund
---------------------------------*/
-refundedAmount = Math.min(
-    Math.round(refundedAmount * 100) / 100,
-    originalAmount
-);
-
-/* -----------------------------
-     STEP 4: Final paid amount
---------------------------------*/
-const finalPaidAmount = Math.max(
-    0,
-    Math.round((originalAmount - refundedAmount) * 100) / 100
-);
-
-// Recompute simple status flags used below in the template
-const hasCancelled = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'cancelled'));
-const hasReturned = (order.orderedItems || []).some(i => ((i.status||'').toString().toLowerCase() === 'returned'));
-const fullCancelled = ((order.status||'').toString().trim().toLowerCase() === 'cancelled');
-const fullReturned = ((order.status||'').toString().trim().toLowerCase() === 'returned');
-        %>
-    
-    <!-- Order Summary Table -->
-    <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
-        <tr style="border-bottom: 1px solid #7dd3fc;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Subtotal</td>
-            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalSubtotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-        <tr style="border-bottom: 1px solid #7dd3fc;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Tax</td>
-            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalTax).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-        <tr style="border-bottom: 1px solid #7dd3fc;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Shipping</td>
-            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:600;">₹<%= (originalShipping).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-        <tr style="border-bottom: 2px solid #7dd3fc;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:700; font-size:1.1rem;">Original Amount</td>
-            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:700; font-size:1.1rem;">₹<%= (originalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-        <tr style="border-bottom: 1px solid #7dd3fc;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:500;">Refunded Amount</td>
-            <td style="padding:12px 0; text-align:right; color:#10b981; font-weight:600;">₹<%= (refundedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-        <tr style="background-color:#f0f9ff; border-bottom: 2px solid #0c4a6e;">
-            <td style="padding:12px 0; text-align:left; color:#0c4a6e; font-weight:700; font-size:1.1rem;">Final Paid Amount</td>
-            <td style="padding:12px 0; text-align:right; color:#0c4a6e; font-weight:700; font-size:1.1rem;">₹<%= (finalPaidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-        </tr>
-    </table>
-
-    <% if (fullCancelled || fullReturned) { %>
-        <div style="margin-top:12px; padding:12px; background:#d1fae5; border-radius:8px; text-align:center; font-weight:600; color:#047857;">
-            Full amount refunded
-        </div>
-    <% } else if (hasCancelled || hasReturned) { %>
-        <div style="margin-top:12px; padding:12px; background:#fef3c7; border-radius:8px; text-align:center; font-weight:600; color:#92400e;">
-            Partial refund processed for cancelled/returned items
-        </div>
-    <% } %>
-</div>
+                <% if (fullCancelled || fullReturned) { %>
+                    <div style="margin-top:12px; padding:12px; background:#d5f5e3; border-radius:8px; text-align:center; font-weight:700; color:#1a7a45;">
+                        Full amount refunded
+                    </div>
+                <% } else if (hasCancelled || hasReturned) { %>
+                    <div style="margin-top:12px; padding:12px; background:#fef3c7; border-radius:8px; text-align:center; font-weight:700; color:#92400e;">
+                        Partial refund processed for cancelled/returned items
+                    </div>
+                <% } %>
+            </div>
 
             <div class="card">
-    <% 
-        // Check if ANY item is Delivered OR whole order is Delivered
-        const hasDeliveredItem = order.orderedItems.some(item => ['delivered', 'returned'].includes(((item.status||'').toString().toLowerCase())));
-        const canDownloadInvoice = ((order.status||'').toString().trim().toLowerCase() === 'delivered') || hasDeliveredItem;
-    %>
+                <% 
+                    const hasDeliveredItem = order.orderedItems.some(item => ['delivered', 'returned'].includes(((item.status||'').toString().toLowerCase())));
+                    const canDownloadInvoice = ((order.status||'').toString().trim().toLowerCase() === 'delivered') || hasDeliveredItem;
+                %>
 
-    <% if (canDownloadInvoice) { %>
-        <a href="/orders/<%= order._id %>/invoice" class="btn-invoice">
-            Download Invoice
-        </a>
-    <% } else { %>
-        <div class="btn-invoice" style="background:#9ca3af; cursor:not-allowed; opacity:0.7;">
-            Invoice Available After Delivery
-        </div>
-    <% } %>
-</div>
+                <% if (canDownloadInvoice) { %>
+                    <a href="/orders/<%= order._id %>/invoice" class="btn-invoice">
+                        📄 Download Invoice
+                    </a>
+                <% } else { %>
+                    <div class="btn-invoice" style="background:#9ca3af; cursor:not-allowed; opacity:0.7;">
+                        Invoice Available After Delivery
+                    </div>
+                <% } %>
+            </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-// Beautiful Cancel/Return Popups - EXACTLY LIKE YOUR PHOTO!
 async function cancelOrderItem(orderId, itemId, btn) {
     const { value: reason } = await Swal.fire({
-        title: 'Cancel Order',
+        title: 'Cancel Item',
         html: `
-            <p class="text-gray-600 mb-4">Are you sure you want to cancel this item?<br>
-            <strong>This action cannot be undone.</strong></p>
-            <div class="text-left">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Please tell us why you're cancelling (optional)
-                </label>
-                <textarea id="cancel-reason" class="swal2-textarea" placeholder="e.g. Changed my mind, ordered by mistake..." rows="3"></textarea>
-            </div>
+            <p class="text-gray-600 mb-4">Are you sure you want to cancel this item?</p>
+            <textarea id="cancel-reason" class="swal2-textarea" placeholder="Reason (optional)" rows="3"></textarea>
         `,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
+        confirmButtonColor: '#e8435a',
         cancelButtonColor: '#9ca3af',
-        confirmButtonText: 'Yes, Cancel Order',
-        cancelButtonText: 'Keep Order',
-        reverseButtons: true,
-        customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'px-8 py-3 text-lg font-semibold rounded-lg',
-            cancelButton: 'px-8 py-3 text-lg font-semibold rounded-lg'
-        },
-        buttonsStyling: false,
-        preConfirm: () => {
-            return document.getElementById('cancel-reason').value || 'No reason provided';
-        }
+        confirmButtonText: 'Yes, Cancel',
+        cancelButtonText: 'No',
+        preConfirm: () => document.getElementById('cancel-reason').value || 'No reason provided'
     });
 
-    if (!reason) return; // User clicked cancel
+    if (!reason) return;
 
-    // Show loading
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
 
     try {
-       const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
-    method: 'POST',
-    credentials: 'same-origin',  // <-- ADD THIS
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason })
-});
+        const res = await fetch(`/orders/${orderId}/items/${itemId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
 
         const data = await res.json();
 
         if (data.success) {
-            Swal.fire({
+            // Show success message for 4 seconds before reload
+            await Swal.fire({
                 icon: 'success',
-                title: data.message || 'Cancelled',
-                showConfirmButton: false,
-                timer: 1800
-            }).then(() => location.reload());
+                title: 'Success!',
+                text: data.message || 'Item cancelled successfully',
+                timer: 4000,           // ← 4 seconds delay
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            location.reload();     // Reload only after timer ends
         } else {
             throw new Error(data.message || 'Failed to cancel');
         }
     } catch (err) {
         Swal.fire({
             icon: 'error',
-            title: 'Failed',
-            text: err.message || 'Something went wrong. Try again.',
-            confirmButtonColor: '#ef4444'
+            title: 'Error',
+            text: err.message || 'Something went wrong',
+            confirmButtonColor: '#e8435a'
         });
     } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Request Cancel';
+        btn.innerHTML = 'Cancel Item';
     }
 }
 
 async function requestReturnItem(orderId, itemId, btn) {
     const { value: reason } = await Swal.fire({
-        title: 'Return Order',
+        title: 'Request Return',
         html: `
-            <p class="text-gray-600 mb-4">Want to return this item?<br>
-            <strong>We'll process your refund once received.</strong></p>
-            <div class="text-left">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for return <span class="text-red-500">*</span>
-                </label>
-                <textarea id="return-reason" class="swal2-textarea" placeholder="e.g. Defective product, wrong size, doesn't match description..." rows="3" required></textarea>
-            </div>
+            <p class="text-gray-600 mb-4">Are you sure you want to return this item?</p>
+            <textarea id="return-reason" class="swal2-textarea" placeholder="Reason for return (required)" rows="3" required></textarea>
         `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#f59e0b',
         cancelButtonColor: '#9ca3af',
-        confirmButtonText: 'Yes, Return Item',
-        cancelButtonText: 'Keep Item',
-        reverseButtons: true,
-        customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'px-8 py-3 text-lg font-semibold rounded-lg',
-            cancelButton: 'px-8 py-3 text-lg font-semibold rounded-lg'
-        },
-        buttonsStyling: false,
+        confirmButtonText: 'Yes, Return',
+        cancelButtonText: 'No',
         preConfirm: () => {
             const text = document.getElementById('return-reason').value.trim();
-            if (!text) {
-                Swal.showValidationMessage('Please tell us why you want to return');
-            }
+            if (!text) Swal.showValidationMessage('Reason is required');
             return text;
         }
     });
@@ -860,35 +861,37 @@ async function requestReturnItem(orderId, itemId, btn) {
     if (!reason) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
 
     try {
         const res = await fetch(`/orders/${orderId}/items/${itemId}/return`, {
-    method: 'POST',
-    credentials: 'same-origin',  // <-- ADD THIS
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason })
-});
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
 
         const data = await res.json();
 
         if (data.success) {
-            Swal.fire({
+            // Show success message for 4 seconds before reload
+            await Swal.fire({
                 icon: 'success',
-                title: 'Return Requested!',
-                text: 'We’ll send pickup details soon.',
-                confirmButtonColor: '#10b981',
-                timer: 3000
-            }).then(() => location.reload());
+                title: 'Success!',
+                text: data.message || 'Return request submitted successfully',
+                timer: 4000,           // ← 4 seconds delay
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            location.reload();     // Reload only after timer ends
         } else {
-            throw new Error(data.message);
+            throw new Error(data.message || 'Failed to submit return');
         }
     } catch (err) {
         Swal.fire({
             icon: 'error',
-            title: 'Failed',
-            text: err.message || 'Request failed. Try again.',
-            confirmButtonColor: '#ef4444'
+            title: 'Error',
+            text: err.message || 'Something went wrong',
+            confirmButtonColor: '#e8435a'
         });
     } finally {
         btn.disabled = false;

@@ -459,7 +459,18 @@
                         Out of Stock
                     </div>
                 <% } else { %>
-                    <div class="item-price">₹<%= item.price.toLocaleString() %></div>
+                    <% 
+                        // show item price and if it differs from current salesPrice include original
+                        const basePrice = item.productId ? (item.productId.salesPrice || 0) : item.price;
+                    %>
+                    <div class="item-price">
+                        ₹<%= item.price.toLocaleString() %>
+                        <% if (basePrice > item.price) { %>
+                            <span class="old-price" style="text-decoration:line-through; color:#888; font-size:0.9rem; margin-left:0.5rem;">
+                                ₹<%= basePrice.toLocaleString() %>
+                            </span>
+                        <% } %>
+                    </div>
                 <% } %>
 
                 <div class="quantity-section">
