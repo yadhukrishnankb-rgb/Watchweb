@@ -7,25 +7,22 @@ const statusCodes = require('../../constants/statusCodes');
 
 const MAX_QUANTITY_PER_ITEM = 10;
 
-// --- pricing helper -------------------------------------------------------
-// returns the price the customer should pay after applying any product-level
-// offer.  The offer value is a percentage and is applied to the current
-// salesPrice. Rounds to two decimals.
-function getEffectivePrice(product) {
-    if (!product) return 0;
-    const base = typeof product.salesPrice === 'number' ? product.salesPrice : (product.price || 0);
-    if (product.productOffer && product.productOffer > 0) {
-        return Math.round(base * (1 - product.productOffer / 100) * 100) / 100;
-    }
-    return base;
-}
+// Shared pricing helper (moved to helpers/priceUtils.js)
+const { getEffectivePrice } = require('../../helpers/priceUtils');
 
 
 // View Cart
 exports.viewCart = async (req, res) => {
     try {
         const userId = req.session.user._id;
-        const cart = await Cart.findOne({ userId }).populate('items.productId');
+        // populate products along with their offers and category offers so we can recompute price
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId',
+            populate: [
+                { path: 'offer', match: { startDate: { $lte: new Date() }, endDate: { $gte: new Date() } } },
+                { path: 'category', populate: { path: 'offer', match: { startDate: { $lte: new Date() }, endDate: { $gte: new Date() }, isActive: true } } }
+            ]
+        });
 
         if (!cart || cart.items.length === 0) {
             return res.render('user/cart', { cart: { items: [] }, total: 0, user: req.session.user });
@@ -34,8 +31,25 @@ exports.viewCart = async (req, res) => {
         // DO NOT filter out out-of-stock or blocked items anymore
         // We want to show them as disabled instead of removing
 
+        // recalculate each item price in case offers changed since it was added
+        let recomputeNeeded = false;
+        cart.items.forEach(item => {
+            if (item.productId && !item.productId.isBlocked) {
+                const newPrice = getEffectivePrice(item.productId, item.productId.category);
+                const newTotal = newPrice * item.quantity;
+                if (newPrice !== item.price || newTotal !== item.totalPrice) {
+                    item.price = newPrice;
+                    item.totalPrice = newTotal;
+                    recomputeNeeded = true;
+                }
+            }
+        });
+        if (recomputeNeeded) {
+            // persist updated prices back to database
+            await Cart.findByIdAndUpdate(cart._id, { items: cart.items });
+        }
+
         const total = cart.items.reduce((sum, item) => {
-            // Only add to total if product is in stock and not blocked
             if (item.productId && !item.productId.isBlocked && item.productId.quantity >= item.quantity) {
                 return sum + item.totalPrice;
             }
@@ -67,8 +81,14 @@ exports.addToCart = async (req, res) => {
         // Validate productId
         if (!productId) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_ID_REQUIRED });
 
-        // Validate product
-        const product = await Product.findById(productId);
+        // Validate product; populate its own offer + category offer so pricing helper can evaluate both discounts
+        const now = new Date();
+        const product = await Product.findById(productId)
+            .populate({ path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now } } })
+            .populate({
+                path: 'category',
+                populate: { path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now }, isActive: true } }
+            });
         if (!product || product.isBlocked || product.quantity <= 0) {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: "We apologize, but this product is currently unavailable." });
         }
@@ -119,8 +139,8 @@ exports.addToCart = async (req, res) => {
             // Prevent duplicate cart entries: inform caller that item already exists
             return res.status(statusCodes.OK).json({ success: false, alreadyInCart: true, message: messages.PRODUCT_ALREADY_IN_CART });
         } else {
-            // Push new item; use discount if applicable
-            const effectivePrice = getEffectivePrice(product);
+            // Push new item; use discount if applicable (pass category for fallback)
+            const effectivePrice = getEffectivePrice(product, product.category);
             const qtyInt = parseInt(quantity, 10);
             cart.items.push({
                 productId,
@@ -180,7 +200,13 @@ exports.updateQuantity = async (req, res) => {
             return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_IN_CART });
         }
 
-        const product = await Product.findById(productId);
+        const now = new Date();
+        const product = await Product.findById(productId)
+            .populate({ path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now } } })
+            .populate({
+                path: 'category',
+                populate: { path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now }, isActive: true } }
+            });
         if (!product) {
             return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
         }
@@ -199,7 +225,7 @@ exports.updateQuantity = async (req, res) => {
         }
 
         cartItem.quantity = newQuantity;
-        const effectivePrice = getEffectivePrice(product);
+        const effectivePrice = getEffectivePrice(product, product.category);
         cartItem.price = effectivePrice;
         cartItem.totalPrice = effectivePrice * newQuantity;
         await cart.save();

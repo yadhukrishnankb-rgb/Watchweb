@@ -74,12 +74,64 @@ exports.listProducts = async (req, res) => {
         }
 
         // Execute query with pagination
-        const products = await Product.find(query)
-            .populate('category')
+        const now = new Date();
+        let products = await Product.find(query)
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .sort(sortQuery)
             .skip(skip)
             .limit(limit)
             .lean();
+
+        // compute offer fields - apply MAXIMUM discount from product or category
+        products = products.map(p => {
+            let productDiscount = 0;
+            let categoryDiscount = 0;
+            const nowDate = new Date();
+
+            // Check product offer
+            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
+                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
+                    productDiscount = p.offer.percentage;
+                }
+            }
+
+            // Check category offer
+            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
+                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
+                    categoryDiscount = p.category.offer.percentage;
+                }
+            }
+
+            // Apply MAXIMUM discount
+            const offerPercent = Math.max(productDiscount, categoryDiscount);
+            let offerStart = null;
+            let offerEnd = null;
+            let offerSource = null;
+
+            if (offerPercent > 0) {
+                if (productDiscount === offerPercent && productDiscount > 0) {
+                    offerStart = p.offer.startDate;
+                    offerEnd = p.offer.endDate;
+                    offerSource = 'product';
+                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
+                    offerStart = p.category.offer.startDate;
+                    offerEnd = p.category.offer.endDate;
+                    offerSource = 'category';
+                }
+            }
+
+            return {
+                ...p,
+                offerPercent,
+                offerStart,
+                offerEnd,
+                offerSource
+            };
+        });
 
         // Get total count for pagination
         const totalProducts = await Product.countDocuments(query);
@@ -129,9 +181,60 @@ exports.getProductDetails = async (req, res) => {
         }
 
         // Get product with populated category
-        const product = await Product.findById(id)
-            .populate('category')
+        const now = new Date();
+        let product = await Product.findById(id)
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .lean();
+
+        // compute offer including category fallback - apply MAXIMUM discount
+        let offerPercent = 0;
+        let offerStart = null;
+        let offerEnd = null;
+        let offerSource = null;
+        if (product) {
+            let productDiscount = 0;
+            let categoryDiscount = 0;
+            const nowDate = new Date();
+
+            // Check product offer
+            if (product.offer && product.offer.percentage > 0 && product.offer.isActive) {
+                if ((!product.offer.startDate || product.offer.startDate <= nowDate) && (!product.offer.endDate || product.offer.endDate >= nowDate)) {
+                    productDiscount = product.offer.percentage;
+                }
+            }
+
+            // Check category offer
+            if (product.category && product.category.offer && product.category.offer.percentage > 0 && product.category.offer.isActive) {
+                if ((!product.category.offer.startDate || product.category.offer.startDate <= nowDate) && (!product.category.offer.endDate || product.category.offer.endDate >= nowDate)) {
+                    categoryDiscount = product.category.offer.percentage;
+                }
+            }
+
+            // Apply MAXIMUM discount
+            offerPercent = Math.max(productDiscount, categoryDiscount);
+            if (offerPercent > 0) {
+                if (productDiscount === offerPercent && productDiscount > 0) {
+                    offerStart = product.offer.startDate;
+                    offerEnd = product.offer.endDate;
+                    offerSource = 'product';
+                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
+                    offerStart = product.category.offer.startDate;
+                    offerEnd = product.category.offer.endDate;
+                    offerSource = 'category';
+                }
+            }
+        }
+        product = {
+            ...product,
+            offerPercent,
+            offerStart,
+            offerEnd,
+            offerSource
+        };
         
         // Check if product exists and is available
         // Check if product exists
@@ -142,13 +245,62 @@ exports.getProductDetails = async (req, res) => {
        
 
         // Get related products from same category
-        const relatedProducts = await Product.find({
+        let relatedProducts = await Product.find({
             category: product.category._id,
             _id: { $ne: product._id },
             isBlocked: false
         })
+        .populate({ path: 'offer' })
+        .populate({
+            path: 'category',
+            populate: { path: 'offer' }
+        })
         .limit(4)
         .lean();
+        relatedProducts = relatedProducts.map(p => {
+            let productDiscount = 0;
+            let categoryDiscount = 0;
+            const nowDate = new Date();
+
+            // Check product offer
+            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
+                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
+                    productDiscount = p.offer.percentage;
+                }
+            }
+
+            // Check category offer
+            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
+                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
+                    categoryDiscount = p.category.offer.percentage;
+                }
+            }
+
+            // Apply MAXIMUM discount
+            const offerPercent = Math.max(productDiscount, categoryDiscount);
+            let offerStart = null;
+            let offerEnd = null;
+            let offerSource = null;
+
+            if (offerPercent > 0) {
+                if (productDiscount === offerPercent && productDiscount > 0) {
+                    offerStart = p.offer.startDate;
+                    offerEnd = p.offer.endDate;
+                    offerSource = 'product';
+                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
+                    offerStart = p.category.offer.startDate;
+                    offerEnd = p.category.offer.endDate;
+                    offerSource = 'category';
+                }
+            }
+            return {
+                ...p,
+                offerPercent,
+                offerStart,
+                offerEnd,
+                offerSource
+            };
+        });
 
         // Get product reviews
         const reviews = await Review.find({ product: id })
@@ -269,12 +421,57 @@ exports.searchProducts = async (req, res) => {
         const limit = 12;
         const skip = (page - 1) * limit;
 
-        const products = await Product.find(query)
-            .populate('category')
+        const now = new Date();
+        let products = await Product.find(query)
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
+
+        // compute offer fields as done in listProducts - apply MAXIMUM discount
+        products = products.map(p => {
+            let productDiscount = 0;
+            let categoryDiscount = 0;
+            const nowDate = new Date();
+
+            // Check product offer
+            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
+                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
+                    productDiscount = p.offer.percentage;
+                }
+            }
+
+            // Check category offer
+            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
+                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
+                    categoryDiscount = p.category.offer.percentage;
+                }
+            }
+
+            // Apply MAXIMUM discount
+            const offerPercent = Math.max(productDiscount, categoryDiscount);
+            let offerStart = null;
+            let offerEnd = null;
+            let offerSource = null;
+
+            if (offerPercent > 0) {
+                if (productDiscount === offerPercent && productDiscount > 0) {
+                    offerStart = p.offer.startDate;
+                    offerEnd = p.offer.endDate;
+                    offerSource = 'product';
+                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
+                    offerStart = p.category.offer.startDate;
+                    offerEnd = p.category.offer.endDate;
+                    offerSource = 'category';
+                }
+            }
+            return { ...p, offerPercent, offerStart, offerEnd, offerSource };
+        });
 
         const totalProducts = await Product.countDocuments(query);
         const totalPages = Math.ceil(totalProducts / limit);

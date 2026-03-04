@@ -447,19 +447,23 @@ body {
               <% 
                 let displayPrice = product.salesPrice;
                 let originalPrice = null;
-                if (product.productOffer && product.productOffer > 0) {
-                    displayPrice = Math.round(product.salesPrice * (1 - product.productOffer/100) * 100) / 100;
+                if (product.offerPercent && product.offerPercent > 0) {
+                    displayPrice = Math.round(product.salesPrice * (1 - product.offerPercent/100) * 100) / 100;
                     originalPrice = product.salesPrice;
                 } else if (product.regularPrice > product.salesPrice) {
                     originalPrice = product.regularPrice;
                 }
               %>
               <span class="text-3xl font-bold" style="color: var(--green);">₹<%= displayPrice.toLocaleString() %></span>
-              <% if (product.productOffer && product.productOffer> 0) { %>
+              <% if (product.offerPercent && product.offerPercent> 0) { %>
                 <span class="text-lg text-gray-500 line-through">₹<%= originalPrice.toLocaleString() %></span>
                 <span class="discount-tag text-sm font-medium">
-                  <%= product.productOffer %>% OFF
+                  <%= product.offerPercent %>% 
+                  <% if (product.offerSource === 'product') { %>Product Offer<% } else if (product.offerSource === 'category') { %>Category Offer<% } else { %>OFF<% } %>
                 </span>
+                <% if (product.offerStart && product.offerEnd) { %>
+                  <div class="text-xs text-gray-600 mt-1">Valid: <%= new Date(product.offerStart).toLocaleDateString() %> - <%= new Date(product.offerEnd).toLocaleDateString() %></div>
+                <% } %>
               <% } else if (product.regularPrice> product.salesPrice) { %>
                 <span class="text-lg text-gray-500 line-through">₹<%= originalPrice.toLocaleString() %></span>
                 <span class="discount-tag text-sm font-medium">
@@ -615,8 +619,8 @@ body {
                   <% 
                       let rpDisplay = relatedProduct.salesPrice;
                       let rpOriginal = null;
-                      if (relatedProduct.productOffer && relatedProduct.productOffer > 0) {
-                          rpDisplay = Math.round(relatedProduct.salesPrice * (1 - relatedProduct.productOffer/100) * 100) / 100;
+                      if (relatedProduct.offerPercent && relatedProduct.offerPercent > 0) {
+                          rpDisplay = Math.round(relatedProduct.salesPrice * (1 - relatedProduct.offerPercent/100) * 100) / 100;
                           rpOriginal = relatedProduct.salesPrice;
                       } else if (relatedProduct.regularPrice > relatedProduct.salesPrice) {
                           rpOriginal = relatedProduct.regularPrice;

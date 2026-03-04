@@ -32,6 +32,8 @@ router.get('/categories', adminAuth, categoryController.getCategories);
 router.post('/categories', adminAuth, categoryController.addCategory);
 router.put('/categories/:id', adminAuth, categoryController.editCategory);
 router.delete('/categories/:id', adminAuth, categoryController.deleteCategory);
+router.patch('/categories/:id/offer', adminAuth, categoryController.setCategoryOffer);
+router.patch('/categories/:id/offer/remove', adminAuth, categoryController.removeCategoryOffer);
 
 // Product management routes
 router.get('/products', adminAuth, productController.getProducts);

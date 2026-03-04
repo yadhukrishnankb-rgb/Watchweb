@@ -8,8 +8,33 @@ const statusCodes = require('../../constants/statusCodes');
 exports.viewWishlist = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    let wishlist = await Wishlist.findOne({ userId }).populate('products.productId');
+    let wishlist = await Wishlist.findOne({ userId }).populate({
+      path: 'products.productId',
+      populate: { path: 'category' }
+    });
     if (!wishlist) wishlist = { products: [] };
+    // attach offerPercent to accessed products for ease of rendering
+    if (wishlist.products && Array.isArray(wishlist.products)) {
+      wishlist.products = wishlist.products.map(item => {
+        const p = item.productId;
+        let offerPercent = 0;
+        let offerSource = null;
+        if (p && p.offer && typeof p.offer.percentage === 'number' && p.offer.percentage > 0) {
+          offerPercent = p.offer.percentage;
+          offerSource = 'product';
+        } else if (p && p.category && p.category.offer && p.category.offer.percentage > 0) {
+          const co = p.category.offer;
+          const now = new Date();
+          if (co.isActive && (!co.startDate || co.startDate <= now) && (!co.endDate || co.endDate >= now)) {
+            offerPercent = co.percentage;
+            offerSource = 'category';
+          }
+        }
+        p.offerPercent = offerPercent;
+        p.offerSource = offerSource;
+        return item;
+      });
+    }
     res.render('user/wishlist', { wishlist });
   } catch (err) {
     console.error('View wishlist error:', err);

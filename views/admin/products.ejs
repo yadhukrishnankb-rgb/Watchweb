@@ -58,8 +58,11 @@
                   </div>
                   <div>Sale: ₹<%= product.salesPrice %>
                   </div>
-                  <% if (product.productOffer && product.productOffer > 0) { %>
-                    <div class="text-sm text-green-600 font-semibold">Offer: <%= product.productOffer %>%</div>
+                  <% if (product.offerPercent && product.offerPercent > 0) { %>
+                    <div class="text-sm text-green-600 font-semibold">Offer: <%= product.offerPercent %>%</div>
+                    <% if (product.offerStart && product.offerEnd) { %>
+                      <div class="text-xs text-gray-500">(<%= new Date(product.offerStart).toLocaleDateString() %> – <%= new Date(product.offerEnd).toLocaleDateString() %>)</div>
+                    <% } %>
                   <% } %>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -88,7 +91,7 @@
                     Delete
                   </button>
                   <!-- Offer buttons -->
-                  <% if (product.productOffer && product.productOffer > 0) { %>
+                  <% if (product.offerPercent && product.offerPercent > 0) { %>
                     <button onclick="confirmRemoveOffer('<%= product._id %>')" class="text-red-600 hover:text-red-900 ml-3">
                       Remove Offer
                     </button>
@@ -726,30 +729,44 @@
 
     /* === PRODUCT OFFER (Set / Remove) === */
     async function promptSetOffer(productId) {
-      const { value: offer } = await Swal.fire({
-        title: 'Set Product Offer (%)',
-        input: 'number',
-        inputLabel: 'Enter offer percentage (0-100)',
-        inputAttributes: { min: 0, max: 100, step: 1 },
-        inputValue: 0,
+      const { value: formValues } = await Swal.fire({
+        title: 'Set Product Offer',
+        html: `
+          <input type="number" id="offerInput" class="swal2-input" placeholder="Percentage (0-100)" min="0" max="100">
+          <input type="date" id="startInput" class="swal2-input" placeholder="Start date">
+          <input type="date" id="endInput" class="swal2-input" placeholder="End date">
+        `,
+        focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: 'Set Offer',
-        preConfirm: (val) => {
-          const n = Number(val);
-          if (isNaN(n) || n < 0 || n > 100) {
-            Swal.showValidationMessage('Please enter a number between 0 and 100');
+        preConfirm: () => {
+          const offerVal = Number(document.getElementById('offerInput').value);
+          const startVal = document.getElementById('startInput').value;
+          const endVal = document.getElementById('endInput').value;
+          if (isNaN(offerVal) || offerVal < 0 || offerVal > 100) {
+            Swal.showValidationMessage('Offer percentage must be between 0 and 100');
+            return;
           }
-          return n;
+          if (!startVal || !endVal) {
+            Swal.showValidationMessage('Please select both start and end dates');
+            return;
+          }
+          if (new Date(startVal) > new Date(endVal)) {
+            Swal.showValidationMessage('End date must be after start date');
+            return;
+          }
+          return { offer: offerVal, startDate: startVal, endDate: endVal };
         }
       });
 
-      if (offer == null) return;
+      if (!formValues) return;
+      const { offer, startDate, endDate } = formValues;
 
       try {
         const data = await fetchJson(`/admin/products/${productId}/offer`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ offer })
+          body: JSON.stringify({ offer, startDate, endDate })
         });
         if (data.success) {
           Swal.fire({ icon: 'success', title: 'Offer Set', text: data.message || 'Offer updated' })

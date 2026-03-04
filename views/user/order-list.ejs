@@ -672,15 +672,22 @@ body {
               <div class="info-item">
                 <span class="info-label">Total Amount</span>
                 <% 
-                  const origSubtotalForOrder = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+                  // original subtotal stored after applying offers; add offer discount to see price before offers
+                  const postOfferSubtotal = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+                  const offerDiscount = Number(order.offerDiscount || 0);
+                  const preOfferSubtotal = postOfferSubtotal + offerDiscount;
                   const origTaxForOrder = Number(order.originalTax ?? order.tax ?? 0);
                   const origShippingForOrder = Number(order.originalShipping ?? order.shipping ?? 0);
-                  const origAmountForDisplay = Math.round(((origSubtotalForOrder + origTaxForOrder + origShippingForOrder) + Number.EPSILON) * 100) / 100;
+                  const origAmountForDisplay = Math.round(((preOfferSubtotal + origTaxForOrder + origShippingForOrder) + Number.EPSILON) * 100) / 100;
                   const paidAmount = Number(order.finalAmount || 0);
                 %>
                 <% if (Math.abs(origAmountForDisplay - paidAmount) > 0.001) { %>
                   <span class="info-value" style="text-decoration:line-through; color:var(--muted);">₹<%= origAmountForDisplay.toLocaleString() %></span>
                   <span class="info-value" style="margin-left:8px; color:var(--green); font-weight:800;">₹<%= paidAmount.toLocaleString() %></span>
+                  <small style="color: var(--success); font-weight:700; display:block; margin-top:4px;">
+                    You saved ₹<%= (origAmountForDisplay - paidAmount).toLocaleString() %> 
+                    <% if (offerDiscount > 0) { %> (₹<%= offerDiscount.toLocaleString() %> from offers<% if (order.couponDiscount>0) { %> + ₹<%= Number(order.couponDiscount).toLocaleString() %> coupon<% } %>)<% } else if (order.couponDiscount>0) { %> (coupon)<% } %>
+                  </small>
                 <% } else { %>
                   <span class="info-value">₹<%= paidAmount.toLocaleString() %></span>
                 <% } %>

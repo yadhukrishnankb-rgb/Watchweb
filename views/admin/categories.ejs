@@ -36,6 +36,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Offer</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -46,6 +47,21 @@
                         <tr data-category-id="<%= category._id %>">
                             <td class="px-6 py-4 whitespace-nowrap"><%= category.name %></td>
                             <td class="px-6 py-4"><%= category.description %></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <% if (category.offer && category.offer.percentage > 0) { %>
+                                    <div class="text-sm text-green-600 font-semibold">
+                                        <%= category.offer.percentage %>% OFF
+                                    </div>
+                                    <% if (category.offer.startDate && category.offer.endDate) { %>
+                                        <div class="text-xs text-gray-500">
+                                            <%= new Date(category.offer.startDate).toLocaleDateString() %> - 
+                                            <%= new Date(category.offer.endDate).toLocaleDateString() %>
+                                        </div>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="text-gray-400">No offer</span>
+                                <% } %>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <%= category.createAt && !isNaN(new Date(category.createAt)) ? new Date(category.createAt).toLocaleDateString() : 'Invalid Date' %>
                             </td>
@@ -58,6 +74,15 @@
                                         class="text-red-600 hover:text-red-900">
                                     Delete
                                 </button>
+                                <% if (category.offer && category.offer.percentage > 0) { %>
+                                    <button onclick="promptRemoveCategoryOffer('<%= category._id %>')" class="text-red-600 hover:text-red-900 ml-3">
+                                        Remove Offer
+                                    </button>
+                                <% } else { %>
+                                    <button onclick="promptSetCategoryOffer('<%= category._id %>')" class="text-indigo-600 hover:text-indigo-900 ml-3">
+                                        Set Offer
+                                    </button>
+                                <% } %>
                             </td>
                         </tr>
 
@@ -303,6 +328,90 @@ async function deleteCategory(id) {
             text: 'Error deleting category!'
         });
     }
+}
+
+
+// ===== offer dialogs =====
+async function promptSetCategoryOffer(categoryId) {
+  const { value: formValues } = await Swal.fire({
+    title: 'Set Category Offer',
+    html: `
+      <input type="number" id="offerInput" class="swal2-input" placeholder="Percentage (0-100)" min="0" max="100">
+      <input type="date" id="startInput" class="swal2-input" placeholder="Start date">
+      <input type="date" id="endInput" class="swal2-input" placeholder="End date">
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Set Offer',
+    preConfirm: () => {
+      const offerVal = Number(document.getElementById('offerInput').value);
+      const startVal = document.getElementById('startInput').value;
+      const endVal = document.getElementById('endInput').value;
+      
+      if (isNaN(offerVal) || offerVal < 0 || offerVal > 100) {
+        Swal.showValidationMessage('Percentage must be 0-100');
+        return;
+      }
+      if (!startVal || !endVal) {
+        Swal.showValidationMessage('Please select both dates');
+        return;
+      }
+      if (new Date(startVal) > new Date(endVal)) {
+        Swal.showValidationMessage('End date must be after start date');
+        return;
+      }
+      return { percentage: offerVal, startDate: startVal, endDate: endVal };
+    }
+  });
+
+  if (!formValues) return;
+
+  try {
+    const response = await fetch(`/admin/categories/${categoryId}/offer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formValues)
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Offer Set!', timer: 1500 })
+        .then(() => location.reload());
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+  }
+}
+
+async function promptRemoveCategoryOffer(categoryId) {
+  const res = await Swal.fire({
+    title: 'Remove Offer?',
+    text: 'This will remove the category discount.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Remove',
+    cancelButtonText: 'Keep'
+  });
+
+  if (!res.isConfirmed) return;
+
+  try {
+    const response = await fetch(`/admin/categories/${categoryId}/offer/remove`, {
+      method: 'PATCH'
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Removed!', timer: 1500 })
+        .then(() => location.reload());
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+  }
 }
 
 </script>

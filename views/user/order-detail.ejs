@@ -681,7 +681,9 @@ body {
                 <h2 class="card-title">💰 Order Summary</h2>
                 
                 <%
-                    const originalSubtotal  = Number(order.originalSubtotal ?? order.subtotal ?? 0);
+                    const storedSubtotal   = Number(order.originalSubtotal ?? order.subtotal ?? 0); // this is after offers
+                    const offerDiscountVal = Number(order.offerDiscount || 0);
+                    const originalSubtotal  = storedSubtotal + offerDiscountVal; // before offer
                     const originalTax       = Number(order.originalTax ?? order.tax ?? 0);
                     const originalShipping  = Number(order.originalShipping ?? order.shipping ?? 0);
                     const originalAmount    = Math.round(((originalSubtotal + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
@@ -720,10 +722,16 @@ body {
                         <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Shipping</td>
                         <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= (originalShipping).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
                     </tr>
+                    <% if (offerDiscountVal > 0) { %>
+                    <tr style="border-bottom: 1px solid var(--line);">
+                        <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Offer Discount</td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">-₹<%= offerDiscountVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <% } %>
                     <% if (couponDiscount > 0) { %>
                     <tr style="border-bottom: 1px solid var(--line);">
                         <td style="padding:12px 0; text-align:left; color:var(--green-dk); font-weight:700;">Coupon Discount <%= couponCode ? '(' + couponCode + ')' : '' %></td>
-                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">₹<%= couponDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                        <td style="padding:12px 0; text-align:right; color:var(--green-dk); font-weight:700;">-₹<%= couponDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
                     </tr>
                     <% } %>
                     <tr style="border-bottom: 2px solid var(--green);">

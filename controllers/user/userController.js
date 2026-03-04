@@ -38,31 +38,85 @@ res.redirect("/pageNotFound")
 const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
-    
-        
+        const now = new Date();
         // Fetch featured products (newest 8 products)
-        const featuredProducts = await Product.find({ isBlocked: false })
-            .populate('category')
+        let featuredProducts = await Product.find({ isBlocked: false })
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .sort({ createdAt: -1 })
             .limit(10)
-            .lean()
-   
-      
-    
+            .lean();
+
         // Fetch popular products (you can modify this based on your criteria)
-        const popularProducts = await Product.find({ isBlocked: false })
-            .populate('category')
+        let popularProducts = await Product.find({ isBlocked: false })
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .sort({ salesCount: -1 })
             .limit(10)
             .lean();
-    
-            
+
         // Fetch new arrivals
-        const newArrivals = await Product.find({ isBlocked: false })
-            .populate('category')
+        let newArrivals = await Product.find({ isBlocked: false })
+            .populate({
+                path: 'category',
+                populate: { path: 'offer' }
+            })
+            .populate({ path: 'offer' })
             .sort({ createdAt: -1 })
             .limit(10)
             .lean();
+
+        // helper to inject offer fields - applies MAXIMUM discount from product or category
+        const injectOffer = p => {
+            let productDiscount = 0;
+            let categoryDiscount = 0;
+            const nowDate = new Date();
+
+            // Check product offer
+            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
+                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
+                    productDiscount = p.offer.percentage;
+                }
+            }
+
+            // Check category offer
+            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
+                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
+                    categoryDiscount = p.category.offer.percentage;
+                }
+            }
+
+            // Apply MAXIMUM discount
+            const offerPercent = Math.max(productDiscount, categoryDiscount);
+            let offerStart = null;
+            let offerEnd = null;
+            let offerSource = null;
+
+            if (offerPercent > 0) {
+                // Determine which offer source provided the max discount
+                if (productDiscount === offerPercent && productDiscount > 0) {
+                    offerStart = p.offer.startDate;
+                    offerEnd = p.offer.endDate;
+                    offerSource = 'product';
+                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
+                    offerStart = p.category.offer.startDate;
+                    offerEnd = p.category.offer.endDate;
+                    offerSource = 'category';
+                }
+            }
+
+            return { ...p, offerPercent, offerStart, offerEnd, offerSource };
+        };
+
+        featuredProducts = featuredProducts.map(injectOffer);
+        popularProducts = popularProducts.map(injectOffer);
+        newArrivals = newArrivals.map(injectOffer);
 
         // Fetch categories for the filter
         const categories = await Category.find({ isListed: true }).lean();

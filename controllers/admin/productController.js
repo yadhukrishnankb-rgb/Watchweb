@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cloudinary = require('../../config/cloudinary');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
+const Offer = require('../../models/offerSchema');
 
 
 
@@ -24,9 +25,12 @@ exports.getProducts = async (req, res) => {
             })
         };
 
+        const now = new Date();
         const [products, totalProducts] = await Promise.all([
             Product.find(query)
                 .populate('category', 'name')
+                // include offer reference regardless of dates so admin can manage it
+                .populate('offer')
                 .sort({ createdAt: -1,_id:-1 })
                 .skip(skip)
                 .limit(limit)
@@ -39,7 +43,10 @@ exports.getProducts = async (req, res) => {
             ...product,
             category: product.category || { name: 'Uncategorized' },
             statusClass: product.isBlocked ? 'text-red-600' : 'text-green-600',
-            statusText: product.isBlocked ? 'Blocked' : 'Active'
+            statusText: product.isBlocked ? 'Blocked' : 'Active',
+            offerPercent: product.offer ? product.offer.percentage : 0,
+            offerStart: product.offer ? product.offer.startDate : null,
+            offerEnd: product.offer ? product.offer.endDate : null
         }));
 
         const categories = await Category.find({ isListed: true }).lean();
@@ -102,7 +109,6 @@ exports.addProduct = async (req, res) => {
             category,
             regularPrice,
             salesPrice,
-            productOffer,
             quantity,
             color,
             status
@@ -141,7 +147,6 @@ exports.addProduct = async (req, res) => {
             category,
             regularPrice: parseFloat(regularPrice),
             salesPrice: parseFloat(salesPrice),
-            productOffer: parseInt(productOffer) || 0,
             quantity: parseInt(quantity) || 0,
             color,
             productImage: productImages,
@@ -196,11 +201,11 @@ exports.editProduct = async (req, res) => {
 
             // Build update data from allowed fields
             const updateData = {};
-            const allowed = ['productName','description','brand','category','regularPrice','salesPrice','productOffer','quantity','color','status'];
+            const allowed = ['productName','description','brand','category','regularPrice','salesPrice','quantity','color','status'];
             for (const key of allowed) {
                 if (req.body[key] !== undefined) {
                     if (['regularPrice','salesPrice'].includes(key)) updateData[key] = parseFloat(req.body[key]) || 0;
-                    else if (['productOffer','quantity'].includes(key)) updateData[key] = parseInt(req.body[key]) || 0;
+                    else if (['quantity'].includes(key)) updateData[key] = parseInt(req.body[key]) || 0;
                     else updateData[key] = req.body[key];
                 }
             }
@@ -270,6 +275,8 @@ exports.deleteProduct = async (req, res) => {
             await cloudinary.uploader.destroy(publicId);
         }
     
+        // remove any linked offer
+        await Offer.deleteOne({ product: id });
         await Product.findByIdAndDelete(id);
     
         res.status(statusCodes.OK).json({
@@ -355,7 +362,7 @@ exports.unblockProduct = async (req, res) => {
     }
 };
 
-// Set an offer percentage for a specific product
+// Set or update an offer for a specific product (percentage and date range)
 exports.setProductOffer = async (req, res) => {
     try {
         const { id } = req.params;
@@ -363,27 +370,57 @@ exports.setProductOffer = async (req, res) => {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.INVALID_PRODUCT_ID });
         }
 
-        const offerRaw = req.body.offer ?? req.body.productOffer;
-        if (offerRaw == null) {
-            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Offer value required' });
+        const offerRaw = req.body.offer ?? req.body.percentage;
+        const startRaw = req.body.startDate;
+        const endRaw = req.body.endDate;
+
+        if (offerRaw == null || !startRaw || !endRaw) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Offer percentage and start/end dates are required' });
         }
 
-        const offer = Number(offerRaw);
-        if (isNaN(offer) || offer < 0 || offer > 100) {
+        const percentage = Number(offerRaw);
+        if (isNaN(percentage) || percentage < 0 || percentage > 100) {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Offer must be a number between 0 and 100' });
         }
 
-        const product = await Product.findByIdAndUpdate(id, { productOffer: Math.round(offer) }, { new: true });
-        if (!product) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
+        const startDate = new Date(startRaw);
+        const endDate = new Date(endRaw);
+        if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Invalid start or end date' });
+        }
 
-        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, product });
+        // upsert offer document
+        let offerDoc = await Offer.findOne({ product: id
+            ,offerType: 'product'
+         });
+        if (offerDoc) {
+            offerDoc.percentage = Math.round(percentage);
+            offerDoc.startDate = startDate;
+            offerDoc.endDate = endDate;
+            offerDoc.isActive = true;
+            await offerDoc.save();
+        } else {
+            offerDoc = new Offer({
+                offerType: 'product',
+                product: id,
+                percentage: Math.round(percentage),
+                startDate,
+                endDate,
+                isActive: true
+            });
+            await offerDoc.save();
+        }
+        // ensure product points at updated/created offer
+        await Product.findByIdAndUpdate(id, { offer: offerDoc._id });
+
+        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, offer: offerDoc });
     } catch (err) {
         console.error('Error setting product offer:', err);
         return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.PRODUCT_UPDATE_ERROR });
     }
 };
 
-// Remove offer (set to 0) for a specific product
+// Remove the current offer for a specific product
 exports.removeProductOffer = async (req, res) => {
     try {
         const { id } = req.params;
@@ -391,10 +428,11 @@ exports.removeProductOffer = async (req, res) => {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.INVALID_PRODUCT_ID });
         }
 
-        const product = await Product.findByIdAndUpdate(id, { productOffer: 0 }, { new: true });
+        await Offer.findOneAndDelete({ product: id });
+        const product = await Product.findByIdAndUpdate(id, { offer: null }, { new: true });
         if (!product) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
 
-        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, product });
+        return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS });
     } catch (err) {
         console.error('Error removing product offer:', err);
         return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.PRODUCT_UPDATE_ERROR });

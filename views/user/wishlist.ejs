@@ -274,8 +274,8 @@ body {
             <% 
                 let wishPrice = p ? (p.salesPrice || 0) : 0;
                 let wishOriginal = null;
-                if (p && p.productOffer && p.productOffer > 0) {
-                    wishPrice = Math.round(wishPrice * (1 - p.productOffer/100) * 100) / 100;
+                if (p && p.offerPercent && p.offerPercent > 0) {
+                    wishPrice = Math.round(wishPrice * (1 - p.offerPercent/100) * 100) / 100;
                     wishOriginal = p.salesPrice;
                 } else if (p && p.regularPrice > p.salesPrice) {
                     wishOriginal = p.regularPrice;
@@ -286,6 +286,17 @@ body {
                     <span style="text-decoration:line-through; font-size:0.85rem; color:#888; margin-left:4px;">₹<%= wishOriginal.toLocaleString() %></span>
                 <% } %>
             </div>
+            <% if (p && p.offerPercent && p.offerPercent > 0) { %>
+                <div class="wish-badge text-xs text-green-600">
+                    <% if (p.offerSource === 'product') { %>
+                        <%= p.offerPercent %>% Product Offer
+                    <% } else if (p.offerSource === 'category') { %>
+                        <%= p.offerPercent %>% Category Offer
+                    <% } else { %>
+                        <%= p.offerPercent %>% OFF
+                    <% } %>
+                </div>
+            <% } %>
             <div class="wish-actions">
               <button class="btn btn-add" onclick="addToCartFromWishlist('<%= p ? p._id : '' %>', this)">Add to cart</button>
               <button class="btn btn-remove" onclick="removeFromWishlist('<%= p ? p._id : '' %>', this)">Remove</button>

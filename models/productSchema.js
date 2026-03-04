@@ -33,11 +33,11 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  productOffer: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
+  // reference to a separate Offer document (active offer for this product)
+  offer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Offer',
+    default: null
   },
   quantity: {
     type: Number,
