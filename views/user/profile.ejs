@@ -527,6 +527,41 @@ body {
 
 </div>
 
+<!-- Referral Section -->
+<div style="background: white; border-radius: 1rem; padding: 1.75rem; box-shadow: 0 2px 12px rgba(74,94,74,0.08); border: 1px solid var(--line); margin-top: 2rem;">
+  <div class="sec-heading" style="margin-bottom: 1.5rem;">
+    <h2>Refer & Earn</h2>
+  </div>
+
+  <div style="margin-bottom: 1.5rem;">
+    <label style="font-size: 12px; font-weight: 700; color: var(--green-dk); text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 8px;">Your Referral Code</label>
+    <div style="display: flex; gap: 0.5rem;">
+      <input type="text" 
+             style="flex: 1; padding: 12px 16px; border: 2px solid #c8d8c8; border-radius: 0.75rem; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); background: linear-gradient(135deg, #dde8dd, #e8f0e8);"
+             value="<%= user.referralCode || 'Loading...' %>" 
+             readonly 
+             id="referralCode">
+      <button style="padding: 12px 24px; background: linear-gradient(135deg, var(--green), var(--green-dk)); color: white; border: none; border-radius: 0.75rem; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(74,94,74,0.25); text-transform: uppercase; letter-spacing: 0.025em;"
+              type="button" 
+              onclick="copyReferralCode()"
+              onmouseover="this.style.background='linear-gradient(135deg, var(--green-dk), #2a3a2a)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(74,94,74,0.35)';"
+              onmouseout="this.style.background='linear-gradient(135deg, var(--green), var(--green-dk))'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(74,94,74,0.25)';">
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <div style="background: linear-gradient(135deg, #dde8dd, #e8f0e8); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--line);">
+    <p style="color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.7; margin: 0 0 1rem 0;">
+      Share this code with friends. When they sign up using your code and place their first order of ₹500 or more:
+    </p>
+    <ul style="margin: 0; padding-left: 1.5rem; color: var(--text); font-size: 14px; font-weight: 600; line-height: 1.9;">
+      <li>You get <strong style="color: var(--green); font-weight: 800;">₹100</strong> in your wallet</li>
+      <li>They get <strong style="color: var(--green); font-weight: 800;">₹50</strong> as signup bonus</li>
+    </ul>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 <% if (success) { %>
@@ -551,6 +586,13 @@ if (window.location.pathname === '/profile/address') {
   document.querySelectorAll('.tnav-btn[data-tab]').forEach(b => b.classList.remove('active'));
   const at = document.querySelector('.tnav-btn[href="/profile/address"]');
   if (at) at.classList.add('active');
+}
+
+function copyReferralCode() {
+  const code = document.getElementById('referralCode');
+  code.select();
+  navigator.clipboard.writeText(code.value);
+  alert('Referral code copied to clipboard!');
 }
 </script>
 

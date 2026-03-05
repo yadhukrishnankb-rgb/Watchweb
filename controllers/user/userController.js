@@ -9,6 +9,7 @@ const statusCodes = require("../../constants/statusCodes");
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const { session } = require("passport");
+const { addToWallet } = require("./walletController");
 
 
  const loadSignup = async (req,res)=>{
@@ -199,7 +200,7 @@ const securepassword = async (password) => {
 
 const signup = async (req,res)=>{
     try {
-        const {name, email, phone, password, confirmpassword} = req.body;
+        const {name, email, phone, password, confirmpassword, referralCode} = req.body;
         console.log("Received data:", {name, email, phone, password, confirmpassword});
 
         // Validate all required fields
@@ -215,6 +216,19 @@ const signup = async (req,res)=>{
         if(findUser) {
             return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
         }
+
+        //Find referral if code provided
+        let referredBy = null;
+        if (referralCode && referralCode.trim()) {
+            const referrer = await User.findOne({
+                referralCode: referralCode.trim().toUpperCase()
+            });
+            if(referrer) {
+                referredBy = referrer._id;
+            }else{
+
+            }
+        }
     
         // Generate and send OTP
         const otp = generateOtp();
@@ -226,7 +240,7 @@ const signup = async (req,res)=>{
 
         // Store OTP and user data in session
         req.session.userOtp = otp;
-        req.session.userData = {name, phone, email, password};
+        req.session.userData = {name, phone, email, password,referredBy};
 
         // Log OTP for debugging
         console.log("OTP sent to email:", email);
@@ -265,10 +279,50 @@ const verifyOtp = async (req,res) => {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                password: passwordHash
+                password: passwordHash,
+                referredBy: user.referredBy|| null
             });
 
             await saveUserData.save();
+
+            //referal reward logic
+            if(saveUserData.referredBy && !saveUserData.referralRewardClaimed) {
+                const referrer = await User.findById(saveUserData.referredBy);
+
+            
+
+            if(referrer) {
+                const referrerReward = 100;
+                const referredReward = 50;
+              //credit referrer
+                await addToWallet(
+                    referrer._id,
+                    referrerReward,
+                    'credit',
+                    `Referral bonus from ${saveUserData.name || saveUserData.email}'s signup`,
+                    null
+                );
+
+                await addToWallet(
+                    saveUserData._id,
+                    referredReward,
+                    'credit',
+                    'Signup bonus via referral',
+                    null
+                );
+
+                // Mark as claimed (prevents double credit if bug)
+          saveUserData.referralRewardClaimed = true;
+          await saveUserData.save();
+
+          // Optional: update referrer stats
+          referrer.referralCount = (referrer.referralCount || 0) + 1;
+          referrer.referralEarnings = (referrer.referralEarnings || 0) + referrerReward;
+          await referrer.save();
+
+          console.log(`Referral reward credited: ${referrerReward} to referrer, ${referredReward} to new user`);
+            }
+        }
 
             // Clear sensitive session data
             req.session.userOtp = null;

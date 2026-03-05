@@ -253,6 +253,13 @@
                     <div id="error5" class="error-message"></div>
                 </div>
 
+                <!-- Add this field inside your form, before the submit button -->
+<div class="form-group">
+  <label for="referralCode" class="form-label">Referral Code (optional)</label>
+  <input type="text" class="form-control" id="referralCode" name="referralCode" 
+         placeholder="Enter friend's referral code">
+</div>
+
                <%if(locals.message && message.length>0){%>
             <div class="alert alert-danger text-center">
                 <%=message%>

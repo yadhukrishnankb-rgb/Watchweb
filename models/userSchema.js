@@ -120,6 +120,39 @@ const userSchema = new Schema({
       },
     },
   ],
+  // Referral System Fields
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true,           // allows null if needed
+    uppercase: true,
+    trim: true,
+    minlength: 6,
+    maxlength: 10
+  },
+
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+
+  referralRewardClaimed: {
+    type: Boolean,
+    default: false
+  },
+
+  referralCount: {
+    type: Number,
+    default: 0
+  },
+
+  referralEarnings: {
+    type: Number,
+    default: 0
+  }
+
+
 
 }, { timestamps: true });
 
@@ -130,6 +163,30 @@ const userSchema = new Schema({
 //   }
 //   next();
 // });
+
+// Auto-generate unique referral code when user is created
+userSchema.pre('save', async function(next) {
+  if (this.isNew && !this.referralCode) {
+    let code;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      // Format: first 3 letters of name + 5 random uppercase + 1 digit
+      const namePart = (this.name || 'USER').substring(0, 3).toUpperCase();
+      const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+      code = `${namePart}${randomPart}${Math.floor(Math.random() * 10)}`;
+
+      attempts++;
+      if (attempts > maxAttempts) {
+        return next(new Error('Failed to generate unique referral code'));
+      }
+    } while (await this.constructor.findOne({ referralCode: code }));
+
+    this.referralCode = code;
+  }
+  next();
+});
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
