@@ -109,6 +109,55 @@
     /* responsive */
     @media (max-width:1024px){ .page-header h1{ font-size:2rem } .item-img{ width:82px; height:82px } }
     @media (max-width:640px){ .grid{ display:block } .card{ padding:1rem } .address-card{ flex-direction:column; align-items:stretch } .address-title{align-items:flex-start} }
+
+    /* Add address form styling */
+    #addAddressForm input,
+    #addAddressForm select {
+        width: 100%;
+        padding: 0.65rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.95rem;
+        font-family: inherit;
+        transition: border-color 0.2s;
+    }
+
+    #addAddressForm input:focus,
+    #addAddressForm select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(90, 127, 114, 0.1);
+    }
+
+    #addAddressForm input::placeholder {
+        color: #9ca3af;
+    }
+
+    .btn-green {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.25rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-green:hover:not(:disabled) {
+        background: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(90, 127, 114, 0.15);
+    }
+
+    .btn-green:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
 </style>
 
 <div class="container">
@@ -483,7 +532,144 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
 // Trigger initial state
 document.querySelector('input[name="paymentMethod"]:checked')?.dispatchEvent(new Event('change'));
 
-        // coupon form handlers
+// ============= ADD NEW ADDRESS MODAL HANDLERS =============
+const openAddressBtn = document.getElementById('openAddAddress');
+const openAddressEmptyBtn = document.getElementById('openAddAddressEmpty');
+const closeAddressBtn = document.getElementById('closeAddAddressModal');
+const cancelAddressBtn = document.getElementById('cancelAddAddress');
+const addAddressModal = document.getElementById('addAddressModal');
+const addAddressForm = document.getElementById('addAddressForm');
+
+// Open modal
+if (openAddressBtn) {
+    openAddressBtn.addEventListener('click', () => {
+        addAddressModal.style.display = 'flex';
+        addAddressForm.reset();
+    });
+}
+
+if (openAddressEmptyBtn) {
+    openAddressEmptyBtn.addEventListener('click', () => {
+        addAddressModal.style.display = 'flex';
+        addAddressForm.reset();
+    });
+}
+
+// Close modal
+if (closeAddressBtn) {
+    closeAddressBtn.addEventListener('click', () => {
+        addAddressModal.style.display = 'none';
+    });
+}
+
+if (cancelAddressBtn) {
+    cancelAddressBtn.addEventListener('click', () => {
+        addAddressModal.style.display = 'none';
+        addAddressForm.reset();
+    });
+}
+
+// Close modal when clicking outside
+addAddressModal.addEventListener('click', (e) => {
+    if (e.target === addAddressModal) {
+        addAddressModal.style.display = 'none';
+    }
+});
+
+// Handle form submission
+if (addAddressForm) {
+    addAddressForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(addAddressForm);
+        const data = {
+            fullName: formData.get('fullName'),
+            phone: formData.get('phone'),
+            address: formData.get('line1'),  // Map line1 to address
+            landmark: formData.get('landmark') || '',
+            city: formData.get('city'),
+            state: formData.get('state'),
+            pincode: formData.get('zip'),  // Map zip to pincode
+            country: formData.get('country'),
+            isDefault: formData.get('isDefault') === 'on',
+            type: formData.get('type')
+        };
+        
+        // Validate required fields
+        if (!data.fullName || !data.phone || !data.address || !data.city || !data.state || !data.pincode) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        const btn = addAddressForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Saving...';
+        
+        try {
+            const response = await fetch('/profile/address', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            let result;
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+            
+            // Parse response - must be JSON
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response text:', text.substring(0, 200));
+                throw new Error(`Server returned ${response.status} ${response.statusText} - expected JSON`);
+            }
+            
+            result = await response.json();
+            console.log('Parsed result:', result);
+            
+            if (response.ok && result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Address added successfully!',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    addAddressModal.style.display = 'none';
+                    addAddressForm.reset();
+                    location.reload();
+                });
+            } else {
+                const errorMsg = result.message || (result.error ? result.error.message : 'Failed to add address');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMsg,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            }
+        } catch (err) {
+            console.error('Address add error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error Adding Address',
+                text: err.message || 'Could not add address. Please try again.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+}
+
+        
         const couponForm = document.getElementById('couponForm');
         async function submitCoupon(form) {
             const fd = new FormData(form);

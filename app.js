@@ -129,6 +129,9 @@ app.set("views", [
 ]);
 app.use(express.static(path.join(__dirname, "public")));
 
+// Make moment available in all EJS views
+app.locals.moment = require('moment');
+
 
 
 

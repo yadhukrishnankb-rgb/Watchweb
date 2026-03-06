@@ -1,0 +1,142 @@
+<%- include('../partials/admin/header') %>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<style>
+  .status-badge { padding: 2px 8px; font-size: 0.75rem; font-weight: 500; border-radius: 4px; }
+  .Delivered { background: #d1fae5; color: #065f46; }
+  .Pending { background: #fef9c3; color: #854d0e; }
+  .Cancelled { background: #fee2e2; color: #991b1b; }
+  .Processing { background: #dbeafe; color: #1e40af; }
+  .Shipped { background: #ede9fe; color: #5b21b6; }
+</style>
+
+<main class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Sales Report</h1>
+
+    <!-- Filter Form -->
+    <form action="/admin/sales-report" method="GET" class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-3 items-end">
+      <div class="flex flex-col min-w-40">
+        <label class="text-xs font-semibold text-gray-600 mb-1">Filter Type</label>
+        <select name="filterType" id="filterType" class="px-3 py-2 border rounded">
+          <option value="daily"   <%= filterType === 'daily'   ? 'selected' : '' %>>Daily</option>
+          <option value="weekly"  <%= filterType === 'weekly'  ? 'selected' : '' %>>Weekly</option>
+          <option value="monthly" <%= filterType === 'monthly' ? 'selected' : '' %>>Monthly</option>
+          <option value="yearly"  <%= filterType === 'yearly'  ? 'selected' : '' %>>Yearly</option>
+          <option value="custom"  <%= filterType === 'custom'  ? 'selected' : '' %>>Custom Range</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col min-w-40">
+        <label class="text-xs font-semibold text-gray-600 mb-1">Start Date</label>
+        <input type="date" name="start" id="startDate" value="<%= start %>" class="px-3 py-2 border rounded" required>
+      </div>
+
+      <div class="flex flex-col min-w-40">
+        <label class="text-xs font-semibold text-gray-600 mb-1">End Date</label>
+        <input type="date" name="end" id="endDate" value="<%= end %>" class="px-3 py-2 border rounded" required>
+      </div>
+
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate Report</button>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded shadow p-5 text-center border-t-4 border-blue-500">
+        <p class="text-sm font-semibold text-blue-600 mb-1">Total Orders</p>
+        <p class="text-3xl font-bold"><%= totalSalesCount %></p>
+      </div>
+      <div class="bg-white rounded shadow p-5 text-center border-t-4 border-green-500">
+        <p class="text-sm font-semibold text-green-600 mb-1">Total Sales Amount</p>
+        <p class="text-3xl font-bold">₹<%= totalOrderAmount %></p>
+      </div>
+      <div class="bg-white rounded shadow p-5 text-center border-t-4 border-red-500">
+        <p class="text-sm font-semibold text-red-600 mb-1">Total Discount (incl. Coupons)</p>
+        <p class="text-3xl font-bold">₹<%= totalDiscount %></p>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-white rounded shadow overflow-hidden">
+      <div class="flex justify-between items-center px-6 py-4 border-b">
+        <h2 class="text-lg font-semibold">Order Details</h2>
+        <div class="flex gap-2">
+          <a href="/admin/sales-report/pdf?filterType=<%= filterType %>&start=<%= start %>&end=<%= end %>"
+             class="px-3 py-1 text-sm border border-red-500 text-red-600 rounded hover:bg-red-50">Download PDF</a>
+          <a href="/admin/sales-report/excel?filterType=<%= filterType %>&start=<%= start %>&end=<%= end %>"
+             class="px-3 py-1 text-sm border border-green-500 text-green-600 rounded hover:bg-green-50">Download Excel</a>
+        </div>
+      </div>
+
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Final Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coupon Discount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% orders.forEach(order => { %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 text-sm font-medium"><%= (order.orderId || 'N/A').slice(0, 8) %>...</td>
+              <td class="px-6 py-4 text-sm text-gray-500"><%= moment(order.createdOn).format('DD-MM-YYYY') %></td>
+              <td class="px-6 py-4 text-sm"><%= order.user?.name || 'Guest' %></td>
+              <td class="px-6 py-4 text-sm font-bold">₹<%= (order.finalAmount || 0).toLocaleString('en-IN') %></td>
+              <td class="px-6 py-4 text-sm">₹<%= (order.discount || 0).toLocaleString('en-IN') %></td>
+              <td class="px-6 py-4 text-sm">₹<%= (order.couponDiscount || 0).toLocaleString('en-IN') %></td>
+              <td class="px-6 py-4">
+                <span class="status-badge <%= order.status %>"><%= order.status %></span>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (orders.length === 0) { %>
+            <tr>
+              <td colspan="7" class="px-6 py-8 text-center text-gray-400">No orders found in this period</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+document.getElementById('filterType')?.addEventListener('change', function () {
+  const type = this.value;
+  const start = document.getElementById('startDate');
+  const end = document.getElementById('endDate');
+  const today = new Date();
+  let s = new Date(), e = new Date();
+
+  if (type === 'daily') {
+    s = e = today;
+  } else if (type === 'weekly') {
+    s = new Date();
+    s.setDate(today.getDate() - 6);
+    e = today;
+  } else if (type === 'monthly') {
+    s = new Date();
+    s.setDate(today.getDate() - 29);
+    e = today;
+  } else if (type === 'yearly') {
+    s = new Date();
+    s.setDate(today.getDate() - 364);
+    e = today;
+  } else {
+    // custom, leave whatever user entered
+    return;
+  }
+
+  start.value = s.toISOString().split('T')[0];
+  end.value = e.toISOString().split('T')[0];
+});
+
+document.getElementById('filterType')?.dispatchEvent(new Event('change'));
+</script>
+
+<%- include('../partials/admin/footer') %>

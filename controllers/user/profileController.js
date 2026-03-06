@@ -417,9 +417,23 @@ exports.changePassword = async (req, res) => {
 
 exports.manageAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
-  if (!userId) return res.redirect('/login');
+  
+  // For AJAX requests, return JSON; for regular forms, redirect
+  const isAjax = req.xhr || req.headers['content-type']?.includes('application/json');
+  
+  if (!userId) {
+    if (isAjax) return res.status(401).json({ success: false, message: 'Not authenticated' });
+    return res.redirect('/login');
+  }
 
-  const { line1, landmark, city, state, zip, country } = req.body;
+  // Handle field mapping: checkout sends 'address' & 'pincode', profile-address sends 'line1' & 'zip'
+  const line1 = req.body.line1 || req.body.address || '';
+  const landmark = req.body.landmark || '';
+  const city = req.body.city || '';
+  const state = req.body.state || '';
+  const zip = req.body.zip || req.body.pincode || '';
+  const country = req.body.country || 'India';
+  
   const errors = [];
 
   // === VALIDATION RULES ===
@@ -443,46 +457,90 @@ exports.manageAddress = async (req, res) => {
   }
 
   if (errors.length > 0) {
-    req.flash('error', errors.join(' | '));
+    const errorMsg = errors.join(' | ');
+    if (isAjax) {
+      return res.status(400).json({ success: false, message: errorMsg, error: { message: errorMsg } });
+    }
+    req.flash('error', errorMsg);
     return res.redirect('/profile/address');
   }
 
   try {
     const user = await User.findById(userId);
+    if (!user) {
+      if (isAjax) return res.status(404).json({ success: false, message: 'User not found' });
+      return res.redirect('/login');
+    }
+    
     user.addresses = user.addresses || [];
 
+    let successMsg = '';
+    
     if (req.params.index !== undefined) {
       const index = parseInt(req.params.index);
       if (index >= 0 && index < user.addresses.length) {
         user.addresses[index] = {
-          line1: line1.trim(),
-          landmark: (landmark || '').trim(),
+          fullName: req.body.fullName || user.addresses[index].fullName || '',
+          phone: req.body.phone || user.addresses[index].phone || '',
+          altPhone: req.body.altPhone || '',
+          street: line1.trim(),
+          landmark: landmark.trim(),
+          locality: req.body.locality || '',
           city: city.trim(),
           state: state.trim(),
           zip: zip.trim(),
-          country: country.trim()
+          country: country.trim(),
+          type: req.body.type || 'home',
+          isDefault: req.body.isDefault === 'on' || req.body.isDefault === true
         };
-        req.flash('success', 'Address updated successfully!');
+        successMsg = 'Address updated successfully!';
       }
     } else {
-      user.addresses.push({
-        line1: line1.trim(),
-        landmark: (landmark || '').trim(),
+      const newAddr = {
+        fullName: req.body.fullName || '',
+        phone: req.body.phone || '',
+        altPhone: req.body.altPhone || '',
+        street: line1.trim(),
+        landmark: landmark.trim(),
+        locality: req.body.locality || '',
         city: city.trim(),
         state: state.trim(),
         zip: zip.trim(),
-        country: country.trim()
-      });
-      req.flash('success', 'Address added successfully!');
+        country: country.trim(),
+        type: req.body.type || 'home',
+        isDefault: req.body.isDefault === 'on' || req.body.isDefault === true
+      };
+      
+      // If setting as default, unset others
+      if (newAddr.isDefault) {
+        user.addresses.forEach(a => { if (a) a.isDefault = false; });
+      }
+      
+      user.addresses.push(newAddr);
+      successMsg = 'Address added successfully!';
     }
 
     await user.save();
+    
+    // Return appropriate response
+    if (isAjax) {
+      return res.json({ success: true, message: successMsg });
+    }
+    
+    req.flash('success', successMsg);
+    return res.redirect('/profile/address');
+    
   } catch (err) {
-    console.error(err);
-    req.flash('error', 'Failed to save address. Please try again.');
+    console.error('Address management error:', err);
+    const errorMsg = 'Failed to save address. Please try again.';
+    
+    if (isAjax) {
+      return res.status(500).json({ success: false, message: errorMsg, error: { message: errorMsg } });
+    }
+    
+    req.flash('error', errorMsg);
+    return res.redirect('/profile/address');
   }
-
-  res.redirect('/profile/address');
 };
 
 

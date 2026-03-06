@@ -13,7 +13,7 @@ const productController = require('../controllers/admin/productController')
 const orderController = require('../controllers/admin/orderController')
 const inventoryController = require('../controllers/admin/inventoryController')
 const couponController = require('../controllers/admin/couponController')
-
+const salesController = require('../controllers/admin/salesController');
 // Auth routes
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
@@ -65,4 +65,9 @@ router.post('/coupons', adminAuth, couponController.createCoupon);
 router.post('/coupons/:id', adminAuth, couponController.editCoupon);
 router.delete('/coupons/:id', adminAuth, couponController.deleteCoupon);
 router.patch('/coupons/:id/toggle', adminAuth, couponController.toggleCoupon);
+
+// Sales report route
+router.get('/sales-report', adminAuth, salesController.getSalesReport);
+router.get('/sales-report/pdf', adminAuth, salesController.downloadPdf);
+router.get('/sales-report/excel', adminAuth, salesController.downloadExcel);
 module.exports = router;
