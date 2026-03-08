@@ -16,6 +16,7 @@ const walletController = require('../controllers/user/walletController'); // adj
 
 const { cancelOrder } = require('../controllers/user/orderController');
 
+const Order = require('../models/orderSchema');
 
 const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
 
@@ -114,9 +115,29 @@ router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheck
 router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutController.placeOrder);
 router.post('/checkout/payment/verify', isUser,checkBlockedStatus, checkoutController.verifyPayment );
 router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
-router.get('/order-failed/:id', isUser, (req, res) => {
-  res.render('user/order-failed', { orderId: req.params.id });
+router.get('/order-failed/:id', isUser, async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const userId = req.session.user._id;
+
+    // Update order status to failed when user reaches failed page
+    await Order.findOneAndUpdate(
+      { _id: orderId, user: userId },
+      { 
+        paymentStatus: 'Failed',
+        status: 'Payment Failed'
+      }
+    );
+
+    res.render('user/order-failed', { orderId });
+  } catch (err) {
+    console.error('Order failed page error:', err);
+    res.render('user/order-failed', { orderId: req.params.id });
+  }
 });
+
+router.post('/orders/:id/retry-payment', isUser, orderController.retryPayment);
+router.post('/orders/verify-retry-payment', isUser, orderController.verifyRetryPayment);
 
 
 

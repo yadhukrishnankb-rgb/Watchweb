@@ -1,6 +1,7 @@
 <%- include('../partials/user/header') %>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -419,6 +420,19 @@ body {
     box-shadow: 0 4px 12px rgba(251,191,36,0.3);
 }
 
+.btn-retry {
+    background: #fef3c7;
+    color: #d97706;
+    border: 2px solid #fcd34d;
+}
+
+.btn-retry:hover {
+    background: #fbbf24;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(251,191,36,0.3);
+}
+
 @media (max-width: 768px) {
     .order-detail-container {
         padding: 1rem 0.5rem;
@@ -627,55 +641,73 @@ body {
             </div>
 
             <div class="card">
-                <h2 class="card-title">💳 Payment Details</h2>
-                <div class="info-grid">
-                    <div class="info-row">
-                        <span class="info-label">Payment Method</span>
-                        <span class="payment-method"><%= order.paymentMethod || 'Unknown' %></span>
-                    </div>
+  <h2 class="card-title">💳 Payment Details</h2>
+  <div class="info-grid">
+    <div class="info-row">
+      <span class="info-label">Payment Method</span>
+      <span class="payment-method"><%= order.paymentMethod || 'Unknown' %></span>
+    </div>
 
-                    <div class="info-row">
-                        <span class="info-label">Payment Status</span>
-                        <% 
-                            let displayStatus = 'Pending';
-                            let paymentStatusClass = 'text-warning fw-bold';
-                            let extraText = '';
-                            const realPayStatus = (order.paymentStatus || 'Pending').trim().toLowerCase();
-                            const orderStat = (order.status || '').trim().toLowerCase();
-                            const payMethod = (order.paymentMethod || '').toUpperCase();
-                            if (payMethod === 'COD') {
-                                if (orderStat === 'delivered') {
-                                    displayStatus = 'Paid on Delivery';
-                                    paymentStatusClass = 'text-success fw-bold';
-                                } else if (['cancelled', 'returned'].includes(orderStat)) {
-                                    displayStatus = 'Refunded / Cancelled';
-                                    paymentStatusClass = 'text-danger fw-bold';
-                                } else {
-                                    displayStatus = 'Pending (Cash on Delivery)';
-                                    paymentStatusClass = 'text-warning fw-bold';
-                                }
-                            } else {
-                                if (realPayStatus === 'paid') {
-                                    displayStatus = 'Paid Successfully';
-                                    paymentStatusClass = 'text-success fw-bold';
-                                } else if (realPayStatus === 'failed') {
-                                    displayStatus = 'Payment Failed';
-                                    paymentStatusClass = 'text-danger fw-bold';
-                                } else {
-                                    displayStatus = 'Pending';
-                                    paymentStatusClass = 'text-warning fw-bold';
-                                }
-                            }
-                        %>
-                        <span class="payment-status <%= paymentStatusClass %>">
-                            <%= displayStatus %>
-                            <% if (extraText) { %>
-                                <small class="d-block mt-1 text-muted">(<%= extraText %>)</small>
-                            <% } %>
-                        </span>
-                    </div>
-                </div>
-            </div>
+   <div class="info-row">
+  <span class="info-label">Payment Status</span>
+  <% 
+    let displayStatus = 'Pending';
+    let paymentStatusClass = 'text-warning fw-bold';
+    let extraText = '';
+
+    const realPayStatus = (order.paymentStatus || 'Pending').trim();
+    const payMethod = (order.paymentMethod || '').toUpperCase();
+
+    if (payMethod === 'COD') {
+      if (order.status?.toLowerCase() === 'delivered') {
+        displayStatus = 'Paid on Delivery';
+        paymentStatusClass = 'text-success fw-bold';
+      } else if (['cancelled', 'returned'].includes(order.status?.toLowerCase())) {
+        displayStatus = 'Refunded / Cancelled';
+        paymentStatusClass = 'text-danger fw-bold';
+      } else {
+        displayStatus = 'Cash on Delivery (Pay on Delivery)';
+        paymentStatusClass = 'text-warning fw-bold';
+      }
+    } else {
+      // For Razorpay / Wallet
+      switch (realPayStatus.toLowerCase()) {
+        case 'paid':
+          displayStatus = 'Paid Successfully';
+          paymentStatusClass = 'text-success fw-bold';
+          break;
+        case 'failed':
+          displayStatus = 'Payment Failed';
+          paymentStatusClass = 'text-danger fw-bold';
+          break;
+        case 'pending':
+          displayStatus = 'Payment Pending';
+          paymentStatusClass = 'text-warning fw-bold';
+          break;
+        default:
+          displayStatus = realPayStatus || 'Unknown';
+      }
+    }
+  %>
+  <span class="payment-status <%= paymentStatusClass %>">
+    <%= displayStatus %>
+    
+    <% if (extraText) { %>
+      <small class="d-block mt-1 text-muted">(<%= extraText %>)</small>
+    <% } %>
+  </span>
+</div>
+
+    <% if (realPayStatus.toLowerCase() === 'failed' && payMethod === 'RAZORPAY') { %>
+      <div class="info-row">
+        <span class="info-label"></span>
+        <button id="retryPaymentBtn" class="action-btn btn-retry">
+          Retry Payment
+        </button>
+      </div>
+    <% } %>
+  </div>
+</div>
 
             <div class="card amount-card">
                 <h2 class="card-title">💰 Order Summary</h2>
@@ -906,6 +938,87 @@ async function requestReturnItem(orderId, itemId, btn) {
         btn.innerHTML = 'Request Return';
     }
 }
+
+// Retry Payment Button Handler
+document.getElementById('retryPaymentBtn')?.addEventListener('click', async function () {
+  const btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+  try {
+    // Step 1: Ask backend to create a new Razorpay order
+    const response = await fetch(`/orders/<%= order._id %>/retry-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'  // sends session cookie
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to initiate retry payment');
+    }
+
+    // Step 2: Open Razorpay checkout popup
+    const options = {
+      key: data.razorpay.key,
+      amount: data.razorpay.amount,
+      currency: data.razorpay.currency,
+      name: "Your Store Name",
+      description: `Retry Payment - Order #<%= order.orderId %>`,
+      order_id: data.razorpay.order_id,
+      prefill: {
+        name: "<%= user.name || 'Customer' %>",
+        email: "<%= user.email || '' %>",
+        contact: "<%= user.phone || '' %>"
+      },
+      theme: { color: "#4a5e4a" }, // match your green theme
+      handler: async function (response) {
+        // Step 3: Verify payment on backend
+        const verifyRes = await fetch('/orders/verify-retry-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderMongoId: "<%= order._id %>"
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Payment Successful!',
+            text: 'Your order is now confirmed.',
+            timer: 3000,
+            showConfirmButton: false
+          }).then(() => {
+            location.reload(); // refresh page to show updated status
+          });
+        } else {
+          Swal.fire('Error', verifyData.message || 'Payment verification failed', 'error');
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err.message || 'Something went wrong. Please try again.',
+      confirmButtonColor: '#e8435a'
+    });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Retry Payment';
+  }
+});
 </script>
 
 <%- include('../partials/user/footer') %>

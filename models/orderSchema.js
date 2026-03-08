@@ -201,7 +201,8 @@ const orderSchema = new mongoose.Schema({
       'Cancelled',
       'Cancellation Request',
       'Return Request',
-      'Returned'
+      'Returned',
+      'Payment Failed'
     ],
     default: 'Pending'
   },
@@ -227,7 +228,13 @@ const orderSchema = new mongoose.Schema({
   pendingCancelTime: {
     type: Date,
     default: () => new Date(Date.now() + 24 * 60 * 60 * 1000)
-  }
+  },
+  // Add this inside your orderSchema (before timestamps)
+paymentAttempts: {
+  type: Number,
+  default: 0,
+  max: 5   // optional - limit to 5 retries
+},
 
 }, { timestamps: true });
 

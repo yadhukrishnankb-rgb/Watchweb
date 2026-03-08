@@ -252,7 +252,7 @@ exports.updateProfile = async (req, res) => {
           landmark: landmark?.trim() || '',
           city: city?.trim(),
           state: state?.trim(),
-          zip: zip?.trim(),
+          pincode: zip?.trim(),
           country: country?.trim()
         } : null
       };
@@ -278,7 +278,7 @@ exports.updateProfile = async (req, res) => {
         landmark: (landmark || '').trim(),
         city: city.trim(),
         state: state.trim(),
-        zip: zip.trim(),
+        pincode: zip.trim(),
         country: country.trim()
       };
 
@@ -488,7 +488,7 @@ exports.manageAddress = async (req, res) => {
           locality: req.body.locality || '',
           city: city.trim(),
           state: state.trim(),
-          zip: zip.trim(),
+          pincode: zip.trim(),
           country: country.trim(),
           type: req.body.type || 'home',
           isDefault: req.body.isDefault === 'on' || req.body.isDefault === true
@@ -505,7 +505,7 @@ exports.manageAddress = async (req, res) => {
         locality: req.body.locality || '',
         city: city.trim(),
         state: state.trim(),
-        zip: zip.trim(),
+        pincode: zip.trim(),
         country: country.trim(),
         type: req.body.type || 'home',
         isDefault: req.body.isDefault === 'on' || req.body.isDefault === true

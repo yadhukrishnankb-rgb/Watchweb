@@ -47,13 +47,12 @@ function getDateRange(filterType, customStart, customEnd) {
 
 exports.getSalesReport = async (req, res) => {
     try {
-        const {filterType = 'custom', start: customStart, end: customEnd} = req.query;
+        const {filterType = 'monthly', start: customStart, end: customEnd} = req.query;
 
         const {start, end} = getDateRange(filterType, customStart, customEnd);
 
         // return all orders in the date range
         const query = {
-            status: 'Delivered',
             createdOn : {$gte: start, $lte: end}
         };
 
@@ -126,7 +125,7 @@ exports.downloadPdf = async (req, res) => {
     doc.moveDown(2);
 
     // Table header
-    const tableTop = doc.y;
+    let tableTop = doc.y;
     doc.fontSize(10).text('Order ID', 50, tableTop);
     doc.text('Date', 170, tableTop);
     doc.text('Customer', 270, tableTop);
@@ -134,9 +133,30 @@ exports.downloadPdf = async (req, res) => {
     doc.text('Discount', 470, tableTop);
     doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
 
+    // Function to draw table header
+    const drawTableHeader = () => {
+      tableTop = doc.y;
+      doc.fontSize(10).text('Order ID', 50, tableTop);
+      doc.text('Date', 170, tableTop);
+      doc.text('Customer', 270, tableTop);
+      doc.text('Amount', 370, tableTop);
+      doc.text('Discount', 470, tableTop);
+      doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+      return tableTop + 25;
+    };
+
     // Table rows
     let y = tableTop + 25;
+    const pageHeight = doc.page.height;
+    const bottomMargin = 50;
+
     orders.forEach(order => {
+      // Check if we need a new page
+      if (y + 20 > pageHeight - bottomMargin) {
+        doc.addPage();
+        y = drawTableHeader();
+      }
+
       doc.text(order.orderId, 50, y);
       doc.text(moment(order.createdOn).format('DD-MM-YYYY'), 170, y);
       doc.text(order.user?.name || 'Guest', 270, y);

@@ -331,7 +331,7 @@ const placeOrder = async (req, res) => {
       locality: selectedAddress.locality || '',
       city: selectedAddress.city || 'Not Available',
       state: selectedAddress.state || 'Not Available',
-      pincode: selectedAddress.pincode || 'PIN Missing',
+      pincode: selectedAddress.pincode || selectedAddress.zip || 'PIN Missing',
       country: selectedAddress.country || 'India'
     };
 
@@ -712,7 +712,7 @@ const addAddressFromCheckout = async (req, res) => {
       landmark: (landmark || '').trim(),
       city: (city || '').trim(),
       state: (state || '').trim(),
-      zip: (zip || '').trim(),
+      pincode: (zip || '').trim(),
       country: (country || 'India').trim(),
       type: (type || 'home').trim(),
       isDefault: (isDefault === 'on' || isDefault === true || isDefault === 'true')

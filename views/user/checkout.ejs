@@ -670,76 +670,6 @@ if (addAddressForm) {
 }
 
         
-        const couponForm = document.getElementById('couponForm');
-        async function submitCoupon(form) {
-            const fd = new FormData(form);
-            const payload = {};
-            for (let [k,v] of fd.entries()) payload[k] = v;
-            try {
-                const resp = await fetch('/checkout/apply-coupon', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(payload)
-                });
-                const data = await resp.json();
-                if (resp.ok && data.success) {
-                    location.reload();
-                } else {
-                    document.getElementById('couponMsg').textContent = data.message || 'Invalid coupon';
-                }
-            } catch (err) {
-                console.error('Coupon apply error', err);
-                document.getElementById('couponMsg').textContent = 'Server error';
-            }
-        }
-
-        if (couponForm) {
-            couponForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const btn = couponForm.querySelector('button');
-                btn.disabled = true;
-                await submitCoupon(couponForm);
-                btn.disabled = false;
-            });
-        }
-        // buttons from available coupon list
-        document.querySelectorAll('.apply-coupon-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const code = this.getAttribute('data-code');
-                if (!code) return;
-                // construct a temporary form to reuse submit logic
-                const temp = document.createElement('form');
-                temp.appendChild(Object.assign(document.createElement('input'), {name:'code',value:code}));
-                if (isDirect) {
-                    const pid = "<%= isDirect ? directProductId : '' %>";
-                    if (pid) {
-                        temp.appendChild(Object.assign(document.createElement('input'), {name:'productId',value:pid}));
-                        temp.appendChild(Object.assign(document.createElement('input'), {name:'quantity',value:'1'}));
-                    }
-                }
-                submitCoupon(temp);
-            });
-        });
-
-        const removeBtn = document.getElementById('removeCouponBtn');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', async () => {
-                try {
-                    const resp = await fetch('/checkout/remove-coupon', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'same-origin'
-                    });
-                    const data = await resp.json();
-                    if (data.success) location.reload();
-                    else alert(data.message);
-                } catch (err) {
-                    console.error('remove coupon error', err);
-                    alert('Could not remove coupon');
-                }
-            });
-        }
 // Address selection sync + form intercept
 document.addEventListener('DOMContentLoaded', function() {
     // Set default address in hidden field
@@ -750,6 +680,88 @@ document.addEventListener('DOMContentLoaded', function() {
         const first = document.querySelector('input[name="selectedAddress"]');
         first.checked = true;
         document.getElementById('selectedAddressId').value = first.value;
+    }
+
+    // COUPON HANDLING CODE - MOVED INSIDE DOMContentLoaded
+    const couponForm = document.getElementById('couponForm');
+    async function submitCoupon(form) {
+        const fd = new FormData(form);
+        const payload = {};
+        for (let [k,v] of fd.entries()) payload[k] = v;
+        try {
+            const resp = await fetch('/checkout/apply-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                location.reload();
+            } else {
+                document.getElementById('couponMsg').textContent = data.message || 'Invalid coupon';
+            }
+        } catch (err) {
+            console.error('Coupon apply error', err);
+            document.getElementById('couponMsg').textContent = 'Server error';
+        }
+    }
+
+    if (couponForm) {
+        couponForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = couponForm.querySelector('button');
+            btn.disabled = true;
+            await submitCoupon(couponForm);
+            btn.disabled = false;
+        });
+    }
+    // buttons from available coupon list
+    document.querySelectorAll('.apply-coupon-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const code = this.getAttribute('data-code');
+            if (!code) return;
+            
+            // Disable button during submission
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = 'Applying...';
+            
+            try {
+                // construct a temporary form to reuse submit logic
+                const temp = document.createElement('form');
+                temp.appendChild(Object.assign(document.createElement('input'), {name:'code',value:code}));
+                const pid = "<%= isDirect ? directProductId : '' %>";
+                if (pid) {
+                    temp.appendChild(Object.assign(document.createElement('input'), {name:'productId',value:pid}));
+                    temp.appendChild(Object.assign(document.createElement('input'), {name:'quantity',value:'1'}));
+                }
+                await submitCoupon(temp);
+            } finally {
+                // Re-enable button
+                this.disabled = false;
+                this.textContent = originalText;
+            }
+        });
+    });
+
+    const removeBtn = document.getElementById('removeCouponBtn');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', async () => {
+            try {
+                const resp = await fetch('/checkout/remove-coupon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const data = await resp.json();
+                if (data.success) location.reload();
+                else alert(data.message);
+            } catch (err) {
+                console.error('remove coupon error', err);
+                alert('Could not remove coupon');
+            }
+        });
     }
 
     const checkoutForm = document.getElementById('checkoutForm');

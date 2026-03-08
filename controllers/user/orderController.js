@@ -3,9 +3,11 @@ const Order = require('../../models/orderSchema');
 const Product = require('../../models/productSchema');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const crypto = require('crypto');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const { addToWallet } = require('./walletController');
+const razorpay = require('../../config/razorpay');
 
 const listOrders = async (req, res) => {
     try {
@@ -591,6 +593,117 @@ const requestReturnItem = async (req, res) => {
 
 // }
 
+// 1. Create new Razorpay order for retry
+const retryPayment = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const orderId = req.params.id;
+
+    const order = await Order.findOne({ _id: orderId, user: userId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Only allow retry for failed Razorpay orders
+    if (order.paymentStatus !== 'Failed' || order.paymentMethod !== 'RAZORPAY') {
+      return res.status(400).json({ success: false, message: 'Cannot retry this order' });
+    }
+
+    // Optional: limit retries
+    if (order.paymentAttempts >= 5) {
+      return res.status(400).json({ success: false, message: 'Maximum retry attempts reached' });
+    }
+
+    const amountInPaise = Math.round(order.finalAmount * 100);
+
+    // Create fresh Razorpay order
+    const rzpOrder = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `retry_${order.orderId}_${Date.now()}`,
+      notes: { userId: userId.toString(), retryFor: orderId.toString() }
+    });
+
+    // Increment attempt count
+    order.paymentAttempts = (order.paymentAttempts || 0) + 1;
+    await order.save();
+
+    res.json({
+      success: true,
+      razorpay: {
+        key: process.env.RAZORPAY_KEY_ID,
+        amount: amountInPaise,
+        currency: 'INR',
+        order_id: rzpOrder.id,
+        name: "Your Store Name",
+        description: `Retry Payment - Order #${order.orderId}`,
+        prefill: {
+          name: req.session.user.name || 'Customer',
+          email: req.session.user.email || '',
+          contact: req.session.user.phone || ''
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Retry payment init error:', err);
+    res.status(500).json({ success: false, message: 'Failed to initiate retry payment' });
+  }
+};
+
+// 2. Verify retry payment (same logic as original verify)
+const verifyRetryPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderMongoId
+    } = req.body;
+
+    const generatedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Payment verification failed - Invalid signature' });
+    }
+
+    const order = await Order.findById(orderMongoId);
+    if (!order || order.user.toString() !== req.session.user._id.toString()) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Already paid? (edge case)
+    if (order.paymentStatus === 'Paid') {
+      return res.json({ success: true, message: 'Order already paid' });
+    }
+
+    // Update payment details
+    order.paymentStatus = 'Paid';
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.razorpaySignature = razorpay_signature;
+    order.paidAt = new Date();
+    order.status = 'Processing'; // or 'Placed' - your choice
+
+    await order.save();
+
+    // Optional: if stock was not deducted earlier, do it now
+    // But usually stock is deducted on first attempt — check your logic
+
+    res.json({
+      success: true,
+      message: 'Payment successful!',
+      redirectUrl: `/order-success/${order._id}`
+    });
+
+  } catch (err) {
+    console.error('Verify retry payment error:', err);
+    res.status(500).json({ success: false, message: 'Server error during payment verification' });
+  }
+};
+
 
 
 module.exports = {
@@ -601,7 +714,8 @@ module.exports = {
     searchOrders,
     downloadInvoice,
       cancelOrderItem,
-    requestReturnItem
-    // getDeliveredOrdersByPrice
+    requestReturnItem,
+    retryPayment,
+    verifyRetryPayment
 
 };

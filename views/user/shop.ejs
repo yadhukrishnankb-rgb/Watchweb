@@ -197,6 +197,30 @@ body {
     box-shadow: 0 6px 16px rgba(74,94,74, 0.35);
 }
 
+/* Clear Search Button */
+.clear-search-btn {
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    color: white;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    border-radius: 0.625rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(74,94,74, 0.25);
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    flex: 1;
+}
+
+.clear-search-btn:hover {
+    background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74,94,74, 0.35);
+}
+
 /* Price Range */
 .filter-section .flex.gap-3 {
     display: flex;
@@ -534,8 +558,8 @@ html { scroll-behavior: smooth; }
             <aside class="filter-section bg-white rounded-xl shadow-sm p-6 mb-8">
                 <form id="filterForm" class="space-y-6">
                     <!-- SEARCH BAR -->
-                    <div class="flex gap-4">
-                        <div class="relative flex-1">
+                    <div class="search-container">
+                        <div class="relative mb-2">
                             <input type="text" 
                                    id="searchInput"
                                    name="search" 
@@ -543,18 +567,17 @@ html { scroll-behavior: smooth; }
                                    placeholder="Search products..." 
                                    class="w-full pl-4 pr-4 py-4 border rounded-lg focus:ring-2 focus:outline-none">
                         </div>
-                        <button type="submit" 
-                                class="px-8 py-4 font-medium rounded-lg transition-colors">
-                            Search
-                        </button>
-                        
+                        <div class="flex gap-4">
+                            <button type="submit" class="clear-search-btn ">
+                                Search
+                            </button>
+                            <button type="button" 
+                                    onclick="clearSearch()" 
+                                    class="clear-search-btn">
+                                Clear 
+                            </button>
+                        </div>
                     </div>
-
-                     <button type="button" 
-                                onclick="clearSearch()" 
-                                class="px-8 py-4 font-medium rounded-lg transition-colors">
-                            Clear
-                        </button>
                       
 
                     
@@ -703,19 +726,12 @@ html { scroll-behavior: smooth; }
 <script>
 document.getElementById('filterForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const params = new URLSearchParams();
-    
-    for (let [key, value] of formData) {
-        if (value) params.append(key, value);
-    }
-    
-    window.location.href = `/shop?${params.toString()}`;
+    updateProducts();
 });
 
 document.querySelectorAll('select').forEach(select => {
     select.addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
+        updateProducts();
     });
 });
 
@@ -733,8 +749,45 @@ maxPrice?.addEventListener('change', function() {
     }
 });
 
+function updateProducts() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+    
+    for (let [key, value] of formData) {
+        if (value) params.append(key, value);
+    }
+    
+    const url = `/shop?${params.toString()}`;
+    
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newSection = doc.querySelector('section');
+            const currentSection = document.querySelector('section');
+            currentSection.innerHTML = newSection.innerHTML;
+            history.pushState(null, '', url);
+        })
+        .catch(error => console.error('Error updating products:', error));
+}
+
 function clearAllFilters() {
-    window.location.href = '/shop';
+    const url = '/shop';
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newSection = doc.querySelector('section');
+            const currentSection = document.querySelector('section');
+            currentSection.innerHTML = newSection.innerHTML;
+            history.pushState(null, '', url);
+            // Reset form
+            document.getElementById('filterForm').reset();
+        })
+        .catch(error => console.error('Error clearing filters:', error));
 }
 
 function clearSearch() {
@@ -749,8 +802,21 @@ function clearSearch() {
         }
     }
     
-    // Navigate with all filters except search
-    window.location.href = `/shop?${params.toString()}`;
+    const url = `/shop?${params.toString()}`;
+    
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newSection = doc.querySelector('section');
+            const currentSection = document.querySelector('section');
+            currentSection.innerHTML = newSection.innerHTML;
+            history.pushState(null, '', url);
+            // Clear search input
+            document.getElementById('searchInput').value = '';
+        })
+        .catch(error => console.error('Error clearing search:', error));
 }
 
 document.querySelectorAll('.add-to-cart-btn').forEach(button => {

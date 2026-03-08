@@ -1,58 +1,102 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Watch Store</title>
-    <-- Bootstrap CSS -->
+    <title>Sign Up - EverTime</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --primary-color: #3a5a78;
-            --secondary-color: #f8f9fa;
-            --accent-color: #ffc107;
-            --text-color: #333;
+            --green:      #4a5e4a;
+            --green-dk:   #3a4a3a;
+            --green-lt:   #5a7a5a;
+            --bg:         #f0f4f0;
+            --text:       #2a3a2a;
+            --muted:      #7a9080;
+            --red:        #e8435a;
+            --success:    #2ecc71;
         }
         
         body {
-            background-color: #f4f7f9;
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-color);
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #3a4a3a 0%, #4a5e4a 60%, #5a7060 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px 20px;
+            position: relative;
+            color: var(--text);
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.04);
+            top: -200px;
+            right: -100px;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.03);
+            bottom: -80px;
+            left: -50px;
+            pointer-events: none;
         }
         
         .signup-container {
             max-width: 550px;
-            margin: 40px auto;
-            padding: 30px;
+            margin: 0 auto;
+            padding: 40px;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            border-radius: 1.25rem;
+            box-shadow: 0 20px 60px rgba(74,94,74, 0.25);
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.6s ease-out;
         }
         
-        .signup-container:hover {
-            transform: translateY(-5px);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         h2 {
-            color: var(--primary-color);
+            color: var(--green);
             text-align: center;
-            margin-bottom: 30px;
-            font-weight: 600;
+            margin-bottom: 32px;
+            font-weight: 800;
+            font-size: 2rem;
+            letter-spacing: -0.02em;
             position: relative;
         }
         
         h2:after {
             content: "";
             position: absolute;
-            bottom: -10px;
+            bottom: -12px;
             left: 50%;
             transform: translateX(-50%);
             width: 60px;
-            height: 3px;
-            background-color: var(--accent-color);
+            height: 4px;
+            background: linear-gradient(135deg, var(--green), var(--green-dk));
+            border-radius: 2px;
         }
         
         .form-group {
@@ -60,77 +104,136 @@
             position: relative;
         }
         
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--green-dk);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
         .form-control {
-            padding: 12px 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            transition: all 0.3s;
+            width: 100%;
+            padding: 12px 48px 12px 16px;
+            border: 2px solid #c8d8c8;
+            border-radius: 0.75rem;
+            font-size: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: #fff;
+            color: var(--text);
+        }
+
+        .form-control::placeholder {
+            color: #aaa;
+            font-weight: 500;
         }
         
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(58, 90, 120, 0.25);
+            border-color: var(--green);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74,94,74, 0.1);
         }
         
         .form-control-icon {
             position: absolute;
-            right: 15px;
+            right: 16px;
             top: 43px;
-            color: var(--primary-color);
+            color: var(--muted);
+            transition: color 0.3s ease;
+        }
+
+        .form-control:focus ~ .form-control-icon {
+            color: var(--green);
         }
         
         .btn-primary {
-            background-color: var(--primary-color);
-            border: none;
-            border-radius: 8px;
-            padding: 12px 25px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 8px rgba(58, 90, 120, 0.2);
-            transition: all 0.3s;
             width: 100%;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--green), var(--green-dk));
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.025em;
+            box-shadow: 0 4px 16px rgba(74,94,74, 0.25);
+            transition: all 0.3s ease;
             margin-top: 10px;
+            color: white;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
         }
         
         .btn-primary:hover {
-            background-color: #2d4961;
+            background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(58, 90, 120, 0.3);
+            box-shadow: 0 8px 24px rgba(74,94,74, 0.35);
         }
         
         .btn-google {
+            width: 100%;
             background-color: white;
-            color: #555;
-            border: 1px solid #e0e0e0;
+            color: var(--text);
+            border: 2px solid #c8d8c8;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 20px;
-            width: 100%;
-            padding: 12px 25px;
-            border-radius: 8px;
-            transition: all 0.3s;
+            padding: 14px 32px;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            font-family: 'Nunito', sans-serif;
         }
         
         .btn-google:hover {
-            background-color: #f8f9fa;
+            background-color: var(--bg);
+            border-color: var(--green);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(74,94,74, 0.15);
+            color: var(--text);
         }
         
         .divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 25px 0;
-            color: #8e8e8e;
+            margin: 24px 0;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.875rem;
         }
         
         .divider::before, .divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #c8d8c8;
         }
         
         .divider::before {
@@ -144,54 +247,62 @@
         .login-link {
             text-align: center;
             display: block;
-            margin-top: 20px;
-            color: var(--primary-color);
+            margin-top: 24px;
+            color: var(--green);
             text-decoration: none;
-            transition: color 0.3s;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
         }
         
         .login-link:hover {
-            color: #2d4961;
+            color: var(--green-dk);
             text-decoration: underline;
         }
         
         .error-message {
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: 5px;
+            color: var(--red);
+            font-size: 0.875rem;
+            margin-top: 6px;
             display: none;
+            font-weight: 600;
         }
         
         .password-toggle {
             cursor: pointer;
         }
-        
-        .img-watch {
-            max-width: 80px;
-            margin: 0 auto 20px;
-            display: block;
-        }
-        
-        /* Animation effects */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .signup-container {
-            animation: fadeIn 0.6s ease-out;
+
+        .password-toggle:hover {
+            color: var(--green);
         }
         
         .form-control.is-invalid {
-            border-color: #dc3545;
-            background-image: none;
+            border-color: var(--red);
+        }
+
+        .form-control.is-valid {
+            border-color: var(--success);
+        }
+
+        .alert-danger {
+            background: #fde8ec;
+            color: #9a1928;
+            border: 1px solid rgba(232,67,90,0.3);
+            border-radius: 0.75rem;
+            padding: 14px 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
         }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .signup-container {
-                margin: 20px;
-                padding: 20px;
+                padding: 30px 24px;
+            }
+
+            h2 {
+                font-size: 1.75rem;
             }
         }
     </style>
@@ -253,20 +364,18 @@
                     <div id="error5" class="error-message"></div>
                 </div>
 
-                <!-- Add this field inside your form, before the submit button -->
-<div class="form-group">
-  <label for="referralCode" class="form-label">Referral Code (optional)</label>
-  <input type="text" class="form-control" id="referralCode" name="referralCode" 
-         placeholder="Enter friend's referral code">
-</div>
+                <div class="form-group">
+                    <label for="referralCode" class="form-label">Referral Code (optional)</label>
+                    <input type="text" class="form-control" id="referralCode" name="referralCode" 
+                           placeholder="Enter friend's referral code">
+                </div>
 
                <%if(locals.message && message.length>0){%>
-            <div class="alert alert-danger text-center">
-                <%=message%>
-            </div>
-            <%}%>
+                <div class="alert alert-danger text-center">
+                    <%=message%>
+                </div>
+                <%}%>
 
-                
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-user-plus me-2"></i>Sign Up
                 </button>
@@ -282,7 +391,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const nameid = document.getElementById("name");
@@ -297,7 +405,6 @@
         const error5 = document.getElementById("error5");
         const signform = document.getElementById("signform");
         
-        // Toggle password visibility
         function togglePassword(fieldId) {
             const passwordField = document.getElementById(fieldId);
             const fieldType = passwordField.getAttribute('type');
@@ -314,7 +421,6 @@
             }
         }
         
-        // Name Validation
         function nameValidateChecking() {
             const nameval = nameid.value.trim();
             const namepattern = /^[A-Za-z\s]+$/;
@@ -338,7 +444,6 @@
             }
         }
         
-        // Email Validation
         function emailValidateChecking() {
             const emailval = emailid.value.trim();
             const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -357,7 +462,6 @@
             }
         }
         
-        // Phone Validation
         function phoneValidateChecking() {
             const phoneval = phoneid.value.trim();
             
@@ -380,7 +484,6 @@
             }
         }
         
-        // Password Validation
         function passValidateChecking() {
             const passval = passid.value.trim();
             const cpassval = cpassid.value.trim();
@@ -420,14 +523,12 @@
             return isValid;
         }
         
-        // Real-time validation
         nameid.addEventListener("blur", nameValidateChecking);
         emailid.addEventListener("blur", emailValidateChecking);
         phoneid.addEventListener("blur", phoneValidateChecking);
         passid.addEventListener("blur", passValidateChecking);
         cpassid.addEventListener("blur", passValidateChecking);
         
-        // Form Submission
         document.addEventListener("DOMContentLoaded", function () {
             signform.addEventListener("submit", function (e) {
                 let nameValid = nameValidateChecking();
@@ -436,23 +537,10 @@
                 let passValid = passValidateChecking();
         
                 if (!nameValid || !emailValid || !phoneValid || !passValid) {
-                    e.preventDefault(); // Prevent form submission if validation fails
+                    e.preventDefault();
                 }
             });
         });
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
