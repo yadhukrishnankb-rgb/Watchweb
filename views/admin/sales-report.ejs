@@ -75,7 +75,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Final Amount</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
+            <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th> -->
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coupon Discount</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
           </tr>
@@ -87,7 +87,7 @@
               <td class="px-6 py-4 text-sm text-gray-500"><%= moment(order.createdOn).format('DD-MM-YYYY') %></td>
               <td class="px-6 py-4 text-sm"><%= order.user?.name || 'Guest' %></td>
               <td class="px-6 py-4 text-sm font-bold">₹<%= (order.finalAmount || 0).toLocaleString('en-IN') %></td>
-              <td class="px-6 py-4 text-sm">₹<%= (order.discount || 0).toLocaleString('en-IN') %></td>
+              <!-- <td class="px-6 py-4 text-sm">₹<%= (order.discount || 0).toLocaleString('en-IN') %></td> -->
               <td class="px-6 py-4 text-sm">₹<%= (order.couponDiscount || 0).toLocaleString('en-IN') %></td>
               <td class="px-6 py-4">
                 <span class="status-badge <%= order.status %>"><%= order.status %></span>

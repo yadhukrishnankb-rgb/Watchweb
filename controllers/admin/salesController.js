@@ -53,6 +53,7 @@ exports.getSalesReport = async (req, res) => {
 
         // return all orders in the date range
         const query = {
+          status:{$nin:["Cancelled","Returned"]},
             createdOn : {$gte: start, $lte: end}
         };
 

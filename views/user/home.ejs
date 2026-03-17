@@ -761,11 +761,7 @@ async function addToCart(productId, event) {
                 }
             });
 
-            const cartCount = document.querySelector('.cart-count');
-            if (cartCount && data.cartCount !== undefined) {
-                cartCount.textContent = data.cartCount;
-                cartCount.style.display = 'flex';
-            }
+            window.updateCartCount(data.cartCount);
 
             setTimeout(() => {
                 button.innerHTML = originalHTML;
@@ -836,6 +832,8 @@ async function toggleWishlist(productId, btn, event) {
 
     if (data.success) {
       btn.classList.toggle('added', !willRemove);
+      // Update header wishlist count
+      window.updateWishlistCount(data.wishlistCount);
       Swal.fire({
         icon: 'success',
         title: willRemove ? 'Removed from wishlist' : 'Added to wishlist',

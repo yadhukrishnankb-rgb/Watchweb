@@ -472,7 +472,7 @@ const cancelOrderItem  = async (req, res) => {
     if (item.product) {
       await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
     }
-
+  
     // Calculate refund for this single item
     const itemSubtotal = Number(item.totalPrice || (item.price * item.quantity) || 0);
     const taxShare = (order.subtotal > 0) 

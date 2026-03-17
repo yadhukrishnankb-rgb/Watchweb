@@ -726,10 +726,8 @@ async function addToCartWithQty(productId) {
 
     if (data.success) {
       Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
-      const cartBadge = document.querySelector('.cart-count');
-      if (cartBadge && data.cartCount !== undefined) cartBadge.textContent = data.cartCount;
-      const wishlistBadge = document.querySelector('.wishlist-count');
-      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
+      window.updateCartCount(data.cartCount);
+      window.updateWishlistCount(data.wishlistCount);
       try {
         const wlBtn = document.getElementById('wishlistBtn');
         const wlText = document.getElementById('wishlistBtnText');

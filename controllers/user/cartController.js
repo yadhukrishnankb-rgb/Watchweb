@@ -111,6 +111,8 @@ exports.addToCart = async (req, res) => {
             })
         }
 
+    
+
         // Use findOneAndUpdate with upsert to avoid duplicate insert race conditions.
         // Ensure both 'userId' and legacy 'user' are set on insert (handles existing DB index on 'user').
         let cart = await Cart.findOneAndUpdate(

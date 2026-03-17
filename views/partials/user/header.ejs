@@ -500,3 +500,15 @@ function clearSearch() {
 </script>
 
 <script src="/js/debounce-search.js"></script>
+
+<script>
+window.updateWishlistCount = function(count) {
+  const badge = document.querySelector('.wishlist-count');
+  if (badge) badge.textContent = count;
+};
+
+window.updateCartCount = function(count) {
+  const badge = document.querySelector('.cart-count');
+  if (badge) badge.textContent = count;
+};
+</script>

@@ -859,15 +859,8 @@ async function addToCart(productId, event) {
                 toast: true
             });
 
-            const cartCount = document.querySelector('.cart-count');
-            if (cartCount && data.cartCount !== undefined) {
-                cartCount.textContent = data.cartCount;
-                cartCount.style.display = 'flex';
-            }
-            const wishlistCount = document.querySelector('.wishlist-count');
-            if (wishlistCount && data.wishlistCount !== undefined) {
-                wishlistCount.textContent = data.wishlistCount;
-            }
+            window.updateCartCount(data.cartCount);
+            window.updateWishlistCount(data.wishlistCount);
 
             setTimeout(() => {
                 if (button) {
@@ -957,10 +950,7 @@ async function toggleWishlist(productId, btn, event) {
                     console.warn('Wishlist DOM cleanup failed', err);
                 }
             }
-            const wishlistBadge = document.querySelector('.wishlist-count');
-            if (wishlistBadge && data.wishlistCount !== undefined) {
-                wishlistBadge.textContent = data.wishlistCount;
-            }
+            window.updateWishlistCount(data.wishlistCount);
         } else if (data.alreadyInWishlist) {
             btn.classList.add('added');
             Swal.fire({ icon: 'info', title: 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });

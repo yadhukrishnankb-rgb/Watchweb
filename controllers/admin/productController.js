@@ -439,3 +439,39 @@ exports.removeProductOffer = async (req, res) => {
     }
 };
 
+exports.editProductOffer = async (req, res) =>{
+    try {
+
+        const { id } = req.params;
+
+        const {percentage,startDate,endDate} = req.body;
+
+        const offer = await Offer.findOne({
+            product: id,
+            offerType:'product'
+        })
+
+        if(!offer){
+            return res.status(404).json({
+                success:false,
+                message:"offer not found"
+            })
+        }
+
+        offer.percentage = percentage;
+        offer.startDate = new Date(startDate);
+        offer.endDate = new Date(endDate);
+
+        await offer.save()
+
+        res.json({
+            success:true,
+            message: "offer update successfully"
+        })
+
+    }catch(err){
+        console.error('Error editing product offer:',err);
+        return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.PRODUCT_UPDATE_ERROR})
+;    }
+}
+

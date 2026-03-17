@@ -236,6 +236,47 @@ exports.setCategoryOffer = async (req, res) => {
     }
 };
 
+exports.editCategoryOffer = async (req,res) =>{
+
+    try{
+
+        const { id } = req.params;
+        const { percentage, startDate, endDate} = req.body;
+
+        const offer = await Offer.findOne({
+            category: id,
+            offerType: 'category'
+        })
+
+        if(!offer){
+            return res.status(404).json({
+                success: false,
+                message: "Offer not found"
+            })
+        }
+
+        offer.percentage = percentage;
+        offer.startDate = new Date(startDate)
+        offer.endDate = new Date(endDate);
+
+        await offer.save();
+
+        res.json({
+            success: true,
+            message: "Offer updated successfully"
+        });
+
+    }catch(err){
+        console.error(err)
+        res.status(500).json({
+            success: false,
+            message: "Error updating offer"
+        })
+
+    }
+
+}
+
 exports.removeCategoryOffer = async (req, res) => {
     try {
         const { id } = req.params;

@@ -409,7 +409,7 @@ async function removeFromWishlist(productId, btn) {
     });
     const data = await res.json();
     
-    if (data.success) {
+  if (data.success) {
       if (card) card.remove();
       Swal.fire({ 
         icon: 'success', 
@@ -420,8 +420,7 @@ async function removeFromWishlist(productId, btn) {
         showConfirmButton: false 
       });
       
-      const wishlistBadge = document.querySelector('.wishlist-count');
-      if (wishlistBadge && data.wishlistCount !== undefined) wishlistBadge.textContent = data.wishlistCount;
+      window.updateWishlistCount(data.wishlistCount);
       return;
     }
     
