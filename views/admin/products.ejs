@@ -72,9 +72,15 @@
                   <button onclick="openEditModal('<%= product._id %>')" class="text-blue-600 hover:text-blue-900 mr-3">
                     Edit
                   </button>
-                  <button onclick="confirmBlock('<%= product._id %>')" class="text-red-600 hover:text-red-900 mr-3">
-                    Block
-                  </button>
+                  <% if (product.isBlocked) { %>
+                    <button onclick="confirmUnblock('<%= product._id %>')" class="text-green-600 hover:text-green-900 mr-3">
+                      Unblock
+                    </button>
+                  <% } else { %>
+                    <button onclick="confirmBlock('<%= product._id %>')" class="text-red-600 hover:text-red-900 mr-3">
+                      Block
+                    </button>
+                  <% } %>
                   <button onclick="confirmDelete('<%= product._id %>')" class="text-red-600 hover:text-red-900 mr-3">
                     Delete
                   </button>
@@ -714,14 +720,65 @@
       });
     }
 
+    function confirmUnblock(productId) {
+      Swal.fire({
+        title: 'Unblock Product?',
+        text: "This product will be visible to users again!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, unblock it!'
+      }).then((result) => {
+        if (result.isConfirmed) unblockProduct(productId);
+      });
+    }
+
     async function blockProduct(productId) {
       try {
         const data = await fetchJson(`/admin/products/${productId}/block`, { method: 'PATCH' });
         if (data.success) {
-          Swal.fire({ icon: 'success', title: 'Blocked!', text: data.message || 'Product blocked', showConfirmButton: false, timer: 1200 });
+          Swal.fire({ icon: 'success', title: 'Blocked!', text: data.message || 'Product blocked', showConfirmButton: false, timer: 1200 })
+            .then(() => {
+              // Update the button to show Unblock
+              updateBlockButton(productId, true);
+            });
         } else throw new Error(data.message || 'Block failed');
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error blocking product' });
+      }
+    }
+
+    async function unblockProduct(productId) {
+      try {
+        const data = await fetchJson(`/admin/products/${productId}/unblock`, { method: 'PATCH' });
+        if (data.success) {
+          Swal.fire({ icon: 'success', title: 'Unblocked!', text: data.message || 'Product unblocked', showConfirmButton: false, timer: 1200 })
+            .then(() => {
+              // Update the button to show Block
+              updateBlockButton(productId, false);
+            });
+        } else throw new Error(data.message || 'Unblock failed');
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error unblocking product' });
+      }
+    }
+
+    function updateBlockButton(productId, isBlocked) {
+      const row = document.querySelector(`tr[data-product-id="${productId}"]`);
+      if (!row) return;
+
+      const actionsCell = row.querySelector('td:last-child');
+      const blockButton = actionsCell.querySelector('button:nth-child(2)'); // The block/unblock button is the second button
+
+      if (isBlocked) {
+        blockButton.textContent = 'Unblock';
+        blockButton.className = 'text-green-600 hover:text-green-900 mr-3';
+        blockButton.setAttribute('onclick', `confirmUnblock('${productId}')`);
+      } else {
+        blockButton.textContent = 'Block';
+        blockButton.className = 'text-red-600 hover:text-red-900 mr-3';
+        blockButton.setAttribute('onclick', `confirmBlock('${productId}')`);
       }
     }
 

@@ -501,7 +501,7 @@ body {
                         const itemStatus = (itemRaw || '').toLowerCase();
                         const rawForDisplay = (itemRaw && itemRaw.toLowerCase() !== 'placed') ? itemRaw : (orderRaw || 'Pending');
                         const displayStatus = rawForDisplay.toString().split(/\s+/).map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()) : '').filter(Boolean).join(' ');
-                        const canCancel = orderStatusClass === 'pending' && itemStatus !== 'cancelled';
+                        const canCancel = (orderStatusClass === 'pending' || orderStatusClass === 'processing') && itemStatus !== 'cancelled';
                         const canReturn = (itemStatus === 'delivered' || (orderRaw || '').toLowerCase() === 'delivered') && itemStatus !== 'cancelled' && itemStatus !== 'returned';
                     %>
 
@@ -638,6 +638,13 @@ body {
                 <p class="status-date">
                     📅 <%= new Date(order.createdOn).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                 </p>
+                <% if (orderStatusClass === 'pending' || orderStatusClass === 'processing') { %>
+                    <div style="margin-top: 1.5rem; text-align: center;">
+                        <button class="action-btn btn-cancel" onclick="cancelFullOrder('<%= order._id %>', this)">
+                            Cancel Entire Order
+                        </button>
+                    </div>
+                <% } %>
             </div>
 
             <div class="card">
@@ -671,21 +678,27 @@ body {
       }
     } else {
       // For Razorpay / Wallet
-      switch (realPayStatus.toLowerCase()) {
-        case 'paid':
-          displayStatus = 'Paid Successfully';
-          paymentStatusClass = 'text-success fw-bold';
-          break;
-        case 'failed':
-          displayStatus = 'Payment Failed';
-          paymentStatusClass = 'text-danger fw-bold';
-          break;
-        case 'pending':
-          displayStatus = 'Payment Pending';
-          paymentStatusClass = 'text-warning fw-bold';
-          break;
-        default:
-          displayStatus = realPayStatus || 'Unknown';
+      const orderStatus = order.status?.toLowerCase();
+      if (['cancelled', 'returned'].includes(orderStatus)) {
+        displayStatus = 'Refunded / Cancelled';
+        paymentStatusClass = 'text-danger fw-bold';
+      } else {
+        switch (realPayStatus.toLowerCase()) {
+          case 'paid':
+            displayStatus = 'Paid Successfully';
+            paymentStatusClass = 'text-success fw-bold';
+            break;
+          case 'failed':
+            displayStatus = 'Payment Failed';
+            paymentStatusClass = 'text-danger fw-bold';
+            break;
+          case 'pending':
+            displayStatus = 'Payment Pending';
+            paymentStatusClass = 'text-warning fw-bold';
+            break;
+          default:
+            displayStatus = realPayStatus || 'Unknown';
+        }
       }
     }
   %>
@@ -936,6 +949,63 @@ async function requestReturnItem(orderId, itemId, btn) {
     } finally {
         btn.disabled = false;
         btn.innerHTML = 'Request Return';
+    }
+}
+
+async function cancelFullOrder(orderId, btn) {
+    const { value: reason } = await Swal.fire({
+        title: 'Cancel Entire Order',
+        html: `
+            <p class="text-gray-600 mb-4">Are you sure you want to cancel this entire order?</p>
+            <textarea id="cancel-reason" class="swal2-textarea" placeholder="Reason (optional)" rows="3"></textarea>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e8435a',
+        cancelButtonColor: '#9ca3af',
+        confirmButtonText: 'Yes, Cancel Order',
+        cancelButtonText: 'No',
+        preConfirm: () => document.getElementById('cancel-reason').value || 'No reason provided'
+    });
+
+    if (!reason) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+
+    try {
+        const res = await fetch(`/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            // Show success message for 4 seconds before reload
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: data.message || 'Order cancelled successfully',
+                timer: 4000,           // ← 4 seconds delay
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            location.reload();     // Reload only after timer ends
+        } else {
+            throw new Error(data.message || 'Failed to cancel order');
+        }
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.message || 'Something went wrong',
+            confirmButtonColor: '#e8435a'
+        });
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Cancel Entire Order';
     }
 }
 

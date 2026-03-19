@@ -8,6 +8,8 @@ const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const { addToWallet } = require('./walletController');
 const razorpay = require('../../config/razorpay');
+const Cart = require('../../models/cartSchema'); 
+
 
 const listOrders = async (req, res) => {
     try {
@@ -188,8 +190,8 @@ const cancelOrder = async (req, res) => {
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const current = (order.status || '').toLowerCase();
-    // Only allow full-order cancellation when order is in 'Pending' state
-    if (current !== 'pending') {
+    // Only allow full-order cancellation when order is in 'Pending' or 'Processing' state
+    if (!['pending', 'processing'].includes(current)) {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANCEL_ONLY_PENDING });
     }
 
@@ -439,8 +441,8 @@ const cancelOrderItem  = async (req, res) => {
       return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
     }
 
-    // Ensure parent order is still pending before allowing item cancel
-    if ((order.status || '').toLowerCase() !== 'pending') {
+    // Ensure parent order is still pending or processing before allowing item cancel
+    if (!['pending', 'processing'].includes((order.status || '').toLowerCase())) {
       return res.status(statusCodes.BAD_REQUEST).json({ 
         success: false, 
         message: messages.ORDER_CANNOT_CANCEL_STAGE 
@@ -685,12 +687,23 @@ const verifyRetryPayment = async (req, res) => {
     order.razorpayPaymentId = razorpay_payment_id;
     order.razorpaySignature = razorpay_signature;
     order.paidAt = new Date();
-    order.status = 'Processing'; // or 'Placed' - your choice
+    order.status = 'Processing'; 
 
     await order.save();
 
-    // Optional: if stock was not deducted earlier, do it now
-    // But usually stock is deducted on first attempt — check your logic
+    await Cart.updateOne(
+      { user: order.user},
+      {$set: { items: []}}
+    )
+
+   //  Reduce stock
+    for (let item of order.orderedItems) {
+      await Product.updateOne(
+        { _id: item.product },
+        { $inc: { quantity: -item.quantity } }
+      );
+    }
+    
 
     res.json({
       success: true,

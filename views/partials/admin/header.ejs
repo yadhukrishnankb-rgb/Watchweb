@@ -114,26 +114,19 @@
 
 
       <nav class="mt-4">
-
-        <a href="/admin/dashboard" class="block py-3 px-4 bg-gray-900 text-blue-400 flex items-center">
-
+        <a href="/admin/dashboard" class="dashboard-link block py-3 px-4 hover:bg-gray-700 flex items-center">
           <span class="sidebar-icon"><i class="fas fa-tachometer-alt"></i></span> Dashboard
-
         </a>
 
-        <a href="/admin/orders" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-
+        <a href="/admin/orders" class="orders-link block py-3 px-4 hover:bg-gray-700 flex items-center">
           <span class="sidebar-icon"><i class="fas fa-clipboard-list"></i></span> Orders
-
         </a>
 
-        <a href="/admin/Products" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
-
+        <a href="/admin/Products" class="products-link block py-3 px-4 hover:bg-gray-700 flex items-center">
           <span class="sidebar-icon"><i class="fas fa-box"></i></span> Products
-
         </a>
 
-<a href="/admin/inventory" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+<a href="/admin/inventory" class="inventory-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-box"></i></span> Inventory
 
@@ -142,43 +135,43 @@
 
 
 
-        <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="#" class="brands-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-industry"></i></span> Brands
 
         </a>
 
-        <a href="/admin/customers" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="/admin/customers" class="customers-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-users"></i></span> Customers
 
         </a>
 
-        <a href="/admin/categories" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="/admin/categories" class="categories-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-users"></i></span> Category
 
         </a>
 
-        <a href="/admin/coupons" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="/admin/coupons" class="coupons-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-image"></i></span> Coupons
 
         </a>
 
-        <a href="/admin/sales-report" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="/admin/sales-report" class="sales-report-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-dollar-sign"></i></span> Sales Report
 
         </a>
 
-        <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="#" class="analytics-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-chart-line"></i></span> Analytics
 
         </a>
 
-        <a href="#" class="block py-3 px-4 hover:bg-gray-700 flex items-center">
+        <a href="#" class="settings-link block py-3 px-4 hover:bg-gray-700 flex items-center">
 
           <span class="sidebar-icon"><i class="fas fa-cog"></i></span> Settings
 
@@ -271,99 +264,91 @@
 
 
 <script>
-
   function toggleDropdown() {
-
     const menu = document.getElementById('dropdownMenu');
-
     menu.classList.toggle('hidden');
-
   }
 
-
+  // Set active sidebar navigation based on current path
+  document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    
+    // Remove active classes from all links first
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+      link.classList.remove('bg-gray-900', 'text-blue-400');
+      link.classList.add('hover:bg-gray-700');
+    });
+    
+    // Add active classes to current page link
+    if (currentPath === '/admin/dashboard') {
+      document.querySelector('.dashboard-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.dashboard-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/orders') {
+      document.querySelector('.orders-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.orders-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/Products') {
+      document.querySelector('.products-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.products-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/inventory') {
+      document.querySelector('.inventory-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.inventory-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/customers') {
+      document.querySelector('.customers-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.customers-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/categories') {
+      document.querySelector('.categories-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.categories-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/coupons') {
+      document.querySelector('.coupons-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.coupons-link').classList.remove('hover:bg-gray-700');
+    } else if (currentPath === '/admin/sales-report') {
+      document.querySelector('.sales-report-link').classList.add('bg-gray-900', 'text-blue-400');
+      document.querySelector('.sales-report-link').classList.remove('hover:bg-gray-700');
+    }
+  });
 
   /* =========================
-
      ADMIN BACK-BUTTON GUARD
-
      ========================= */
-
   (function () {
-
     if (!location.pathname.startsWith('/admin')) return;
 
-
-
     if (window.__adminBackGuard) return;
-
     window.__adminBackGuard = true;
 
-
-
     const DASHBOARD = '/admin/dashboard';
-
     const DEBOUNCE = 600;
-
     const KEY = 'admin_back_ts';
-
     let handling = false;
 
-
-
     history.replaceState({ guard: true }, '', location.href);
-
     history.pushState({ guard: true }, '', location.href);
 
-
-
     const onBack = (e) => {
-
       if (e.state && e.state.guard) return;
-
       if (handling) return;
 
-
-
       const now = Date.now();
-
       const last = Number(sessionStorage.getItem(KEY) || 0);
-
       if (now - last < DEBOUNCE) return;
 
-
-
       sessionStorage.setItem(KEY, String(now));
-
       handling = true;
-
-
 
       const win = window.open(DASHBOARD, '_blank', 'noopener,noreferrer');
 
-
-
       if (!win) {
-
         window.location.replace(DASHBOARD);
-
       } else {
-
         try { history.pushState({ guard: true }, '', location.href); } catch (_) {}
-
       }
 
-
-
       setTimeout(() => { handling = false; }, DEBOUNCE);
-
     };
 
-
-
     window.addEventListener('popstate', onBack, { passive: true });
-
   })();
-
 </script>
 
 

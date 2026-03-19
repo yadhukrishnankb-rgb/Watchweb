@@ -49,6 +49,8 @@ exports.getSalesReport = async (req, res) => {
     try {
         const {filterType = 'monthly', start: customStart, end: customEnd} = req.query;
 
+       
+
         const {start, end} = getDateRange(filterType, customStart, customEnd);
 
         // return all orders in the date range
@@ -59,8 +61,11 @@ exports.getSalesReport = async (req, res) => {
 
         const orders = await Order.find(query).
         populate('user', 'name email').
-        sort({createdOn: -1}).
-        lean();
+        sort({createdOn: -1})
+        .lean();
+
+
+      
 
         console.log('Sales report query:', query);
         console.log('Found orders:', orders.length);
