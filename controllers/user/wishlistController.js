@@ -3,6 +3,7 @@ const Wishlist = require('../../models/wishlistSchema');
 const Product = require('../../models/productSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
+const { getOfferDetails } = require('../../helpers/priceUtils');
 
 // Show user's wishlist
 exports.viewWishlist = async (req, res) => {
@@ -17,21 +18,9 @@ exports.viewWishlist = async (req, res) => {
     if (wishlist.products && Array.isArray(wishlist.products)) {
       wishlist.products = wishlist.products.map(item => {
         const p = item.productId;
-        let offerPercent = 0;
-        let offerSource = null;
-        if (p && p.offer && typeof p.offer.percentage === 'number' && p.offer.percentage > 0) {
-          offerPercent = p.offer.percentage;
-          offerSource = 'product';
-        } else if (p && p.category && p.category.offer && p.category.offer.percentage > 0) {
-          const co = p.category.offer;
-          const now = new Date();
-          if (co.isActive && (!co.startDate || co.startDate <= now) && (!co.endDate || co.endDate >= now)) {
-            offerPercent = co.percentage;
-            offerSource = 'category';
-          }
-        }
-        p.offerPercent = offerPercent;
-        p.offerSource = offerSource;
+        const offerDetails = getOfferDetails(p);
+        p.offerPercent = offerDetails.offerPercent;
+        p.offerSource = offerDetails.offerSource;
         return item;
       });
     }

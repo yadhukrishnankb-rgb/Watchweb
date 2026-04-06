@@ -111,7 +111,8 @@ exports.addProduct = async (req, res) => {
             salesPrice,
             quantity,
             color,
-            status
+            status,
+            
         } = req.body;
 
         // Validate required fields
@@ -149,6 +150,7 @@ exports.addProduct = async (req, res) => {
             salesPrice: parseFloat(salesPrice),
             quantity: parseInt(quantity) || 0,
             color,
+        
             productImage: productImages,
             status: status || 'Available'
         });

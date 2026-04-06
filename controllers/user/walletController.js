@@ -96,6 +96,10 @@ const getWallet = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = 10; // transactions per page
+    const skip = (page - 1) * limit;
+
     const user = await User.findById(req.session.user._id)
       .select('wallet.balance wallet.transactions')
       .lean();
@@ -109,10 +113,30 @@ const getWallet = async (req, res) => {
       (a, b) => new Date(b.date) - new Date(a.date)
     );
 
+    // Calculate pagination
+    const totalTransactions = sortedTransactions.length;
+    const totalPages = Math.ceil(totalTransactions / limit);
+    const paginatedTransactions = sortedTransactions.slice(skip, skip + limit);
+
+    // Ensure page is within valid range
+    if (page > totalPages && totalPages > 0) {
+      return res.redirect(`/wallet?page=${totalPages}`);
+    }
+
     res.render('user/wallet', {
       wallet: {
         balance: user.wallet.balance || 0,
-        transactions: sortedTransactions
+        transactions: paginatedTransactions
+      },
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalTransactions: totalTransactions,
+        itemsPerPage: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        nextPage: page + 1,
+        prevPage: page - 1
       },
       user: req.session.user
     });

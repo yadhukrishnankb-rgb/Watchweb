@@ -176,6 +176,7 @@ const orderDetails = async (req, res) => {
 };
 
 
+
 const cancelOrder = async (req, res) => {
   try {
     if (!req.session || !req.session.user) {
@@ -225,9 +226,9 @@ const cancelOrder = async (req, res) => {
 
     //refund to wallet only if it was a paid (online) order
     if (totalRemoved > 0 && order.paymentMethod && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
-       await addToWallet(userId, totalRemoved, 'credit', 'Full Order Cancel Refund', order._id);
+       await addToWallet(userId, order.finalAmount, 'credit', 'Full Order Cancel Refund', orderId);
 
-       order.refunded = (order.refunded || 0) + totalRemoved;
+       order.refunded = (order.refunded || 0) + order.finalAmount;
     }
 
     await order.save();

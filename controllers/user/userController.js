@@ -10,8 +10,8 @@ const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const { session } = require("passport");
 const { addToWallet } = require("./walletController");
-
-
+const { getOfferDetails } = require("../../helpers/priceUtils");
+const { offerPopulate } = require("../../helpers/populateUtils");
  const loadSignup = async (req,res)=>{
     try{
 
@@ -39,89 +39,48 @@ res.redirect("/pageNotFound")
 const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
-        const now = new Date();
-        // Fetch featured products (newest 8 products)
-        let featuredProducts = await Product.find({ isBlocked: false })
-            .populate({
-                path: 'category',
-                populate: { path: 'offer' }
-            })
-            .populate({ path: 'offer' })
-            .sort({ createdAt: -1 })
-            .limit(10)
+
+        // Reusable base query with proper population
+        const baseQuery = Product.find({ isBlocked: false })
+            .populate(offerPopulate)   // ← Clean & consistent
             .lean();
 
-        // Fetch popular products (you can modify this based on your criteria)
-        let popularProducts = await Product.find({ isBlocked: false })
-            .populate({
-                path: 'category',
-                populate: { path: 'offer' }
-            })
-            .populate({ path: 'offer' })
+        // Fetch featured products
+        let featuredProducts = await baseQuery.clone()
+            .sort({ createdAt: -1 })
+            .limit(10);
+
+        // Fetch popular products
+        let popularProducts = await baseQuery.clone()
             .sort({ salesCount: -1 })
-            .limit(10)
-            .lean();
+            .limit(10);
 
         // Fetch new arrivals
-        let newArrivals = await Product.find({ isBlocked: false })
-            .populate({
-                path: 'category',
-                populate: { path: 'offer' }
-            })
-            .populate({ path: 'offer' })
+        let newArrivals = await baseQuery.clone()
             .sort({ createdAt: -1 })
-            .limit(10)
-            .lean();
+            .limit(10);
 
-        // helper to inject offer fields - applies MAXIMUM discount from product or category
-        const injectOffer = p => {
-            let productDiscount = 0;
-            let categoryDiscount = 0;
-            const nowDate = new Date();
+      
+const injectOffer = (p) => {
+    const offerDetails = getOfferDetails(p);
+    return { 
+        ...p, 
+        ...offerDetails,
+        // Ensure we have clean fields for EJS
+        displayPrice: offerDetails.effectivePrice,
+        originalPrice: offerDetails.offerPercent > 0 ? 
+                      Math.round((typeof p.salesPrice === 'number' ? p.salesPrice : (p.price || p.regularPrice || 0)) * 100) / 100 : 
+                      null
+    };
+};
 
-            // Check product offer
-            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
-                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
-                    productDiscount = p.offer.percentage;
-                }
-            }
+featuredProducts = featuredProducts.map(injectOffer);
+popularProducts = popularProducts.map(injectOffer);
+newArrivals = newArrivals.map(injectOffer);
 
-            // Check category offer
-            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
-                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
-                    categoryDiscount = p.category.offer.percentage;
-                }
-            }
 
-            // Apply MAXIMUM discount
-            const offerPercent = Math.max(productDiscount, categoryDiscount);
-            let offerStart = null;
-            let offerEnd = null;
-            let offerSource = null;
-
-            if (offerPercent > 0) {
-                // Determine which offer source provided the max discount
-                if (productDiscount === offerPercent && productDiscount > 0) {
-                    offerStart = p.offer.startDate;
-                    offerEnd = p.offer.endDate;
-                    offerSource = 'product';
-                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
-                    offerStart = p.category.offer.startDate;
-                    offerEnd = p.category.offer.endDate;
-                    offerSource = 'category';
-                }
-            }
-
-            return { ...p, offerPercent, offerStart, offerEnd, offerSource };
-        };
-
-        featuredProducts = featuredProducts.map(injectOffer);
-        popularProducts = popularProducts.map(injectOffer);
-        newArrivals = newArrivals.map(injectOffer);
-
-        // Fetch categories for the filter
+        // Fetch categories for filter
         const categories = await Category.find({ isListed: true }).lean();
-
 
         if (user) {
             const userData = await User.findOne({ _id: user._id });
@@ -131,7 +90,6 @@ const loadHomepage = async (req, res) => {
                 popularProducts,
                 newArrivals,
                 categories
-                
             });
         } else {
             res.render("home", {
@@ -140,7 +98,6 @@ const loadHomepage = async (req, res) => {
                 popularProducts,
                 newArrivals,
                 categories
-            
             });
         }
     } catch (error) {
@@ -148,7 +105,6 @@ const loadHomepage = async (req, res) => {
         res.status(500).send("Server error");
     }
 };
-
 
     
     function generateOtp(){

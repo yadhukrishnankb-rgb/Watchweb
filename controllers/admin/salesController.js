@@ -34,8 +34,8 @@ function getDateRange(filterType, customStart, customEnd) {
             break;
 
         case 'custom':
-            start = customStart ? moment(customStart) : moment().subtract(30,'days');
-            end = customEnd ? moment(customEnd) : moment();
+            start = customStart ? moment(customStart).startOf('day') : moment().subtract(30, 'days').startOf('day');
+            end = customEnd ? moment(customEnd).endOf('day') : moment().endOf('day');
             break;
     }
 
@@ -44,7 +44,6 @@ function getDateRange(filterType, customStart, customEnd) {
 }    
 
 // get sales report page
-
 exports.getSalesReport = async (req, res) => {
     try {
         const {filterType = 'monthly', start: customStart, end: customEnd} = req.query;

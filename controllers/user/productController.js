@@ -7,6 +7,7 @@ const Discount = require('../../models/discountSchema');
 const Wishlist = require('../../models/wishlistSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
+ const { getOfferDetails } = require('../../helpers/priceUtils');
 
 
 exports.listProducts = async (req, res) => {
@@ -88,49 +89,8 @@ exports.listProducts = async (req, res) => {
 
         // compute offer fields - apply MAXIMUM discount from product or category
         products = products.map(p => {
-            let productDiscount = 0;
-            let categoryDiscount = 0;
-            const nowDate = new Date();
-
-            // Check product offer
-            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
-                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
-                    productDiscount = p.offer.percentage;
-                }
-            }
-
-            // Check category offer
-            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
-                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
-                    categoryDiscount = p.category.offer.percentage;
-                }
-            }
-
-            // Apply MAXIMUM discount
-            const offerPercent = Math.max(productDiscount, categoryDiscount);
-            let offerStart = null;
-            let offerEnd = null;
-            let offerSource = null;
-
-            if (offerPercent > 0) {
-                if (productDiscount === offerPercent && productDiscount > 0) {
-                    offerStart = p.offer.startDate;
-                    offerEnd = p.offer.endDate;
-                    offerSource = 'product';
-                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
-                    offerStart = p.category.offer.startDate;
-                    offerEnd = p.category.offer.endDate;
-                    offerSource = 'category';
-                }
-            }
-
-            return {
-                ...p,
-                offerPercent,
-                offerStart,
-                offerEnd,
-                offerSource
-            };
+            const offerDetails = getOfferDetails(p);
+            return { ...p, ...offerDetails };
         });
 
         // Get total count for pagination
@@ -191,49 +151,10 @@ exports.getProductDetails = async (req, res) => {
             .lean();
 
         // compute offer including category fallback - apply MAXIMUM discount
-        let offerPercent = 0;
-        let offerStart = null;
-        let offerEnd = null;
-        let offerSource = null;
-        if (product) {
-            let productDiscount = 0;
-            let categoryDiscount = 0;
-            const nowDate = new Date();
-
-            // Check product offer
-            if (product.offer && product.offer.percentage > 0 && product.offer.isActive) {
-                if ((!product.offer.startDate || product.offer.startDate <= nowDate) && (!product.offer.endDate || product.offer.endDate >= nowDate)) {
-                    productDiscount = product.offer.percentage;
-                }
-            }
-
-            // Check category offer
-            if (product.category && product.category.offer && product.category.offer.percentage > 0 && product.category.offer.isActive) {
-                if ((!product.category.offer.startDate || product.category.offer.startDate <= nowDate) && (!product.category.offer.endDate || product.category.offer.endDate >= nowDate)) {
-                    categoryDiscount = product.category.offer.percentage;
-                }
-            }
-
-            // Apply MAXIMUM discount
-            offerPercent = Math.max(productDiscount, categoryDiscount);
-            if (offerPercent > 0) {
-                if (productDiscount === offerPercent && productDiscount > 0) {
-                    offerStart = product.offer.startDate;
-                    offerEnd = product.offer.endDate;
-                    offerSource = 'product';
-                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
-                    offerStart = product.category.offer.startDate;
-                    offerEnd = product.category.offer.endDate;
-                    offerSource = 'category';
-                }
-            }
-        }
+        let offerDetails = getOfferDetails(product);
         product = {
             ...product,
-            offerPercent,
-            offerStart,
-            offerEnd,
-            offerSource
+            ...offerDetails
         };
         
         // Check if product exists and is available
@@ -258,48 +179,8 @@ exports.getProductDetails = async (req, res) => {
         .limit(4)
         .lean();
         relatedProducts = relatedProducts.map(p => {
-            let productDiscount = 0;
-            let categoryDiscount = 0;
-            const nowDate = new Date();
-
-            // Check product offer
-            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
-                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
-                    productDiscount = p.offer.percentage;
-                }
-            }
-
-            // Check category offer
-            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
-                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
-                    categoryDiscount = p.category.offer.percentage;
-                }
-            }
-
-            // Apply MAXIMUM discount
-            const offerPercent = Math.max(productDiscount, categoryDiscount);
-            let offerStart = null;
-            let offerEnd = null;
-            let offerSource = null;
-
-            if (offerPercent > 0) {
-                if (productDiscount === offerPercent && productDiscount > 0) {
-                    offerStart = p.offer.startDate;
-                    offerEnd = p.offer.endDate;
-                    offerSource = 'product';
-                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
-                    offerStart = p.category.offer.startDate;
-                    offerEnd = p.category.offer.endDate;
-                    offerSource = 'category';
-                }
-            }
-            return {
-                ...p,
-                offerPercent,
-                offerStart,
-                offerEnd,
-                offerSource
-            };
+            const offerDetails = getOfferDetails(p);
+            return { ...p, ...offerDetails };
         });
 
         // Get product reviews
@@ -435,42 +316,8 @@ exports.searchProducts = async (req, res) => {
 
         // compute offer fields as done in listProducts - apply MAXIMUM discount
         products = products.map(p => {
-            let productDiscount = 0;
-            let categoryDiscount = 0;
-            const nowDate = new Date();
-
-            // Check product offer
-            if (p.offer && p.offer.percentage > 0 && p.offer.isActive) {
-                if ((!p.offer.startDate || p.offer.startDate <= nowDate) && (!p.offer.endDate || p.offer.endDate >= nowDate)) {
-                    productDiscount = p.offer.percentage;
-                }
-            }
-
-            // Check category offer
-            if (p.category && p.category.offer && p.category.offer.percentage > 0 && p.category.offer.isActive) {
-                if ((!p.category.offer.startDate || p.category.offer.startDate <= nowDate) && (!p.category.offer.endDate || p.category.offer.endDate >= nowDate)) {
-                    categoryDiscount = p.category.offer.percentage;
-                }
-            }
-
-            // Apply MAXIMUM discount
-            const offerPercent = Math.max(productDiscount, categoryDiscount);
-            let offerStart = null;
-            let offerEnd = null;
-            let offerSource = null;
-
-            if (offerPercent > 0) {
-                if (productDiscount === offerPercent && productDiscount > 0) {
-                    offerStart = p.offer.startDate;
-                    offerEnd = p.offer.endDate;
-                    offerSource = 'product';
-                } else if (categoryDiscount === offerPercent && categoryDiscount > 0) {
-                    offerStart = p.category.offer.startDate;
-                    offerEnd = p.category.offer.endDate;
-                    offerSource = 'category';
-                }
-            }
-            return { ...p, offerPercent, offerStart, offerEnd, offerSource };
+            const offerDetails = getOfferDetails(p);
+            return { ...p, ...offerDetails };
         });
 
         const totalProducts = await Product.countDocuments(query);

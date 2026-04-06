@@ -2,6 +2,7 @@ const Category = require('../../models/categorySchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const Offer = require('../../models/offerSchema');
+const Product = require('../../models/productSchema')
 
 
 exports.getCategories = async (req, res) => {
@@ -25,8 +26,8 @@ exports.getCategories = async (req, res) => {
             Category.countDocuments(query),
             Category.find(query)
             .populate('offer')
-            .select('name description offer isListed createAt')
-            .sort({createAt: -1,_id: -1})
+            .select('name description offer isListed createdAt')
+            .sort({createdAt: -1,_id: -1})
             .skip(skip)
             .limit(limit)
         ]);
@@ -142,12 +143,16 @@ exports.editCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
+
+    
         
         const category = await Category.findOneAndUpdate(
             { _id: id, isListed: true },
             { isListed: false },
             { new: true }
         );
+
+        
 
         if (!category) {
             return res.status(statusCodes.NOT_FOUND).json({
