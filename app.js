@@ -137,7 +137,36 @@ app.locals.moment = require('moment');
 
 // Routes
 app.use("/", userRouter);
- app.use("/admin",adminRouter);
+app.use("/admin", adminRouter);
+
+// 404 handler for unknown routes
+app.use((req, res, next) => {
+    const err = new Error('Page not found');
+    err.status = 404;
+    next(err);
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || (status === 400 ? 'Bad request' : status === 404 ? 'Page not found' : 'Internal server error');
+
+    if (status === 404) {
+        return res.status(404).render('page-404', { message });
+    }
+
+    const viewData = {
+        status,
+        title: status === 400 ? 'Bad Request' : 'Server Error',
+        message
+    };
+
+    if (req.originalUrl.startsWith('/admin')) {
+        return res.status(status).render('admin/error', viewData);
+    }
+
+    return res.status(status).render('error', viewData);
+});
 
 // Server setup
 const PORT = process.env.PORT || 3000; // Fixed port configuration

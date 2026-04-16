@@ -8,6 +8,26 @@ const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const { addToWallet } = require('../user/walletController');
 
+const round2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+const computeItemRefund = (order, item) => {
+  const itemPaid = Number(item.totalPrice ?? (item.price * item.quantity) ?? 0);
+  const totalTax = Number(order.tax || 0);
+  const subtotal = Number(order.subtotal || 0);
+  const discountedSubtotal = (order.orderedItems || []).reduce(
+    (sum, it) => sum + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0),
+    0
+  ) || subtotal;
+  const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
+  return round2(itemPaid + taxShare);
+};
+
+const computePendingOrderRefund = (order) => {
+  const paidAmount = Number(order.finalAmount || 0);
+  const refunded = Number(order.refunded || 0);
+  return round2(Math.max(0, paidAmount - refunded));
+};
+
 // GET /admin/orders
 exports.getOrders = async (req, res) => {
   try {
@@ -159,24 +179,44 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    // === REFUND ON DIRECT ADMIN CANCEL/RETURN ===
+    const isRefundableAdminAction = ['Cancelled', 'Returned'].includes(newStatusNormalized)
+      && order.paymentStatus === 'Paid'
+      && order.paymentMethod !== 'COD';
+
+    if (isRefundableAdminAction) {
+      const refundAmount = computePendingOrderRefund(order);
+      if (refundAmount > 0) {
+        const reason = newStatusNormalized === 'Returned'
+          ? 'Full Order Return Refund'
+          : 'Full Order Cancel Refund';
+
+        await addToWallet(order.user, refundAmount, 'credit', reason, order._id);
+        order.refunded = round2(Number(order.refunded || 0) + refundAmount);
+      }
+    }
+
     // All checks passed → update order status
     order.status = newStatusNormalized;
 
     // === SYNC ITEM STATUSES ===
-    // Update all items that don't have a cancellation/return request
-    // Items with pending cancel/return requests keep their status
     order.orderedItems.forEach(item => {
-      // Skip items that have explicit cancel/return requests - they handle their own status
-      if (item.status === 'Cancellation Request' || item.status === 'Return Request') {
-        return; // Don't override pending requests
-      }
-
-      // Skip already cancelled or returned items
+      // Already final items remain final
       if (item.status === 'Cancelled' || item.status === 'Returned') {
-        return; // Keep their final status
+        return;
       }
 
-      // Sync normal items with order status
+      // If the order is being finalised as Cancelled or Returned, update request/pending items too
+      if (['Cancelled', 'Returned'].includes(newStatusNormalized)) {
+        item.status = newStatusNormalized;
+        return;
+      }
+
+      // Keep explicit requests untouched on non-final status changes
+      if (item.status === 'Cancellation Request' || item.status === 'Return Request') {
+        return;
+      }
+
       item.status = newStatusNormalized;
     });
 
@@ -391,6 +431,73 @@ exports.approveRequest = async (req, res) => {
 
   } catch (err) {
     console.error('approveRequest error:', err);
+    return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
+  }
+};
+
+exports.adminUpdateItemStatus = async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { action } = req.body;
+
+    if (!['cancel', 'return'].includes(action)) {
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Invalid action' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
+    }
+
+    const item = order.orderedItems.id(itemId);
+    if (!item) {
+      return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
+    }
+
+    const currentStatus = item.status;
+    if (['Cancelled', 'Returned'].includes(currentStatus)) {
+      return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Item already finalised' });
+    }
+
+    item.status = action === 'cancel' ? 'Cancelled' : 'Returned';
+    item.approvedAt = new Date();
+    if (action === 'cancel') {
+      item.cancelReason = item.cancelReason || 'Cancelled by admin';
+    } else {
+      item.returnReason = item.returnReason || 'Returned by admin';
+    }
+
+    if (item.product) {
+      await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
+    }
+
+    if (order.paymentStatus === 'Paid' && order.paymentMethod !== 'COD') {
+      const refundAmount = computeItemRefund(order, item);
+      if (refundAmount > 0) {
+        item.refundAmount = refundAmount;
+        order.refunded = round2(Number(order.refunded || 0) + refundAmount);
+        await addToWallet(order.user, refundAmount, 'credit', action === 'cancel' ? 'Item Cancel Refund' : 'Item Return Refund', order._id);
+      }
+    }
+
+    const allReturned = order.orderedItems.every(it => it.status === 'Returned');
+    const allCancelled = order.orderedItems.every(it => it.status === 'Cancelled');
+    if (allReturned) {
+      order.status = 'Returned';
+    } else if (allCancelled) {
+      order.status = 'Cancelled';
+    }
+
+    await order.save();
+
+    return res.status(statusCodes.OK).json({
+      success: true,
+      message: action === 'cancel' ? messages.ITEM_CANCELLED_SUCCESS : 'Item returned successfully',
+      itemId,
+      newStatus: item.status
+    });
+  } catch (err) {
+    console.error('adminUpdateItemStatus error:', err);
     return res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.SERVER_ERROR });
   }
 };

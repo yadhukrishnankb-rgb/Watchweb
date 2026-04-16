@@ -29,11 +29,12 @@ const { offerPopulate } = require("../../helpers/populateUtils");
 
  const pageNotFound = async (req,res) => {
     try {
-        res.render("page-404")
-    }catch (error){
-res.redirect("/pageNotFound")
+        res.status(404).render("page-404")
+    } catch (error) {
+        res.redirect("/pageNotFound")
     }
 }
+
 
 
 const loadHomepage = async (req, res) => {

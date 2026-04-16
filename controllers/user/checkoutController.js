@@ -458,7 +458,7 @@ const placeOrder = async (req, res) => {
         order_id: rzpOrder.id,
         amount: amountInPaise,
         currency: 'INR',
-        name: "Your Store",
+        name: "EverTime",
         description: `Payment for Order #${order.orderId}`,
         prefill: {
           name: user.name || 'Customer',

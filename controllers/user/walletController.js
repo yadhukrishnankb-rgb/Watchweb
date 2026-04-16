@@ -102,6 +102,10 @@ const getWallet = async (req, res) => {
 
     const user = await User.findById(req.session.user._id)
       .select('wallet.balance wallet.transactions')
+      .populate({
+        path: 'wallet.transactions.orderId',
+        select: 'orderId'
+      })
       .lean();
 
     if (!user) {

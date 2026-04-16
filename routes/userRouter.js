@@ -117,23 +117,24 @@ router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutContr
 router.post('/checkout/payment/verify', isUser,checkBlockedStatus, checkoutController.verifyPayment );
 router.get('/order-success/:id', isUser, checkoutController.orderSuccess);
 router.get('/order-failed/:id', isUser, async (req, res) => {
-  try {
-    const orderId = req.params.id;
-    const userId = req.session.user._id;
+  const orderMongoId = req.params.id;
+  const userId = req.session.user._id;
 
-    // Update order status to failed when user reaches failed page
-    await Order.findOneAndUpdate(
-      { _id: orderId, user: userId },
-      { 
+  try {
+    const order = await Order.findOneAndUpdate(
+      { _id: orderMongoId, user: userId },
+      {
         paymentStatus: 'Failed',
         status: 'Payment Failed'
-      }
+      },
+      { new: true }
     );
 
-    res.render('user/order-failed', { orderId });
+    const displayOrderId = order?.orderId || orderMongoId;
+    res.render('user/order-failed', { orderId: orderMongoId, displayOrderId });
   } catch (err) {
     console.error('Order failed page error:', err);
-    res.render('user/order-failed', { orderId: req.params.id });
+    res.render('user/order-failed', { orderId: orderMongoId, displayOrderId: orderMongoId });
   }
 });
 

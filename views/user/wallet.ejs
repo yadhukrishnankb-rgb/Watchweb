@@ -408,8 +408,8 @@
                 <td><%= tx.reason %></td>
                 <td>
                   <% if (tx.orderId) { %>
-                    <a href="/orders/<%= tx.orderId %>">
-                      <%= tx.orderId.toString().slice(-8).toUpperCase() %>
+                    <a href="/orders/<%= tx.orderId._id ? tx.orderId._id : tx.orderId %>">
+                      <%= tx.orderId.orderId ? tx.orderId.orderId : tx.orderId.toString().slice(-8).toUpperCase() %>
                     </a>
                   <% } else { %>
                     -

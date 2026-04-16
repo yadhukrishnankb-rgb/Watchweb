@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= status %> - <%= title || 'Error' %></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f3f4f6; color: #111827; }
+        .container { max-width: 620px; width: 100%; padding: 2rem; text-align: center; background: #ffffff; border-radius: 24px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12); }
+        .status-code { font-size: 5rem; font-weight: 800; color: #4a5e4a; margin-bottom: 0.5rem; }
+        .title { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #111827; }
+        .message { font-size: 1rem; color: #4b5563; margin-bottom: 1.75rem; line-height: 1.7; }
+        .actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.9rem 1.6rem; border-radius: 999px; font-weight: 700; text-decoration: none; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .btn-primary { background: linear-gradient(135deg, #3a6f4e, #194d34); color: #fff; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(74, 94, 74, 0.18); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-code"><%= status %></div>
+        <div class="title"><%= title || (status === 400 ? 'Bad Request' : status === 404 ? 'Page Not Found' : 'Server Error') %></div>
+        <div class="message"><%= message || 'Something went wrong. Please try again later.' %></div>
+        <div class="actions">
+            <a href="/" class="btn btn-primary">Go to Home</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+        </div>
+    </div>
+</body>
+</html>

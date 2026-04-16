@@ -53,6 +53,7 @@ router.patch('/products/:id/offer/remove', adminAuth, productController.removePr
 router.get('/orders', adminAuth, orderController.getOrders);
 router.get('/orders/:id', adminAuth, orderController.getOrderDetails);
 router.patch('/orders/:id/status', adminAuth, orderController.updateOrderStatus);
+router.patch('/orders/:orderId/items/:itemId/admin-action', adminAuth, orderController.adminUpdateItemStatus);
 router.get('/requests', adminAuth, orderController.getRequests);
 router.post('/orders/:orderId/items/:itemId/approve', adminAuth, orderController.approveRequest);
 

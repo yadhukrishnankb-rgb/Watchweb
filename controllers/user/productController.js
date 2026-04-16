@@ -57,12 +57,13 @@ exports.listProducts = async (req, res) => {
         }
 
         // Sorting
+        let sortByEffectivePrice = false;
         switch (req.query.sort) {
             case 'price-asc':
-                sortQuery = { salesPrice: 1 };
+                sortByEffectivePrice = true;
                 break;
             case 'price-desc':
-                sortQuery = { salesPrice: -1 };
+                sortByEffectivePrice = true;
                 break;
             case 'name-asc':
                 sortQuery = { productName: 1 };
@@ -83,27 +84,50 @@ exports.listProducts = async (req, res) => {
                 sortQuery = { createdAt: -1 };
         }
 
-        // Execute query with pagination
-        const now = new Date();
-        let products = await Product.find(query)
-            .populate({
-                path: 'category',
-                populate: { path: 'offer' }
-            })
-            .populate({ path: 'offer' })
-            .sort(sortQuery)
-            .skip(skip)
-            .limit(limit)
-            .lean();
+        let products;
+        let totalProducts;
 
-        // compute offer fields - apply MAXIMUM discount from product or category
-        products = products.map(p => {
-            const offerDetails = getOfferDetails(p);
-            return { ...p, ...offerDetails };
-        });
+        if (sortByEffectivePrice) {
+            products = await Product.find(query)
+                .populate({
+                    path: 'category',
+                    populate: { path: 'offer' }
+                })
+                .populate({ path: 'offer' })
+                .lean();
 
-        // Get total count for pagination
-        const totalProducts = await Product.countDocuments(query);
+            products = products.map(p => {
+                const offerDetails = getOfferDetails(p);
+                return { ...p, ...offerDetails };
+            });
+
+            products.sort((a, b) => {
+                const diff = a.effectivePrice - b.effectivePrice;
+                return req.query.sort === 'price-asc' ? diff : -diff;
+            });
+
+            totalProducts = products.length;
+            products = products.slice(skip, skip + limit);
+        } else {
+            products = await Product.find(query)
+                .populate({
+                    path: 'category',
+                    populate: { path: 'offer' }
+                })
+                .populate({ path: 'offer' })
+                .sort(sortQuery)
+                .skip(skip)
+                .limit(limit)
+                .lean();
+
+            products = products.map(p => {
+                const offerDetails = getOfferDetails(p);
+                return { ...p, ...offerDetails };
+            });
+
+            totalProducts = await Product.countDocuments(query);
+        }
+
         const totalPages = Math.ceil(totalProducts / limit);
 
         // Get all categories and brands for filters

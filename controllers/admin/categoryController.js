@@ -2,8 +2,9 @@ const Category = require('../../models/categorySchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const Offer = require('../../models/offerSchema');
-const Product = require('../../models/productSchema')
+const Product = require('../../models/productSchema');
 
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 exports.getCategories = async (req, res) => {
     try {
@@ -51,8 +52,8 @@ exports.addCategory = async (req, res) => {
         let { name, description } = req.body;
         
         // Trim whitespace and validate
-        name = name.trim();
-        description = description.trim();
+        name = (name || '').toString().trim();
+        description = (description || '').toString().trim();
 
         if (!name || !description) {
             return res.status(statusCodes.BAD_REQUEST).json({
@@ -61,11 +62,9 @@ exports.addCategory = async (req, res) => {
             });
         }
 
-        
-
         // Check if category already exists (case insensitive)
         const existingCategory = await Category.findOne({ 
-            name: { $regex: new RegExp(`^${name}$`, 'i') }
+            name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') }
         });
         
         if (existingCategory) {
@@ -98,15 +97,25 @@ exports.addCategory = async (req, res) => {
 exports.editCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description } = req.body;
+        let { name, description } = req.body;
 
-        // Check if new name already exists for different category
+        name = (name || '').toString().trim();
+        description = (description || '').toString().trim();
+
+        if (!name || !description) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: messages.CATEGORY_NAME_DESC_REQUIRED
+            });
+        }
+
+        // Check if new name already exists for different category (case insensitive)
         const existingCategory = await Category.findOne({ 
-            name, 
+            name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') },
             _id: { $ne: id }
         });
         
-       if (existingCategory) {
+        if (existingCategory) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: messages.CATEGORY_EXISTS
