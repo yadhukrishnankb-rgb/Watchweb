@@ -775,6 +775,18 @@ function updateProducts() {
 
 function clearAllFilters() {
     const url = '/shop';
+    const form = document.getElementById('filterForm');
+
+    if (form) {
+        form.querySelectorAll('input, select').forEach(el => {
+            if (el.type === 'checkbox' || el.type === 'radio') {
+                el.checked = false;
+            } else {
+                el.value = '';
+            }
+        });
+    }
+
     fetch(url)
         .then(response => response.text())
         .then(html => {
@@ -784,8 +796,6 @@ function clearAllFilters() {
             const currentSection = document.querySelector('section');
             currentSection.innerHTML = newSection.innerHTML;
             history.pushState(null, '', url);
-            // Reset form
-            document.getElementById('filterForm').reset();
         })
         .catch(error => console.error('Error clearing filters:', error));
 }

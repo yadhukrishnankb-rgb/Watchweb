@@ -560,15 +560,14 @@
              class="product__img hover">
       </a>
 
-      <% if (product.offerPercent && product.offerPercent > 0) { %>
-        <div class="product__badge">
-          <%= Math.round(product.offerPercent) %>% OFF
-          <% if (product.offerSource === 'category') { %>
-            <small style="font-size:0.7rem; display:block;"></small>
-          <% } %>
-        </div>
-      <% } %>
-
+      <div class="product__actions">
+        <button onclick="toggleWishlist('<%= product._id %>', this, event)" class="action__btn" aria-label="Toggle Wishlist">
+          <i class="fi fi-rs-heart"></i>
+        </button>
+        <button onclick="addToCart('<%= product._id %>', event)" class="action__btn" aria-label="Add to Cart">
+          <i class="fi fi-rs-shopping-cart"></i>
+        </button>
+      </div>
     </div>
 
     <div class="product__content">

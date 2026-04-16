@@ -28,11 +28,13 @@ const userSchema = new Schema({
       phone: { type: String },
       altPhone: { type: String, default: '' },
       street: { type: String },
+      line1: { type: String },
       landmark: { type: String, default: '' },
       locality: { type: String, default: '' },
       city: { type: String },
       state: { type: String },
       zip: { type: String },
+      pincode: { type: String },
       country: { type: String },
       type: { type: String, default: 'home' },
       isDefault: { type: Boolean, default: false }

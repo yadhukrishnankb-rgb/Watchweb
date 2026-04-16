@@ -248,10 +248,12 @@ exports.updateProfile = async (req, res) => {
         name: name.trim(),
         phone: phone.trim(),
         address: hasAddress ? {
+          street: line1?.trim(),
           line1: line1?.trim(),
           landmark: landmark?.trim() || '',
           city: city?.trim(),
           state: state?.trim(),
+          zip: zip?.trim(),
           pincode: zip?.trim(),
           country: country?.trim()
         } : null
@@ -274,10 +276,12 @@ exports.updateProfile = async (req, res) => {
     if (hasAddress) {
       user.addresses = user.addresses || [];
       const addrObj = {
+        street: line1.trim(),
         line1: line1.trim(),
         landmark: (landmark || '').trim(),
         city: city.trim(),
         state: state.trim(),
+        zip: zip.trim(),
         pincode: zip.trim(),
         country: country.trim()
       };
@@ -484,10 +488,12 @@ exports.manageAddress = async (req, res) => {
           phone: req.body.phone || user.addresses[index].phone || '',
           altPhone: req.body.altPhone || '',
           street: line1.trim(),
+          line1: line1.trim(),
           landmark: landmark.trim(),
           locality: req.body.locality || '',
           city: city.trim(),
           state: state.trim(),
+          zip: zip.trim(),
           pincode: zip.trim(),
           country: country.trim(),
           type: req.body.type || 'home',
@@ -501,10 +507,12 @@ exports.manageAddress = async (req, res) => {
         phone: req.body.phone || '',
         altPhone: req.body.altPhone || '',
         street: line1.trim(),
+        line1: line1.trim(),
         landmark: landmark.trim(),
         locality: req.body.locality || '',
         city: city.trim(),
         state: state.trim(),
+        zip: zip.trim(),
         pincode: zip.trim(),
         country: country.trim(),
         type: req.body.type || 'home',

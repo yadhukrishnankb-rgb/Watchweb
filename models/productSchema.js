@@ -50,11 +50,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  discount: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
+  
   
   productImage: {
     type: [String],

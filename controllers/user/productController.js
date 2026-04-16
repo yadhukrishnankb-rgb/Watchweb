@@ -2,6 +2,7 @@
 const mongoose = require('mongoose')
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
+const Brand = require('../../models/brandSchema');
 const Review = require('../../models/reviewSchema');
 const Discount = require('../../models/discountSchema');
 const Wishlist = require('../../models/wishlistSchema');
@@ -42,9 +43,17 @@ exports.listProducts = async (req, res) => {
             if (req.query.maxPrice) query.salesPrice.$lte = parseFloat(req.query.maxPrice);
         }
 
-        // Brand Filter
+        // Brand filter and blocked-brand exclusion
+        const blockedBrands = await Brand.find({ isBlocked: true }).distinct('name');
         if (req.query.brand) {
-            query.brand = req.query.brand;
+            const selectedBrand = req.query.brand;
+            if (blockedBrands.some(b => b.toLowerCase() === selectedBrand.toLowerCase())) {
+                query.brand = '__BRAND_BLOCKED__';
+            } else {
+                query.brand = selectedBrand;
+            }
+        } else if (blockedBrands.length > 0) {
+            query.brand = { $nin: blockedBrands };
         }
 
         // Sorting
@@ -99,11 +108,11 @@ exports.listProducts = async (req, res) => {
 
         // Get all categories and brands for filters
         const categories = await Category.find({ isListed: true }).lean();
-        const brands = await Product.distinct('brand', { isBlocked: false });
+        const visibleBrands = await Product.distinct('brand', { isBlocked: false, brand: { $nin: blockedBrands } });
 
         // Get price range for filter
         const priceRange = await Product.aggregate([
-            { $match: { isBlocked: false } },
+            { $match: { isBlocked: false, brand: { $nin: blockedBrands } } },
             {
                 $group: {
                     _id: null,
@@ -116,7 +125,7 @@ exports.listProducts = async (req, res) => {
         res.render('user/shop', {
             products,
             categories,
-            brands,
+            brands: visibleBrands,
             currentPage: page,
             totalPages,
             query: req.query,
@@ -158,8 +167,13 @@ exports.getProductDetails = async (req, res) => {
         };
         
         // Check if product exists and is available
-        // Check if product exists
         if (!product) {
+            return res.redirect('/shop');
+        }
+
+        const blockedBrands = await Brand.find({ isBlocked: true }).distinct('name');
+        const normalizedProductBrand = product.brand ? product.brand.toLowerCase() : '';
+        if (blockedBrands.some(b => b.toLowerCase() === normalizedProductBrand) || product.isBlocked) {
             return res.redirect('/shop');
         }
 
@@ -169,7 +183,8 @@ exports.getProductDetails = async (req, res) => {
         let relatedProducts = await Product.find({
             category: product.category._id,
             _id: { $ne: product._id },
-            isBlocked: false
+            isBlocked: false,
+            brand: { $nin: blockedBrands }
         })
         .populate({ path: 'offer' })
         .populate({
@@ -235,6 +250,7 @@ exports.getProductDetails = async (req, res) => {
             discounts, // Pass discounts to the view
             breadcrumbs,
             user: req.session.user,
+            reviewMessage: req.query.review || null,
             isInWishlist,
             // Add additional data for better error handling
             isAvailable: ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus),
@@ -247,6 +263,48 @@ exports.getProductDetails = async (req, res) => {
     }
 };
 
+
+exports.addReview = async (req, res) => {
+    try {
+        if (!req.session.user) return res.redirect('/login');
+
+        const { id } = req.params;
+        const { rating, comment } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.redirect('/shop');
+        }
+
+        if (!rating || !comment || !comment.trim() || !['1','2','3','4','5'].includes(String(rating))) {
+            return res.redirect(`/product/${id}?review=error`);
+        }
+
+        const product = await Product.findById(id).lean();
+        if (!product) {
+            return res.redirect('/shop');
+        }
+
+        const existingReview = await Review.findOne({ product: id, user: req.session.user._id });
+        if (existingReview) {
+            existingReview.rating = Number(rating);
+            existingReview.comment = comment.trim();
+            await existingReview.save();
+            return res.redirect(`/product/${id}?review=updated`);
+        }
+
+        await Review.create({
+            product: id,
+            user: req.session.user._id,
+            rating: Number(rating),
+            comment: comment.trim()
+        });
+
+        res.redirect(`/product/${id}?review=success`);
+    } catch (error) {
+        console.error('Add review error:', error);
+        res.redirect(`/product/${req.params.id}?review=error`);
+    }
+};
 
 
 // Helper function for stock status

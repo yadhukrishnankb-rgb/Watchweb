@@ -444,6 +444,7 @@
                         <div class="summary-line" style="color:#b91c1c; font-weight:700;"><span>Coupon Discount</span> <span>-₹<%= discount.toLocaleString() %></span></div>
                     <% } %>
                     <div class="summary-line"><span>Shipping</span> <span class="<%= shipping === 0 ? 'text-green-600' : '' %>"><%= shipping === 0 ? 'FREE' : '₹' + shipping %></span></div>
+                    <div id="codDeliveryRow" class="summary-line" style="display:none;"><span>Delivery Charge (COD)</span> <span>₹<%= shipping.toLocaleString() %></span></div>
                 </div>
 
                 <div class="summary-line total" style="margin-top:.75rem; border-top:1px dashed rgba(0,0,0,0.05); padding-top:.85rem;">
@@ -463,8 +464,8 @@
 
                     <!-- Payment Options -->
                     <div class="payment__methods">
-                        <label class="payment__option <%= total > 100000 ? 'disabled' : '' %>">
-                            <input type="radio" name="paymentMethod" value="cod" <%= total > 100000 ? 'disabled' : '' %> />
+                        <label class="payment__option <%= subtotal > 1000 ? 'disabled' : '' %>">
+                            <input type="radio" name="paymentMethod" value="cod" <%= subtotal > 1000 ? 'disabled' : '' %> />
                             <span>Cash on Delivery</span>
                         </label>
                         <label class="payment__option">
@@ -489,7 +490,7 @@
 
                 <!-- COD Warning -->
                 <p id="cod-warning" class="text-red-600 text-xs mt-2 hidden text-center">
-                    <i class="fas fa-exclamation-triangle"></i> COD not available for orders above ₹100000
+                    <i class="fas fa-exclamation-triangle"></i> COD not available for orders above ₹1000
                 </p>
 
                 <div style="margin-top:1rem;" class="security-badge">
@@ -512,7 +513,7 @@
 
 <script>
 // Payment method selection visual feedback + COD limit check
-<% const orderTotal = (typeof total === 'number' ? total : 0); %>
+<% const orderSubtotal = (typeof subtotal === 'number' ? subtotal : 0); %>
 document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', function() {
         document.querySelectorAll('.payment__option').forEach(opt => {
@@ -521,10 +522,20 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         this.closest('.payment__option').classList.add('selected');
 
         const codWarning = document.getElementById('cod-warning');
-        if (this.value === 'cod' && orderTotal > 100000) {
+        const codDeliveryRow = document.getElementById('codDeliveryRow');
+
+        if (this.value === 'cod' && orderSubtotal > 1000) {
             codWarning.classList.remove('hidden');
         } else {
             codWarning.classList.add('hidden');
+        }
+
+        if (codDeliveryRow) {
+            if (this.value === 'cod') {
+                codDeliveryRow.style.display = 'flex';
+            } else {
+                codDeliveryRow.style.display = 'none';
+            }
         }
     });
 });

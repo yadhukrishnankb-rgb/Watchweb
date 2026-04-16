@@ -581,47 +581,50 @@ body {
                 <h2 class="card-title">📍 Shipping Address</h2>
                 <div class="address-card">
                     <% 
-                        const a = order.address || order.shippingAddress || {};
-                        const name = a.fullName || a.name || order.user?.name || (user ? ((user.firstName||'').trim() + ' ' + (user.lastName||'').trim()).trim() : '') || 'Customer';
-                        const phone = a.phone || a.mobile || order.user?.phone || user?.phone || 'Not provided';
-                        const altPhone = a.altPhone || '';
-                        let addr = '';
-                        if (typeof a === 'string') {
-                            addr = a;
-                        } else {
-                            addr = a.street || a.address || a.line1 || a.addressLine1 || '';
-                            if (!addr && a.address && typeof a.address === 'object') {
-                                addr = a.address.line1 || a.address.street || a.address.addressLine1 || '';
-                            }
+                        let addr = order.address || {};
+                        if ((!addr.fullName || addr.fullName === 'Customer') && order.shippingAddress) {
+                            addr = order.shippingAddress;
                         }
-                        let landmark = '';
-                        if (a.landmark) landmark = a.landmark;
-                        else if (a.addressLine2) landmark = a.addressLine2;
-                        else if (a.address && typeof a.address === 'object' && a.address.landmark) landmark = a.address.landmark;
-                        const locality = a.locality || a.area || '';
-                        const city = a.city || a.town || a.district || 'Not Available';
-                        const state = a.state || a.stateName || 'Not Available';
-                        const pincode = a.pincode || a.postalCode || a.zip || a.pin || 'PIN Missing';
+                        const displayName = addr.fullName && addr.fullName !== 'Customer'
+                            ? addr.fullName
+                            : (user && user.name)
+                                ? user.name
+                                : 'Customer';
+                        const displayPhone = addr.phone || (user && user.phone) || 'Not provided';
+                        const displayAltPhone = addr.altPhone || '';
+
+                        const street = addr.street || addr.address || addr.line1 || '';
+                        const landmark = addr.landmark || '';
+                        const locality = addr.locality || '';
+                        const city = addr.city || 'Not Available';
+                        const state = addr.state || 'Not Available';
+                        const pincode = addr.pincode || 'PIN Missing';
                     %>
 
                     <div style="font-size:0.95rem; line-height:1.9;">
-                        <p><strong>Name:</strong> <span style="font-weight:700; color:var(--text);"><%= name %></span></p>
+                        <p><strong>Name:</strong> 
+                            <span style="font-weight:700; color:var(--text);"><%= displayName %></span>
+                        </p>
                         
-                        <% if (addr) { %>
-                            <p><strong>Address:</strong> <span style="color:var(--text);"><%= addr %><%= locality ? ', ' + locality : '' %></span></p>
+                        <% if (street.trim()) { %>
+                            <p><strong>Address:</strong> 
+                                <span style="color:var(--text);"><%= street %><%= locality ? ', ' + locality : '' %></span>
+                            </p>
                         <% } %>
 
-                        <% if (landmark) { %>
-                            <p><strong>Landmark:</strong> <span style="color:var(--text);"><%= landmark %></span></p>
+                        <% if (landmark.trim()) { %>
+                            <p><strong>Landmark:</strong> 
+                                <span style="color:var(--text);"><%= landmark %></span>
+                            </p>
                         <% } %>
 
                         <p><strong>City:</strong> <%= city %></p>
                         <p><strong>State:</strong> <%= state %></p>
                         <p><strong>Pincode:</strong> <strong><%= pincode %></strong></p>
-                        <p><strong>Mobile:</strong> <span style="color:var(--green); font-weight:700;"><%= phone %></span></p>
+                        <p><strong>Mobile:</strong> <span style="color:var(--green); font-weight:700;"><%= displayPhone %></span></p>
                         
-                        <% if (altPhone) { %>
-                            <p><strong>Alt Phone:</strong> <span style="color:var(--green);"><%= altPhone %></span></p>
+                        <% if (displayAltPhone) { %>
+                            <p><strong>Alt Phone:</strong> <span style="color:var(--green);"><%= displayAltPhone %></span></p>
                         <% } %>
 
                         <p><strong>Country:</strong> India</p>

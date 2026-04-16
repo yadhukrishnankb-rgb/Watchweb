@@ -14,6 +14,7 @@ const orderController = require('../controllers/admin/orderController')
 const inventoryController = require('../controllers/admin/inventoryController')
 const couponController = require('../controllers/admin/couponController')
 const salesController = require('../controllers/admin/salesController');
+const brandController = require('../controllers/admin/brandController');
 // Auth routes
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
@@ -66,6 +67,15 @@ router.post('/coupons', adminAuth, couponController.createCoupon);
 router.post('/coupons/:id', adminAuth, couponController.editCoupon);
 router.delete('/coupons/:id', adminAuth, couponController.deleteCoupon);
 router.patch('/coupons/:id/toggle', adminAuth, couponController.toggleCoupon);
+
+
+//brand management routes
+router.get('/brands', adminAuth, brandController.getBrandPage);
+router.post('/add-brand', adminAuth, brandController.addBrand);
+router.post('/edit-brand/:id', adminAuth, brandController.editBrand);
+router.post('/toggle-brand/:id', adminAuth, brandController.toggleBrand);
+router.delete('/brands/:id', adminAuth, brandController.deleteBrand);
+
 
 // Sales report route
 router.get('/sales-report', adminAuth, salesController.getSalesReport);

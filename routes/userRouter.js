@@ -82,6 +82,7 @@ router.get('/profile', isUser, profileController.profilePage);
 
 
 router.get('/product/:id', productController.getProductDetails);
+router.post('/product/:id/review', isUser, productController.addReview);
 // Add this route with your other routes
 router.get('/search', productController.searchProducts);
 

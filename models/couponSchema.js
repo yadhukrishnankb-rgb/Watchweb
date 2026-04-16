@@ -18,7 +18,24 @@ const couponSchema = new mongoose.Schema({
   discountValue: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    validate: {
+      validator: function (value) {
+        if (this.discountType === 'fixed' && this.minAmount > 0) {
+          return value <= this.minAmount;
+        }
+        return this.discountType !== 'percentage' || value <= 100;
+      },
+      message: function () {
+        if (this.discountType === 'fixed') {
+          return 'Fixed discount value cannot be greater than the minimum purchase amount.';
+        }
+        if (this.discountType === 'percentage') {
+          return 'Percentage discount value cannot exceed 100.';
+        }
+        return 'Invalid discount value.';
+      }
+    }
   },
   minAmount: {
     type: Number,

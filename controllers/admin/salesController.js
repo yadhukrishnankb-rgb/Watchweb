@@ -46,9 +46,9 @@ function getDateRange(filterType, customStart, customEnd) {
 // get sales report page
 exports.getSalesReport = async (req, res) => {
     try {
-        const {filterType = 'monthly', start: customStart, end: customEnd} = req.query;
-
-       
+        const {filterType = 'monthly', start: customStart, end: customEnd, page: pageQuery} = req.query;
+        const page = Math.max(Number(pageQuery) || 1, 1);
+        const limit = 10;
 
         const {start, end} = getDateRange(filterType, customStart, customEnd);
 
@@ -58,10 +58,28 @@ exports.getSalesReport = async (req, res) => {
             createdOn : {$gte: start, $lte: end}
         };
 
-        const orders = await Order.find(query).
-        populate('user', 'name email').
-        sort({createdOn: -1})
-        .lean();
+        const totalsResult = await Order.aggregate([
+          { $match: query },
+          {
+            $group: {
+              _id: null,
+              totalSalesCount: { $sum: 1 },
+              totalOrderAmount: { $sum: { $ifNull: ['$finalAmount', 0] } },
+              totalDiscount: { $sum: { $add: [ { $ifNull: ['$discount', 0] }, { $ifNull: ['$couponDiscount', 0] } ] } }
+            }
+          }
+        ]);
+
+        const totals = totalsResult[0] || { totalSalesCount: 0, totalOrderAmount: 0, totalDiscount: 0 };
+        const totalPages = Math.max(Math.ceil(totals.totalSalesCount / limit), 1);
+        const currentPage = Math.min(page, totalPages);
+
+        const orders = await Order.find(query)
+          .populate('user', 'name email')
+          .sort({createdOn: -1})
+          .skip((currentPage - 1) * limit)
+          .limit(limit)
+          .lean();
 
 
       
@@ -69,21 +87,16 @@ exports.getSalesReport = async (req, res) => {
         console.log('Sales report query:', query);
         console.log('Found orders:', orders.length);
 
-        //calcultate aggreagates
-        const totalSalesCount = orders.length;
-        const totalOrderAmount = orders.reduce((sum, order) => sum + (order.finalAmount || 0),0);
-        const totalDiscount = orders.reduce((sum, order) => {
-            return sum + (order.discount || 0) + (order.couponDiscount || 0);
-        },0 );
-
        res.render('admin/sales-report', {
       orders,
-      totalSalesCount,
-      totalOrderAmount: totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-      totalDiscount: totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      totalSalesCount: totals.totalSalesCount,
+      totalOrderAmount: totals.totalOrderAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      totalDiscount: totals.totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
       start: moment(start).format('YYYY-MM-DD'),
       end: moment(end).format('YYYY-MM-DD'),
-      filterType
+      filterType,
+      currentPage,
+      totalPages
     });
 
     }catch (err){
@@ -132,20 +145,22 @@ exports.downloadPdf = async (req, res) => {
     // Table header
     let tableTop = doc.y;
     doc.fontSize(10).text('Order ID', 50, tableTop);
-    doc.text('Date', 170, tableTop);
-    doc.text('Customer', 270, tableTop);
-    doc.text('Amount', 370, tableTop);
-    doc.text('Discount', 470, tableTop);
+    doc.text('Date', 140, tableTop);
+    doc.text('Customer', 230, tableTop);
+    doc.text('Amount', 330, tableTop);
+    doc.text('Payment', 410, tableTop);
+    doc.text('Discount', 500, tableTop);
     doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
 
     // Function to draw table header
     const drawTableHeader = () => {
       tableTop = doc.y;
       doc.fontSize(10).text('Order ID', 50, tableTop);
-      doc.text('Date', 170, tableTop);
-      doc.text('Customer', 270, tableTop);
-      doc.text('Amount', 370, tableTop);
-      doc.text('Discount', 470, tableTop);
+      doc.text('Date', 140, tableTop);
+      doc.text('Customer', 230, tableTop);
+      doc.text('Amount', 330, tableTop);
+      doc.text('Payment', 410, tableTop);
+      doc.text('Discount', 500, tableTop);
       doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
       return tableTop + 25;
     };
@@ -163,10 +178,11 @@ exports.downloadPdf = async (req, res) => {
       }
 
       doc.text(order.orderId, 50, y);
-      doc.text(moment(order.createdOn).format('DD-MM-YYYY'), 170, y);
-      doc.text(order.user?.name || 'Guest', 270, y);
-      doc.text(`₹${(order.finalAmount || 0).toLocaleString('en-IN')}`, 370, y);
-      doc.text(`₹${((order.discount || 0) + (order.couponDiscount || 0)).toLocaleString('en-IN')}`, 470, y);
+      doc.text(moment(order.createdOn).format('DD-MM-YYYY'), 140, y);
+      doc.text(order.user?.name || 'Guest', 230, y);
+      doc.text(`₹${(order.finalAmount || 0).toLocaleString('en-IN')}`, 330, y);
+      doc.text(order.paymentMethod || 'N/A', 410, y);
+      doc.text(`₹${((order.discount || 0) + (order.couponDiscount || 0)).toLocaleString('en-IN')}`, 500, y);
       y += 20;
     });
 
@@ -202,7 +218,7 @@ exports.downloadExcel = async (req, res) => {
     sheet.addRow([]);
 
     // Headers
-    sheet.addRow(['Order ID', 'Date', 'Customer', 'Final Amount', 'Discount', 'Coupon Discount', 'Status']);
+    sheet.addRow(['Order ID', 'Date', 'Customer', 'Final Amount', 'Payment Method', 'Discount', 'Coupon Discount', 'Status']);
 
     // Data rows
     orders.forEach(o => {
@@ -211,6 +227,7 @@ exports.downloadExcel = async (req, res) => {
         moment(o.createdOn).format('DD-MM-YYYY'),
         o.user?.name || 'Guest',
         `₹${(o.finalAmount || 0).toLocaleString('en-IN')}`,
+        o.paymentMethod || 'N/A',
         `₹${(o.discount || 0).toLocaleString('en-IN')}`,
         `₹${(o.couponDiscount || 0).toLocaleString('en-IN')}`,
         o.status

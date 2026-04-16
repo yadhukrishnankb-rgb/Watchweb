@@ -76,15 +76,60 @@
     </div>
 
     <!-- Pagination -->
-    <% if (totalPages > 1) { %>
-      <div class="mt-6 flex justify-center gap-2">
-        <% for(let i=1; i<=totalPages; i++) { %>
-          <a href="/admin/orders?page=<%= i %>&search=<%= search %>&status=<%= statusFilter %>"
-             class="px-3 py-1 rounded <%= i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-200' %>">
-            <%= i %>
-          </a>
-        <% } %>
-      </div>
+    <% if (totalPages > 1) {
+         const maxPagesToShow = 5;
+         let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+         let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+         if (endPage - startPage + 1 < maxPagesToShow) {
+           startPage = Math.max(1, endPage - maxPagesToShow + 1);
+         }
+    %>
+      <nav aria-label="Orders pagination" class="mt-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+          <div class="text-sm text-gray-600">
+            Showing page <span class="font-semibold text-gray-900"><%= currentPage %></span> of <span class="font-semibold text-gray-900"><%= totalPages %></span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <a href="/admin/orders?page=<%= Math.max(currentPage - 1, 1) %>&search=<%= search %>&status=<%= statusFilter %>"
+               class="px-3 py-2 rounded border text-sm <%= currentPage === 1 ? 'bg-gray-100 text-gray-400 pointer-events-none' : 'bg-white text-gray-700 hover:bg-gray-50' %>">
+              Previous
+            </a>
+
+            <% if (startPage > 1) { %>
+              <a href="/admin/orders?page=1&search=<%= search %>&status=<%= statusFilter %>"
+                 class="px-3 py-2 rounded border bg-white text-gray-700 hover:bg-gray-50 text-sm">
+                1
+              </a>
+              <% if (startPage > 2) { %>
+                <span class="px-2 text-sm text-gray-500">…</span>
+              <% } %>
+            <% } %>
+
+            <% for (let i = startPage; i <= endPage; i++) { %>
+              <a href="/admin/orders?page=<%= i %>&search=<%= search %>&status=<%= statusFilter %>"
+                 class="px-3 py-2 rounded border text-sm <%= i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50' %>">
+                <%= i %>
+              </a>
+            <% } %>
+
+            <% if (endPage < totalPages) { %>
+              <% if (endPage < totalPages - 1) { %>
+                <span class="px-2 text-sm text-gray-500">…</span>
+              <% } %>
+              <a href="/admin/orders?page=<%= totalPages %>&search=<%= search %>&status=<%= statusFilter %>"
+                 class="px-3 py-2 rounded border bg-white text-gray-700 hover:bg-gray-50 text-sm">
+                <%= totalPages %>
+              </a>
+            <% } %>
+
+            <a href="/admin/orders?page=<%= Math.min(currentPage + 1, totalPages) %>&search=<%= search %>&status=<%= statusFilter %>"
+               class="px-3 py-2 rounded border text-sm <%= currentPage === totalPages ? 'bg-gray-100 text-gray-400 pointer-events-none' : 'bg-white text-gray-700 hover:bg-gray-50' %>">
+              Next
+            </a>
+          </div>
+        </div>
+      </nav>
     <% } %>
   </div>
 </main>

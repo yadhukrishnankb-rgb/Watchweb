@@ -410,31 +410,6 @@ const login = async (req, res) => {
 
 
 
-// const logout = async (req, res) => {
-//     try {
-//         // Destroy the session
-//         req.session.destroy((err) => {
-//             if (err) {
-//                     console.error('Logout Error:', err);
-//                     return res.status(statusCodes.INTERNAL_ERROR).json({
-//                         success: false,
-//                         message: messages.LOGOUT_ERROR
-//                     });
-//                 }
-//             // Redirect to login page
-//             res.redirect('/login');
-//         });
-
-
-//     } catch (error) {
-//         console.error('Logout Error:', error);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Error during logout'
-//         });
-//     }
-// };
-
 
 const logout = async (req, res) => {
   try {

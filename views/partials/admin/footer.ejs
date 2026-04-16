@@ -4,73 +4,102 @@
 
 <script>
 // Sales Chart
-const salesCtx = document.getElementById('salesChart').getContext('2d');
-const salesChart = new Chart(salesCtx, {
-  type: 'line',
-  data: {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-    datasets: [{
-      label: 'Sales ($)',
-      data: [8500, 11200, 10800, 9500, 12800, 13900, 14800, 16500, 21000, 24500],
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      borderColor: 'rgba(59, 130, 246, 1)',
-      borderWidth: 2,
-      tension: 0.4,
-      fill: true
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false
-      }
+const salesCanvas = document.getElementById('salesChart');
+if (salesCanvas) {
+  const salesCtx = salesCanvas.getContext('2d');
+  const salesLabels = window.dashboardChartLabels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+  const salesData = window.dashboardChartData || [8500, 11200, 10800, 9500, 12800, 13900, 14800, 16500, 21000, 24500];
+
+  new Chart(salesCtx, {
+    type: 'line',
+    data: {
+      labels: salesLabels,
+      datasets: [{
+        label: 'Sales ($)',
+        data: salesData,
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        tension: 0.35,
+        pointRadius: 4,
+        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+        pointBorderColor: '#fff',
+        pointHoverRadius: 6,
+        fill: {
+          target: 'origin',
+          opacity: 0.08
+        }
+      }]
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          display: true,
-          drawBorder: false
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return '$' + context.parsed.y.toLocaleString();
+            }
+          }
         }
       },
-      x: {
-        grid: {
-          display: false
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(15, 23, 42, 0.06)',
+            drawBorder: false
+          },
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
         }
       }
     }
-  }
-});
+  });
+}
 
 // Top Products Chart
-const productsCtx = document.getElementById('productsChart').getContext('2d');
-const productsChart = new Chart(productsCtx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Classic Gold', 'Sport Black', 'Smart Pro', 'Luxury Silver', 'Others'],
-    datasets: [{
-      data: [30, 25, 20, 15, 10],
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(168, 85, 247, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(245, 158, 11, 0.8)',
-        'rgba(239, 68, 68, 0.8)'
-      ],
-      borderWidth: 0
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom'
-      }
+const productsCanvas = document.getElementById('productsChart');
+if (productsCanvas) {
+  const productsCtx = productsCanvas.getContext('2d');
+  new Chart(productsCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Classic Gold', 'Sport Black', 'Smart Pro', 'Luxury Silver', 'Others'],
+      datasets: [{
+        data: [30, 25, 20, 15, 10],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(239, 68, 68, 0.8)'
+        ],
+        borderWidth: 0
+      }]
     },
-    cutout: '70%'
-  }
-});
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      },
+      cutout: '70%'
+    }
+  });
+}
 </script>
 </body>
 </html>

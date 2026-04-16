@@ -163,6 +163,23 @@ const orderDetails = async (req, res) => {
     const cappedRefunded = Math.min(roundedRefunded, Number(plainOrder.finalAmount || 0));
     const finalPaid = Math.max(0, Math.round(((plainOrder.finalAmount || 0) - cappedRefunded + Number.EPSILON) * 100) / 100);
 
+    // FORCE fullName from session if still missing (final safety)
+    if (!plainOrder.address || !plainOrder.address.fullName || plainOrder.address.fullName === 'Customer') {
+      plainOrder.address = {
+        fullName: req.session.user?.name || 'Customer',
+        phone: plainOrder.address?.phone || req.session.user?.phone || '',
+        street: plainOrder.address?.street || '',
+        landmark: plainOrder.address?.landmark || '',
+        locality: plainOrder.address?.locality || '',
+        city: plainOrder.address?.city || 'Not Available',
+        state: plainOrder.address?.state || 'Not Available',
+        pincode: plainOrder.address?.pincode || 'PIN Missing',
+        country: 'India'
+      };
+    }
+
+    plainOrder.shippingAddress = plainOrder.shippingAddress || plainOrder.address;
+
     res.render('user/order-detail', {
       order: plainOrder,
       user: req.session.user,

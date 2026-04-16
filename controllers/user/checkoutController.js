@@ -13,6 +13,10 @@ const { addToWallet } = require('./walletController');
 // Global timestamp (used in multiple places — only declared once)
 const now = new Date();
 
+// Business rules
+const COD_FIXED_SHIPPING = 79;
+const FREE_SHIPPING_THRESHOLD = 1000;
+
 // Shared pricing helper (moved to helpers/priceUtils.js)
 const { getEffectivePrice } = require('../../helpers/priceUtils');
 
@@ -304,13 +308,15 @@ const placeOrder = async (req, res) => {
     }
 
     const tax = originalSubtotal * 0.18;
-    const shipping = originalSubtotal >= 1000 ? 0 : 79;
+    const shipping = paymentMethod === 'cod'
+      ? COD_FIXED_SHIPPING
+      : (originalSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : COD_FIXED_SHIPPING);
     const total = originalSubtotal + tax + shipping - (couponDiscount); // offers already baked into subtotal
 
-    if (paymentMethod === 'cod' && total > 100000) {
+    if (paymentMethod === 'cod' && subtotal > 1000) {
       return res.status(400).json({
         success: false,
-        message: 'Cash on Delivery not available for orders above ₹100000'
+        message: 'Cash on Delivery not available for orders above ₹1000'
       });
     }
 
@@ -326,12 +332,15 @@ const placeOrder = async (req, res) => {
       fullName: (selectedAddress.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Customer').trim(),
       phone: selectedAddress.phone || user.phone || '',
       altPhone: selectedAddress.altPhone || '',
+      address: selectedAddress.street || selectedAddress.line1 || selectedAddress.address || 'Not provided',
       street: selectedAddress.street || selectedAddress.line1 || selectedAddress.address || 'Not provided',
+      line1: selectedAddress.line1 || selectedAddress.street || selectedAddress.address || 'Not provided',
       landmark: selectedAddress.landmark || '',
       locality: selectedAddress.locality || '',
       city: selectedAddress.city || 'Not Available',
       state: selectedAddress.state || 'Not Available',
       pincode: selectedAddress.pincode || selectedAddress.zip || 'PIN Missing',
+      zip: selectedAddress.zip || selectedAddress.pincode || '',
       country: selectedAddress.country || 'India'
     };
 

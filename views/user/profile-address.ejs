@@ -388,8 +388,9 @@ body {
   <!-- Address List -->
   <% if (user.addresses && user.addresses.length) { %>
     <div class="addr-list">
-      <% user.addresses.filter(a => a).forEach((addr, i) => { %>
-        <% const _line1 = addr.line1 || ''; const _landmark = addr.landmark || ''; const _city = addr.city || ''; const _state = addr.state || ''; const _zip = addr.zip || ''; const _country = addr.country || ''; %>
+      <% var displayAddresses = []; for (var idx = 0; idx < user.addresses.length; idx++) { if (user.addresses[idx]) displayAddresses.push(user.addresses[idx]); } %>
+      <% for (var i = 0; i < displayAddresses.length; i++) { var addr = displayAddresses[i]; %>
+        <% var _line1 = addr.line1 || addr.street || addr.address || ''; var _landmark = addr.landmark || ''; var _city = addr.city || ''; var _state = addr.state || ''; var _zip = addr.zip || addr.pincode || ''; var _country = addr.country || ''; %>
         <div class="addr-row">
           <div class="addr-icon">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -407,11 +408,11 @@ body {
             <% } else { %>
               <a href="/profile/address/<%= i %>/default" class="ab-default">Set Default</a>
             <% } %>
-            <button class="ab-edit" onclick="editAddress(<%= i %>, `<%= _line1 %>`, `<%= _landmark %>`, `<%= _city %>`, `<%= _state %>`, `<%= _zip %>`, `<%= _country %>`)">Edit</button>
-            <button class="ab-del" onclick="deleteAddress(<%= i %>)">Delete</button>
+            <button type="button" class="ab-edit" data-line1='<%- _line1.replace(/'/g, '&#39;') %>' data-landmark='<%- _landmark.replace(/'/g, '&#39;') %>' data-city='<%- _city.replace(/'/g, '&#39;') %>' data-state='<%- _state.replace(/'/g, '&#39;') %>' data-zip='<%- _zip.replace(/'/g, '&#39;') %>' data-country='<%- _country.replace(/'/g, '&#39;') %>' onclick="editAddress(this, <%= i %>)">Edit</button>
+            <button type="button" class="ab-del" onclick="deleteAddress(<%= i %>)">Delete</button>
           </div>
         </div>
-      <% }) %>
+      <% } %>
     </div>
   <% } else { %>
     <div class="empty-msg">
@@ -425,55 +426,83 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.4/dist/sweetalert2.all.min.js"></script>
 <script>
   const form = document.getElementById('address-form');
-  const inputs = form.querySelectorAll('input[required]');
+  if (form) {
+    const line1Input = document.getElementById('line1');
+    const landmarkInput = document.getElementById('landmark');
+    const cityInput = document.getElementById('city');
+    const stateInput = document.getElementById('state');
+    const zipInput = document.getElementById('zip');
+    const countryInput = document.getElementById('country');
+    const inputs = form.querySelectorAll('input');
 
-  // Add red border on invalid
+  const validationRules = {
+    line1: value => value.length >= 5,
+    city: value => value.length >= 2,
+    state: value => value.length >= 2,
+    zip: value => /^\d{5,6}$/.test(value),
+    country: value => value.length >= 2,
+    landmark: value => value.length === 0 || value.length >= 3
+  };
+
+  const validationMessages = {
+    line1: 'Address must be at least 5 characters',
+    city: 'City must be at least 2 characters',
+    state: 'State must be at least 2 characters',
+    zip: 'ZIP must be 5 or 6 digits',
+    country: 'Country must be at least 2 characters',
+    landmark: 'Landmark must be at least 3 characters when provided'
+  };
+
   inputs.forEach(input => {
     input.addEventListener('invalid', (e) => {
       e.target.classList.add('error');
+      e.preventDefault();
     });
     input.addEventListener('input', (e) => {
       e.target.classList.remove('error');
     });
   });
 
-  // Custom validation before submit
+  function getValidationMessage(input, value) {
+    if (input.required && !value) {
+      return 'This field is required';
+    }
+    return validationMessages[input.name] || 'Invalid input';
+  }
+
+  function validateField(input) {
+    const name = input.name;
+    const value = input.value.trim();
+    const isValid = validationRules[name] ? validationRules[name](value) : true;
+
+    if (!isValid) {
+      input.classList.add('error');
+      return false;
+    }
+
+    input.classList.remove('error');
+    return true;
+  }
+
+  [line1Input, cityInput, stateInput, zipInput, countryInput, landmarkInput].forEach(input => {
+    input.addEventListener('blur', () => {
+      validateField(input);
+      if (input.required && !input.value.trim()) {
+        showError(input.id, getValidationMessage(input, ''));
+      }
+    });
+  });
+
   form.addEventListener('submit', function(e) {
     let hasError = false;
-    const line1 = document.getElementById('line1').value.trim();
-    const city = document.getElementById('city').value.trim();
-    const state = document.getElementById('state').value.trim();
-    const zip = document.getElementById('zip').value.trim();
-    const country = document.getElementById('country').value.trim();
-    const landmark = document.getElementById('landmark').value.trim();
-
-    // Reset borders
-    inputs.forEach(i => i.classList.remove('error'));
-
-    if (line1.length < 5) {
-      showError('line1', 'Address must be at least 5 characters');
-      hasError = true;
-    }
-    if (city.length < 2) {
-      showError('city', 'City too short');
-      hasError = true;
-    }
-    if (state.length < 2) {
-      showError('state', 'State too short');
-      hasError = true;
-    }
-    if (landmark && landmark.length < 3) {
-      showError('landmark', 'Landmark too short');
-      hasError = true;
-    }
-    if (country.length < 2) {
-      showError('country', 'Country too short');
-      hasError = true;
-    }
-    if (!/^\d{5,6}$/.test(zip)) {
-      showError('zip', 'ZIP must be 5 or 6 digits');
-      hasError = true;
-    }
+    [line1Input, cityInput, stateInput, zipInput, countryInput, landmarkInput].forEach(input => {
+      const valid = validateField(input);
+      if (!valid && !hasError) {
+        const value = input.value.trim();
+        showError(input.id, getValidationMessage(input, value));
+      }
+      hasError = hasError || !valid;
+    });
 
     if (hasError) {
       e.preventDefault();
@@ -519,9 +548,15 @@ body {
     inputs.forEach(i => i.classList.remove('error'));
   }
 
-  function editAddress(i, l1, lm, c, s, z, co) {
+  function editAddress(button, i) {
+    const l1 = button.dataset.line1 || '';
+    const lm = button.dataset.landmark || '';
+    const c = button.dataset.city || '';
+    const s = button.dataset.state || '';
+    const z = button.dataset.zip || '';
+    const co = button.dataset.country || '';
     document.getElementById('line1').value = l1;
-    document.getElementById('landmark').value = lm || '';
+    document.getElementById('landmark').value = lm;
     document.getElementById('city').value = c;
     document.getElementById('state').value = s;
     document.getElementById('zip').value = z;
@@ -533,7 +568,7 @@ body {
     window.scrollTo({top: formContainer.offsetTop - 100, behavior: 'smooth'});
   }
 
-  async function deleteAddress(index) {
+  window.deleteAddress = async function deleteAddress(index) {
     const result = await Swal.fire({
       title: 'Delete this address?',
       text: "You won't be able to recover it!",
@@ -552,6 +587,7 @@ body {
     try {
       const response = await fetch('/profile/address/' + index + '/delete', {
         method: 'DELETE',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -570,6 +606,7 @@ body {
       Swal.fire('Error', err.message || 'Failed to delete', 'error');
     }
   }
+}
 
   // Flash messages
   <% if (success) { %>

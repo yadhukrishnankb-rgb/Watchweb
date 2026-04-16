@@ -1,301 +1,489 @@
-<!-- dashboard.ejs -->
-<%-include("../../views/partials/admin/header")%>
+<%- include("../../views/partials/admin/header") %>
 
-<!-- Dashboard Content -->
-<div class="p-6">
-  <!-- Stats Overview -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-500 text-sm">Total Revenue</p>
-          <h3 class="text-2xl font-bold text-gray-800">$24,532</h3>
-          <p class="text-green-500 text-sm mt-2">+12% from last month</p>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-full">
-          <i class="fas fa-dollar-sign text-blue-500"></i>
-        </div>
+<style>
+* { box-sizing: border-box; }
+.dash { padding: 2rem 1rem 3rem; background: #f3f4f6; min-height: 100vh; }
+.dash-inner { max-width: 1240px; margin: 0 auto; }
+.dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 1.8rem; flex-wrap: wrap; }
+.dashboard-title { font-size: 2rem; font-weight: 700; color: #111827; margin: 0; }
+.dashboard-subtitle { font-size: 0.95rem; color: #6b7280; margin: 0.35rem 0 0; }
+.dashboard-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: #4b5563; }
+.dashboard-meta span { background: #fff; border: 1px solid #e5e7eb; border-radius: 999px; padding: 0.5rem 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 1.8rem; }
+.stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 1.3rem 1.5rem; position: relative; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08); }
+.stat-label { font-size: 12px; color: #6b7280; margin-bottom: 0.45rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.stat-value { font-size: 2rem; font-weight: 700; color: #111827; line-height: 1.05; }
+.stat-change { font-size: 0.85rem; margin-top: 0.65rem; }
+.pos { color: #16a34a; }
+.neg { color: #dc2626; }
+.stat-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.badge-red { position: absolute; top: 14px; right: 14px; background: #fee2e2; color: #dc2626; font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 600; }
+.section-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; margin-bottom: 1.8rem; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 22px; padding: 1.5rem; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.05); }
+.card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 1.25rem; }
+.card-title { font-size: 1.05rem; font-weight: 700; color: #111827; }
+.view-all { font-size: 0.9rem; color: #3b82f6; text-decoration: none; }
+.view-all:hover { text-decoration: underline; }
+.filter-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.filter-btn { border: 1px solid #e5e7eb; border-radius: 999px; padding: 0.65rem 1rem; font-size: 0.8rem; color: #4b5563; text-decoration: none; background: #fff; transition: all 0.2s ease; }
+.filter-btn.active { border-color: #3b82f6; color: #1d4ed8; background: #dbeafe; }
+.filter-btn:hover { background: #f8fafc; }
+.sales-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 1rem; }
+.summary-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 18px; padding: 1rem 1.2rem; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05); }
+.summary-card span { display: block; font-size: 0.75rem; color: #6b7280; margin-bottom: 0.45rem; text-transform: uppercase; letter-spacing: 0.12em; }
+.summary-card strong { display: block; font-size: 1.35rem; color: #111827; }
+.sales-overview-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; width: 100%; }
+.range-title { font-size: 0.95rem; color: #6b7280; }
+.top-list { display: grid; gap: 10px; }
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f3f4f6; }
+.list-item:last-child { border-bottom: none; }
+.list-rank { font-size: 0.85rem; color: #6b7280; width: 30px; }
+.list-name { font-size: 0.95rem; font-weight: 600; color: #111827; }
+.list-meta { font-size: 0.85rem; color: #6b7280; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th { font-size: 0.78rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; padding: 12px 14px; background: #f9fafb; text-align: left; }
+th:first-child { border-radius: 8px 0 0 8px; }
+th:last-child { border-radius: 0 8px 8px 0; }
+td { padding: 14px 14px; border-bottom: 1px solid #f3f4f6; color: #111827; }
+tr:last-child td { border-bottom: none; }
+.status-pill { font-size: 0.75rem; padding: 4px 12px; border-radius: 999px; font-weight: 700; display: inline-block; }
+.s-complete { background: #dcfce7; color: #15803d; }
+.s-process { background: #fef9c3; color: #b45309; }
+.s-shipped { background: #dbeafe; color: #1d4ed8; }
+.s-cancel { background: #fee2e2; color: #b91c1c; }
+.action-link { color: #3b82f6; font-size: 0.85rem; text-decoration: none; }
+.action-link:hover { text-decoration: underline; }
+.prod-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f3f4f6; }
+.prod-row:last-child { border-bottom: none; }
+.prod-img { width: 48px; height: 48px; border-radius: 12px; background: #f3f4f6; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.prod-name { font-size: 0.95rem; font-weight: 600; color: #111827; }
+.prod-sku { font-size: 0.8rem; color: #9ca3af; margin-top: 2px; }
+.prod-price { font-size: 0.95rem; font-weight: 700; color: #111827; text-align: right; }
+.in-stock { font-size: 0.8rem; color: #16a34a; text-align: right; margin-top: 2px; }
+.cust-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f3f4f6; }
+.cust-row:last-child { border-bottom: none; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+.av-1 { background: #dbeafe; color: #1d4ed8; }
+.av-2 { background: #dcfce7; color: #15803d; }
+.av-3 { background: #fef9c3; color: #b45309; }
+.av-4 { background: #ede9fe; color: #6d28d9; }
+.cust-name { font-size: 0.95rem; font-weight: 600; color: #111827; }
+.cust-email { font-size: 0.8rem; color: #9ca3af; margin-top: 2px; }
+.cust-orders { font-size: 0.95rem; font-weight: 700; color: #111827; text-align: right; }
+.cust-joined { font-size: 0.8rem; color: #9ca3af; text-align: right; margin-top: 2px; }
+.low-stock-banner { background: #fff5f5; border: 1px solid #fecaca; border-radius: 16px; padding: 1.4rem 1.5rem; margin-top: 1.5rem; }
+.low-stock-title { font-size: 1rem; font-weight: 700; color: #b91c1c; margin-bottom: 0.8rem; }
+.low-stock-item { display: flex; justify-content: space-between; font-size: 0.95rem; padding: 6px 0; color: #374151; }
+.low-qty { color: #dc2626; font-weight: 700; }
+.manage-link { font-size: 0.95rem; color: #dc2626; text-decoration: none; display: inline-block; margin-top: 1rem; }
+.manage-link:hover { text-decoration: underline; }
+.chart-wrap { min-height: 320px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-radius: 22px; display: flex; align-items: flex-end; gap: 10px; padding: 20px 18px 38px; position: relative; overflow: hidden; border: 1px solid #e5e7eb; }
+.chart-wrap::before { content: ''; position: absolute; left: 18px; right: 18px; bottom: 34px; height: 1px; background: #e5e7eb; }
+.chart-wrap canvas { width: 100% !important; height: auto !important; }
+.bar { flex: 1; border-radius: 10px 10px 0 0; background: #dbeafe; min-height: 24px; transition: background 0.2s ease; }
+.bar:hover { background: #93c5fd; }
+.bar.accent { background: #3b82f6; }
+.chart-labels { position: absolute; bottom: 10px; left: 18px; right: 18px; display: flex; gap: 10px; }
+.cl { flex: 1; text-align: center; font-size: 0.8rem; color: #6b7280; }
+.chart-note { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 1.2rem; font-size: 0.95rem; color: #6b7280; }
+.chart-note span { display: inline-flex; align-items: center; gap: 8px; }
+.chart-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+.chart-dot.primary { background: #3b82f6; }
+.chart-dot.secondary { background: #bfdbfe; }
+.progress-bar-bg { flex: 3; background: #f3f4f6; border-radius: 999px; height: 10px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 999px; }
+@media (max-width: 900px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .section-grid { grid-template-columns: 1fr; }
+  .dashboard-meta { width: 100%; justify-content: flex-start; }
+}
+@media (max-width: 500px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .dashboard-header { align-items: flex-start; }
+  .card { padding: 1.2rem; }
+}
+</style>
+
+<div class="dash">
+  <div class="dash-inner">
+
+    <!-- <div class="dashboard-header">
+      <div>
+        <p class="dashboard-subtitle">Store performance at a glance</p>
+        <h1 class="dashboard-title">Admin Dashboard</h1>
       </div>
-    </div>
-    
-    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-500 text-sm">Orders</p>
-          <h3 class="text-2xl font-bold text-gray-800"><%= totalOrders %></h3>
-          <p class="text-green-500 text-sm mt-2">+8% from last month</p>
-        </div>
-        <div class="bg-purple-100 p-3 rounded-full">
-          <i class="fas fa-shopping-bag text-purple-500"></i>
-        </div>
-      </div>
-    </div>
-    
-    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-500 text-sm">Customers</p>
-          <h3 class="text-2xl font-bold text-gray-800">1,257</h3>
-          <p class="text-green-500 text-sm mt-2">+5% from last month</p>
-        </div>
-        <div class="bg-green-100 p-3 rounded-full">
-          <i class="fas fa-users text-green-500"></i>
-        </div>
-      </div>
-    </div>
-    
-    <!-- <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-500 text-sm">Products</p>
-          <h3 class="text-2xl font-bold text-gray-800">128</h3>
-          <p class="text-red-500 text-sm mt-2">-2% from last month</p>
-        </div>
-        <div class="bg-yellow-100 p-3 rounded-full">
-          <i class="fas fa-box text-yellow-500"></i>
-        </div>
+      <div class="dashboard-meta">
+        <span>Updated just now</span>
       </div>
     </div> -->
 
-    <div class="bg-white rounded-lg shadow-sm p-6 dashboard-card relative">
-  <div class="flex items-center justify-between">
-    <div>
-      <p class="text-gray-500 text-sm">Products</p>
-      <h3 class="text-2xl font-bold text-gray-800"><%= totalProducts %></h3>
-      <p class="text-red-500 text-sm mt-2">-2% from last month</p>
-    </div>
-    <div class="bg-yellow-100 p-3 rounded-full">
-      <i class="fas fa-box text-yellow-500"></i>
-    </div>
-  </div>
-  <% if (lowStockCount > 0) { %>
-    <div class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-      <%= lowStockCount %> low
-    </div>
-  <% } %>
+    <!-- Stat cards -->
+    <div class="stat-grid">
+
+<div class="stat-card">
+<div class="stat-row">
+<div>
+<div class="stat-label">Total revenue</div>
+<div class="stat-value">$<%= totalRevenue.toLocaleString() %></div>
+<!-- <div class="stat-change pos">+12% from last month</div> -->
+</div>
+<div class="stat-icon" style="background:#dbeafe;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+</div>
+</div>
 </div>
 
-
-
-
-  </div>
-  
-  <!-- Charts & Tables -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white rounded-lg shadow-sm p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">Sales Overview</h3>
-      <canvas id="salesChart" height="250"></canvas>
-    </div>
-    
-    <div class="bg-white rounded-lg shadow-sm p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Selling Watches</h3>
-      <canvas id="productsChart" height="250"></canvas>
-    </div>
-  </div>
-  
-  <!-- Recent Orders -->
-  <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold text-gray-800">Recent Orders</h3>
-      <a href="#" class="text-blue-500 hover:text-blue-700">View All</a>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr>
-            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2453</td>
-            <td class="py-4 px-4 text-sm text-gray-900">John Smith</td>
-            <td class="py-4 px-4 text-sm text-gray-900">EverTime Classic Gold</td>
-            <td class="py-4 px-4 text-sm text-gray-500">Apr 10, 2025</td>
-            <td class="py-4 px-4 text-sm text-gray-900">$299.99</td>
-            <td class="py-4 px-4">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-            </td>
-            <td class="py-4 px-4 text-sm">
-              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
-            </td>
-          </tr>
-          <tr>
-            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2452</td>
-            <td class="py-4 px-4 text-sm text-gray-900">Emily Johnson</td>
-            <td class="py-4 px-4 text-sm text-gray-900">EverTime Sport Black</td>
-            <td class="py-4 px-4 text-sm text-gray-500">Apr 09, 2025</td>
-            <td class="py-4 px-4 text-sm text-gray-900">$199.99</td>
-            <td class="py-4 px-4">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Processing</span>
-            </td>
-            <td class="py-4 px-4 text-sm">
-              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
-            </td>
-          </tr>
-          <tr>
-            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2451</td>
-            <td class="py-4 px-4 text-sm text-gray-900">Robert Davis</td>
-            <td class="py-4 px-4 text-sm text-gray-900">EverTime Smart Pro</td>
-            <td class="py-4 px-4 text-sm text-gray-500">Apr 08, 2025</td>
-            <td class="py-4 px-4 text-sm text-gray-900">$349.99</td>
-            <td class="py-4 px-4">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Shipped</span>
-            </td>
-            <td class="py-4 px-4 text-sm">
-              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
-            </td>
-          </tr>
-          <tr>
-            <td class="py-4 px-4 text-sm text-gray-900">#ORD-2450</td>
-            <td class="py-4 px-4 text-sm text-gray-900">Sarah Wilson</td>
-            <td class="py-4 px-4 text-sm text-gray-900">EverTime Luxury Silver</td>
-            <td class="py-4 px-4 text-sm text-gray-500">Apr 07, 2025</td>
-            <td class="py-4 px-4 text-sm text-gray-900">$499.99</td>
-            <td class="py-4 px-4">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
-            </td>
-            <td class="py-4 px-4 text-sm">
-              <a href="#" class="text-blue-500 hover:text-blue-700 mr-3">View</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  
-  <!-- Popular Products & Recent Customers -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-lg shadow-sm p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold text-gray-800">Popular Products</h3>
-        <a href="#" class="text-blue-500 hover:text-blue-700">View All</a>
-      </div>
-      <div class="space-y-4">
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/60/60" alt="EverTime Classic Gold" class="w-12 h-12 rounded-lg">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">EverTime Classic Gold</h4>
-            <p class="text-xs text-gray-500">SKU: ET-CG-001</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">$299.99</p>
-            <p class="text-xs text-green-500">In Stock</p>
-          </div>
-        </div>
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/60/60" alt="EverTime Sport Black" class="w-12 h-12 rounded-lg">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">EverTime Sport Black</h4>
-            <p class="text-xs text-gray-500">SKU: ET-SB-002</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">$199.99</p>
-            <p class="text-xs text-green-500">In Stock</p>
-          </div>
-        </div>
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/60/60" alt="EverTime Smart Pro" class="w-12 h-12 rounded-lg">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">EverTime Smart Pro</h4>
-            <p class="text-xs text-gray-500">SKU: ET-SP-003</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">$349.99</p>
-            <p class="text-xs text-green-500">In Stock</p>
-          </div>
-        </div>
-        <div class="flex items-center">
-          <img src="/api/placeholder/60/60" alt="EverTime Luxury Silver" class="w-12 h-12 rounded-lg">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">EverTime Luxury Silver</h4>
-            <p class="text-xs text-gray-500">SKU: ET-LS-004</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">$499.99</p>
-            <p class="text-xs text-green-500">In Stock</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="bg-white rounded-lg shadow-sm p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold text-gray-800">Recent Customers</h3>
-<!-- In dashboard.ejs, inside Recent Customers section -->
-<a href="/admin/customers" class="text-blue-500 hover:text-blue-700">View All</a>      </div>
-      <div class="space-y-4">
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/40/40" alt="John Smith" class="w-10 h-10 rounded-full">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">John Smith</h4>
-            <p class="text-xs text-gray-500">john.smith@example.com</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">3 Orders</p>
-            <p class="text-xs text-gray-500">Joined Apr 1, 2025</p>
-          </div>
-        </div>
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/40/40" alt="Emily Johnson" class="w-10 h-10 rounded-full">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">Emily Johnson</h4>
-            <p class="text-xs text-gray-500">emily.j@example.com</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">1 Order</p>
-            <p class="text-xs text-gray-500">Joined Apr 5, 2025</p>
-          </div>
-        </div>
-        <div class="flex items-center border-b pb-4">
-          <img src="/api/placeholder/40/40" alt="Robert Davis" class="w-10 h-10 rounded-full">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">Robert Davis</h4>
-            <p class="text-xs text-gray-500">robert.d@example.com</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">2 Orders</p>
-            <p class="text-xs text-gray-500">Joined Mar 28, 2025</p>
-          </div>
-        </div>
-        <div class="flex items-center">
-          <img src="/api/placeholder/40/40" alt="Sarah Wilson" class="w-10 h-10 rounded-full">
-          <div class="ml-4 flex-1">
-            <h4 class="text-sm font-medium text-gray-900">Sarah Wilson</h4>
-            <p class="text-xs text-gray-500">sarah.w@example.com</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-gray-900">5 Orders</p>
-            <p class="text-xs text-gray-500">Joined Mar 15, 2025</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  //-------------------------------------------
-<!-- Low Stock Alert Widget -->
-<div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
-  <h3 class="font-semibold text-red-800 mb-2">Low Stock Alert (<%= lowStockCount %> items)</h3>
-  <div class="space-y-2">
-    <% lowStockProducts.forEach(p => { %>
-      <div class="flex justify-between text-sm">
-        <span><%= p.productName %></span>
-        <span class="text-red-600 font-medium"><%= p.quantity %> left</span>
-      </div>
-    <% }) %>
-  </div>
-  <a href="/admin/inventory?stock=low" class="text-red-600 text-sm mt-2 inline-block hover:underline">Manage Stock →</a>
+<div class="stat-card">
+<div class="stat-row">
+<div>
+<div class="stat-label">Orders</div>
+<div class="stat-value"><%= totalOrders %></div>
+<!-- <div class="stat-change pos">+8% from last month</div> -->
 </div>
-  //-----------------------------
+<div class="stat-icon" style="background:#ede9fe;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+</div>
+</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-row">
+<div>
+<div class="stat-label">Customers</div>
+<div class="stat-value"><%= totalCustomers %></div>
+<!-- <div class="stat-change pos">+5% from last month</div> -->
+</div>
+<div class="stat-icon" style="background:#dcfce7;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+</div>
+</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-row">
+<div>
+<div class="stat-label">Products</div>
+<div class="stat-value"><%= totalProducts %></div>
+<div class="stat-change neg">-2% from last month</div>
+</div>
+<div class="stat-icon" style="background:#fef9c3;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+</div>
+</div>
+<% if (lowStockCount > 0) { %>
+<div class="badge-red"><%= lowStockCount %> low</div>
+<% } %>
+</div>
 
 </div>
 
-<%-include("../../views/partials/admin/footer")%>
+<!-- Charts row -->
+<div class="section-grid">
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Sales overview</span>
+<div class="sales-overview-meta">
+  <div class="filter-controls">
+    <a href="/admin/dashboard?range=monthly" class="filter-btn<%= selectedRange === 'monthly' ? ' active' : '' %>">Monthly</a>
+    <a href="/admin/dashboard?range=yearly" class="filter-btn<%= selectedRange === 'yearly' ? ' active' : '' %>">Yearly</a>
+  </div>
+  <span class="range-title"><%= selectedRange === 'yearly' ? 'Last 5 years' : 'Last 6 months' %></span>
+</div>
+</div>
+<div class="chart-wrap">
+  <canvas id="salesChart" height="280"></canvas>
+</div>
+<div class="chart-note">
+  <span><span class="chart-dot primary"></span> Delivered revenue</span>
+  <span><span class="chart-dot secondary"></span> No revenue</span>
+</div>
+</div>
+
+<script>
+  window.dashboardChartLabels = <%- JSON.stringify(chartLabels) %>;
+  window.dashboardChartData = <%- JSON.stringify(chartData) %>;
+</script>
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Order status</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;margin-top:4px;">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+<div style="flex:1;color:#6b7280;">Completed</div>
+<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:65%;background:#16a34a;"></div></div>
+<div style="min-width:32px;text-align:right;font-weight:600;color:#111827;">65%</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+<div style="flex:1;color:#6b7280;">Processing</div>
+<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:20%;background:#f59e0b;"></div></div>
+<div style="min-width:32px;text-align:right;font-weight:600;color:#111827;">20%</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+<div style="flex:1;color:#6b7280;">Shipped</div>
+<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:10%;background:#3b82f6;"></div></div>
+<div style="min-width:32px;text-align:right;font-weight:600;color:#111827;">10%</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+<div style="flex:1;color:#6b7280;">Cancelled</div>
+<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:5%;background:#ef4444;"></div></div>
+<div style="min-width:32px;text-align:right;font-weight:600;color:#111827;">5%</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- Top selling products and categories -->
+<div class="section-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Best-selling products</span>
+    </div>
+    <div class="top-list">
+      <% if (topProducts.length === 0) { %>
+        <div class="list-item"><span class="list-name">No delivered sales yet</span></div>
+      <% } else { %>
+        <% topProducts.forEach(function(item, idx) { %>
+          <div class="list-item">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="list-rank"><%= idx + 1 %>.</span>
+              <span class="list-name"><%= item.name %></span>
+            </div>
+            <div class="list-meta"><%= item.quantity %> sold</div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Best-selling categories</span>
+    </div>
+    <div class="top-list">
+      <% if (topCategories.length === 0) { %>
+        <div class="list-item"><span class="list-name">No category sales yet</span></div>
+      <% } else { %>
+        <% topCategories.forEach(function(item, idx) { %>
+          <div class="list-item">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="list-rank"><%= idx + 1 %>.</span>
+              <span class="list-name"><%= item.name %></span>
+            </div>
+            <div class="list-meta"><%= item.quantity %> sold</div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Best-selling brands</span>
+    </div>
+    <div class="top-list">
+      <% if (topBrands.length === 0) { %>
+        <div class="list-item"><span class="list-name">No brand sales yet</span></div>
+      <% } else { %>
+        <% topBrands.forEach(function(item, idx) { %>
+          <div class="list-item">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="list-rank"><%= idx + 1 %>.</span>
+              <span class="list-name"><%= item.name %></span>
+            </div>
+            <div class="list-meta"><%= item.quantity %> sold</div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Recent orders -->
+<!-- <div class="card" style="margin-bottom:1.5rem;">
+<div class="card-header">
+<span class="card-title">Recent orders</span>
+<a href="#" class="view-all">View all</a>
+</div>
+<div style="overflow-x:auto;">
+<table>
+<thead>
+<tr>
+<th>Order ID</th>
+<th>Customer</th>
+<th>Product</th>
+<th>Date</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="font-weight:600;">#ORD-2453</td>
+<td>John Smith</td>
+<td style="color:#6b7280;">EverTime Classic Gold</td>
+<td style="color:#6b7280;">Apr 10, 2025</td>
+<td style="font-weight:600;">$299.99</td>
+<td><span class="status-pill s-complete">Completed</span></td>
+<td><a href="#" class="action-link">View</a></td>
+</tr>
+<tr>
+<td style="font-weight:600;">#ORD-2452</td>
+<td>Emily Johnson</td>
+<td style="color:#6b7280;">EverTime Sport Black</td>
+<td style="color:#6b7280;">Apr 09, 2025</td>
+<td style="font-weight:600;">$199.99</td>
+<td><span class="status-pill s-process">Processing</span></td>
+<td><a href="#" class="action-link">View</a></td>
+</tr>
+<tr>
+<td style="font-weight:600;">#ORD-2451</td>
+<td>Robert Davis</td>
+<td style="color:#6b7280;">EverTime Smart Pro</td>
+<td style="color:#6b7280;">Apr 08, 2025</td>
+<td style="font-weight:600;">$349.99</td>
+<td><span class="status-pill s-shipped">Shipped</span></td>
+<td><a href="#" class="action-link">View</a></td>
+</tr>
+<tr>
+<td style="font-weight:600;">#ORD-2450</td>
+<td>Sarah Wilson</td>
+<td style="color:#6b7280;">EverTime Luxury Silver</td>
+<td style="color:#6b7280;">Apr 07, 2025</td>
+<td style="font-weight:600;">$499.99</td>
+<td><span class="status-pill s-cancel">Cancelled</span></td>
+<td><a href="#" class="action-link">View</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Popular products & Recent customers -->
+<!-- <div class="section-grid">
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Popular products</span>
+<a href="#" class="view-all">View all</a>
+</div>
+<div class="prod-row">
+<div class="prod-img">⌚</div>
+<div style="flex:1;">
+<div class="prod-name">EverTime Classic Gold</div>
+<div class="prod-sku">SKU: ET-CG-001</div>
+</div>
+<div>
+<div class="prod-price">$299.99</div>
+<div class="in-stock">In stock</div>
+</div>
+</div>
+<div class="prod-row">
+<div class="prod-img">⌚</div>
+<div style="flex:1;">
+<div class="prod-name">EverTime Sport Black</div>
+<div class="prod-sku">SKU: ET-SB-002</div>
+</div>
+<div>
+<div class="prod-price">$199.99</div>
+<div class="in-stock">In stock</div>
+</div>
+</div>
+<div class="prod-row">
+<div class="prod-img">⌚</div>
+<div style="flex:1;">
+<div class="prod-name">EverTime Smart Pro</div>
+<div class="prod-sku">SKU: ET-SP-003</div>
+</div>
+<div>
+<div class="prod-price">$349.99</div>
+<div class="in-stock">In stock</div>
+</div>
+</div>
+<div class="prod-row">
+<div class="prod-img">⌚</div>
+<div style="flex:1;">
+<div class="prod-name">EverTime Luxury Silver</div>
+<div class="prod-sku">SKU: ET-LS-004</div>
+</div>
+<div>
+<div class="prod-price">$499.99</div>
+<div class="in-stock">In stock</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Recent customers</span>
+<a href="/admin/customers" class="view-all">View all</a>
+</div>
+<div class="cust-row">
+<div class="avatar av-1">JS</div>
+<div style="flex:1;">
+<div class="cust-name">John Smith</div>
+<div class="cust-email">john.smith@example.com</div>
+</div>
+<div>
+<div class="cust-orders">3 orders</div>
+<div class="cust-joined">Apr 1, 2025</div>
+</div>
+</div>
+<div class="cust-row">
+<div class="avatar av-2">EJ</div>
+<div style="flex:1;">
+<div class="cust-name">Emily Johnson</div>
+<div class="cust-email">emily.j@example.com</div>
+</div>
+<div>
+<div class="cust-orders">1 order</div>
+<div class="cust-joined">Apr 5, 2025</div>
+</div>
+</div>
+<div class="cust-row">
+<div class="avatar av-3">RD</div>
+<div style="flex:1;">
+<div class="cust-name">Robert Davis</div>
+<div class="cust-email">robert.d@example.com</div>
+</div>
+<div>
+<div class="cust-orders">2 orders</div>
+<div class="cust-joined">Mar 28, 2025</div>
+</div>
+</div>
+<div class="cust-row">
+<div class="avatar av-4">SW</div>
+<div style="flex:1;">
+<div class="cust-name">Sarah Wilson</div>
+<div class="cust-email">sarah.w@example.com</div>
+</div>
+<div>
+<div class="cust-orders">5 orders</div>
+<div class="cust-joined">Mar 15, 2025</div>
+</div>
+</div>
+</div>
+
+</div> --> -->
+
+<!-- Low stock alert -->
+<!-- <div class="low-stock-banner">
+<div class="low-stock-title">Low stock alert — <%= lowStockCount %> items</div>
+<% lowStockProducts.forEach(p => { %>
+<div class="low-stock-item">
+<span><%= p.productName %></span>
+<span class="low-qty"><%= p.quantity %> left</span>
+</div>
+<% }) %>
+<a href="/admin/inventory?stock=low" class="manage-link">Manage stock →</a>
+</div> -->
+
+  </div>
+</div>
+
+<%- include("../../views/partials/admin/footer") %>

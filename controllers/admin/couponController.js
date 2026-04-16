@@ -12,6 +12,31 @@ const getCoupons = async (req, res) =>{
     }
 }
 
+const validateCouponInput = ({ discountType, discountValue, minAmount, expiryDate }) => {
+    const discount = Number(discountValue);
+    const minimum = Number(minAmount);
+
+    if (!discountType || typeof discountType !== 'string') {
+        return 'Discount type is required.';
+    }
+    if (Number.isNaN(discount) || discount <= 0) {
+        return 'Discount value must be a positive number.';
+    }
+    if (Number.isNaN(minimum) || minimum < 0) {
+        return 'Minimum order amount must be 0 or greater.';
+    }
+    if (!expiryDate || isNaN(new Date(expiryDate).valueOf())) {
+        return 'Valid expiry date is required.';
+    }
+    if (discountType === 'fixed' && minimum > 0 && discount > minimum) {
+        return 'Discount value cannot be greater than the minimum purchase amount.';
+    }
+    if (discountType === 'percentage' && discount > 100) {
+        return 'Percentage discount value cannot exceed 100.';
+    }
+    return null;
+};
+
 const createCoupon = async (req, res) => {
     try {
        
@@ -20,10 +45,15 @@ const createCoupon = async (req, res) => {
             maxDiscount, expiryDate, usageLimit, userUsageLimit
         } = req.body;
 
+        const validationError = validateCouponInput({ discountType, discountValue, minAmount, expiryDate });
+        if (validationError) {
+            return res.status(400).json({ success: false, message: validationError });
+        }
+
         const existing = await Coupon.findOne({ code: code.toUpperCase()});
 
         if (existing) {
-            return res.status(400).json({ success: false, message: 'coupon code already exists'})
+            return res.status(400).json({ success: false, message: 'Coupon code already exists'})
         }
 
         const coupon = new Coupon({
@@ -55,6 +85,11 @@ const editCoupon = async (req,res) =>{
      
         const { id } = req.params;
         const { discountType, discountValue, minAmount, maxDiscount, expiryDate, usageLimit, userUsageLimit } = req.body;
+
+        const validationError = validateCouponInput({ discountType, discountValue, minAmount, expiryDate });
+        if (validationError) {
+            return res.status(400).json({ success: false, message: validationError });
+        }
 
         const coupon = await Coupon.findById(id);
         if(!coupon) {

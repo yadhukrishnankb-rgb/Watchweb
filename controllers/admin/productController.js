@@ -1,5 +1,6 @@
 const Product = require('../../models/productSchema');
 const Category = require('../../models/categorySchema');
+const Brand = require('../../models/brandSchema');
 const mongoose = require('mongoose');
 const cloudinary = require('../../config/cloudinary');
 const messages = require('../../constants/messages');
@@ -50,10 +51,12 @@ exports.getProducts = async (req, res) => {
         }));
 
         const categories = await Category.find({ isListed: true }).lean();
+        const brands = await Brand.find().sort({ name: 1 }).lean();
 
         res.render('admin/products', {
             products: processedProducts,
             categories,
+            brands,
             currentPage: page,
             totalPages: Math.ceil(totalProducts / limit),
             searchQuery
@@ -123,12 +126,8 @@ exports.addProduct = async (req, res) => {
             });
         }
 
-        // if(parseFloat(salesPrice) > parseFloat(regularPrice)){
-        //     return res.status(statusCodes.BAD_REQUEST).json({
-        //         success: false,
-        //         message:'sales price cannot be greater than regular price'
-        //     })
-        // }
+           
+        
      
         // Check images
         if (!req.files || req.files.length < 3) {

@@ -685,7 +685,7 @@ body {
                   <span class="info-value" style="text-decoration:line-through; color:var(--muted);">₹<%= origAmountForDisplay.toLocaleString() %></span>
                   <span class="info-value" style="margin-left:8px; color:var(--green); font-weight:800;">₹<%= paidAmount.toLocaleString() %></span>
                   <small style="color: var(--success); font-weight:700; display:block; margin-top:4px;">
-                    You saved ₹<%= (origAmountForDisplay - paidAmount).toLocaleString() %> 
+                    <!-- You saved ₹<%= (origAmountForDisplay - paidAmount).toLocaleString() %>  -->
                     <% if (offerDiscount > 0) { %> (₹<%= offerDiscount.toLocaleString() %> from offers<% if (order.couponDiscount>0) { %> + ₹<%= Number(order.couponDiscount).toLocaleString() %> coupon<% } %>)<% } else if (order.couponDiscount>0) { %> (coupon)<% } %>
                   </small>
                 <% } else { %>

@@ -7,6 +7,37 @@ const Order   = require('../../models/orderSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 
+const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const buildChartBuckets = (range) => {
+  const now = new Date();
+  const buckets = [];
+
+  if (range === 'yearly') {
+    const years = 5;
+    for (let i = years - 1; i >= 0; i -= 1) {
+      const year = now.getFullYear() - i;
+      buckets.push({ key: `${year}`, label: `${year}` });
+    }
+  } else {
+    const months = 6;
+    for (let i = months - 1; i >= 0; i -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      buckets.push({ key: `${date.getFullYear()}-${month}`, label: `${monthNames[date.getMonth()]} ${date.getFullYear()}` });
+    }
+  }
+
+  return buckets;
+};
+
+const getChartStartDate = (range) => {
+  const now = new Date();
+  if (range === 'yearly') {
+    return new Date(now.getFullYear() - 4, 0, 1);
+  }
+  return new Date(now.getFullYear(), now.getMonth() - 5, 1);
+};
 
 const loadLogin = async (req, res) => {
   try {
@@ -58,9 +89,13 @@ const loadDashboard = async (req, res) => {
   try {
     if (!req.session.admin) return res.redirect('/admin/login');
 
+    const range = ['monthly', 'yearly'].includes(req.query.range) ? req.query.range : 'monthly';
+    const chartBuckets = buildChartBuckets(range);
+    const chartStartDate = getChartStartDate(range);
+    const chartDateFormat = range === 'yearly' ? '%Y' : '%Y-%m';
+
     // 1. Total products
     const totalProducts = await Product.countDocuments();
-
 
     // 2. Low‑stock products (≤5 and >0)
     const lowStockProducts = await Product.find({
@@ -73,32 +108,137 @@ const loadDashboard = async (req, res) => {
     // 3. Total orders
     const totalOrders = await Order.countDocuments();
 
-
-
     // 4. Total revenue (only Delivered orders)
     const revenueAgg = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $group: { _id: null, total: { $sum: '$finalAmount' } } }
     ]);
     const totalRevenue = revenueAgg[0]?.total || 0;
-  
 
     // 5. Total customers (non‑admin users)
     const totalCustomers = await User.countDocuments({ isAdmin: { $ne: true } });
 
-    // Render dashboard with **all** needed variables
+    // 6. Sales chart data
+    const chartAgg = await Order.aggregate([
+      { $match: { status: 'Delivered', createdAt: { $gte: chartStartDate } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: chartDateFormat, date: '$createdAt' } },
+          totalAmount: { $sum: '$finalAmount' }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const chartMap = chartAgg.reduce((acc, item) => {
+      acc[item._id] = item.totalAmount;
+      return acc;
+    }, {});
+
+    const chartLabels = chartBuckets.map((bucket) => bucket.label);
+    const chartData = chartBuckets.map((bucket) => chartMap[bucket.key] || 0);
+    const chartMax = Math.max(...chartData, 1);
+    const rangeRevenue = chartData.reduce((sum, amount) => sum + amount, 0);
+    const rangeOrders = await Order.countDocuments({ status: 'Delivered', createdAt: { $gte: chartStartDate } });
+    const averageOrderValue = rangeOrders ? rangeRevenue / rangeOrders : 0;
+
+    // 7. Best-selling products
+    const topProducts = await Order.aggregate([
+      { $match: { status: 'Delivered' } },
+      { $unwind: '$orderedItems' },
+      {
+        $group: {
+          _id: '$orderedItems.product',
+          name: { $first: '$orderedItems.name' },
+          quantity: { $sum: '$orderedItems.quantity' },
+          revenue: { $sum: '$orderedItems.totalPrice' }
+        }
+      },
+      { $sort: { quantity: -1, revenue: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // 8. Best-selling categories
+    const topCategories = await Order.aggregate([
+      { $match: { status: 'Delivered' } },
+      { $unwind: '$orderedItems' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'orderedItems.product',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'product.category',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: '$category._id',
+          name: { $first: '$category.name' },
+          quantity: { $sum: '$orderedItems.quantity' }
+        }
+      },
+      { $sort: { quantity: -1 } },
+      { $limit: 10 }
+    ]).then((items) => items.map((item) => ({
+      name: item.name || 'Unknown category',
+      quantity: item.quantity
+    })));
+
+    // 9. Best-selling brands
+    const topBrands = await Order.aggregate([
+      { $match: { status: 'Delivered' } },
+      { $unwind: '$orderedItems' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'orderedItems.product',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $group: {
+          _id: '$product.brand',
+          quantity: { $sum: '$orderedItems.quantity' }
+        }
+      },
+      { $sort: { quantity: -1 } },
+      { $limit: 10 }
+    ]).then((items) => items.map((item) => ({
+      name: item._id || 'Unknown brand',
+      quantity: item.quantity
+    })));
+
     res.render('admin/dashboard', {
       admin: req.session.admin,
       page: 'dashboard',
-
-      // ---- NEW ----
       totalProducts,
       lowStockCount: lowStockProducts.length,
       lowStockProducts,
       totalOrders,
       totalRevenue,
       totalCustomers,
-      
+      chartLabels,
+      chartData,
+      chartMax,
+      rangeRevenue,
+      rangeOrders,
+      averageOrderValue,
+      selectedRange: range,
+      topProducts,
+      topCategories,
+      topBrands
     });
   } catch (error) {
     console.error('Dashboard error:', error);
