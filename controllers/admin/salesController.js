@@ -34,14 +34,21 @@ function getDateRange(filterType, customStart, customEnd) {
             break;
 
         case 'custom':
-            start = customStart ? moment(customStart).startOf('day') : moment().subtract(30, 'days').startOf('day');
-            end = customEnd ? moment(customEnd).endOf('day') : moment().endOf('day');
+            start = isValidDateString(customStart)
+                ? moment(customStart).startOf('day')
+                : moment().subtract(30, 'days').startOf('day');
+            end = isValidDateString(customEnd)
+                ? moment(customEnd).endOf('day')
+                : moment().endOf('day');
             break;
     }
 
     return { start: start.toDate(), end: end.toDate() };
+}
 
-}    
+function isValidDateString(dateString) {
+    return Boolean(dateString) && moment(dateString, 'YYYY-MM-DD', true).isValid();
+}
 
 // get sales report page
 exports.getSalesReport = async (req, res) => {
@@ -49,6 +56,32 @@ exports.getSalesReport = async (req, res) => {
         const {filterType = 'monthly', start: customStart, end: customEnd, page: pageQuery} = req.query;
         const page = Math.max(Number(pageQuery) || 1, 1);
         const limit = 10;
+        let errorMessage = null;
+
+        if (filterType === 'custom') {
+            if (!customStart || !customEnd) {
+                errorMessage = 'Please select both start and end dates for a custom range.';
+            } else if (!isValidDateString(customStart) || !isValidDateString(customEnd)) {
+                errorMessage = 'Please enter valid dates in YYYY-MM-DD format.';
+            } else if (moment(customStart).isAfter(moment(customEnd))) {
+                errorMessage = 'Start date cannot be later than end date.';
+            }
+        }
+
+        if (errorMessage) {
+            return res.render('admin/sales-report', {
+                orders: [],
+                totalSalesCount: 0,
+                totalOrderAmount: '0.00',
+                totalDiscount: '0.00',
+                start: customStart || moment().subtract(29, 'days').format('YYYY-MM-DD'),
+                end: customEnd || moment().format('YYYY-MM-DD'),
+                filterType,
+                currentPage: 1,
+                totalPages: 1,
+                errorMessage
+            });
+        }
 
         const {start, end} = getDateRange(filterType, customStart, customEnd);
 

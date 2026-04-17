@@ -334,8 +334,7 @@ exports.addReview = async (req, res) => {
 // Helper function for stock status
 function getStockStatus(product) {
     if (product.isBlocked) return 'UNAVAILABLE';
-    if (product.status === 'Out of Stock') return 'OUT_OF_STOCK';
-    if (product.quantity <= 0) return 'SOLD_OUT';
+    if (product.status === 'Out of Stock' || product.quantity <= 0) return 'OUT_OF_STOCK';
     if (product.quantity <= 5) return 'LOW_STOCK';
     return 'IN_STOCK';
 }

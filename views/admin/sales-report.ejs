@@ -14,6 +14,12 @@
   <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">Sales Report</h1>
 
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      <div class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <strong>Error:</strong> <%= errorMessage %>
+      </div>
+    <% } %>
+
     <!-- Filter Form -->
     <form action="/admin/sales-report" method="GET" class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-3 items-end">
       <div class="flex flex-col min-w-40">
@@ -185,7 +191,53 @@ document.getElementById('filterType')?.addEventListener('change', function () {
   end.value = e.toISOString().split('T')[0];
 });
 
+const todayISO = new Date().toISOString().split('T')[0];
+const startInput = document.getElementById('startDate');
+const endInput = document.getElementById('endDate');
+if (startInput) startInput.max = todayISO;
+if (endInput) endInput.max = todayISO;
+
 document.getElementById('filterType')?.dispatchEvent(new Event('change'));
+
+function showSalesReportError(message) {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'error',
+      title: 'Invalid Date',
+      text: message,
+      confirmButtonText: 'OK'
+    });
+  } else {
+    alert(message);
+  }
+}
+
+const salesForm = document.querySelector('form[action="/admin/sales-report"]');
+salesForm?.addEventListener('submit', function (event) {
+  const filterType = document.getElementById('filterType')?.value;
+  const start = document.getElementById('startDate')?.value;
+  const end = document.getElementById('endDate')?.value;
+
+  if (filterType === 'custom') {
+    if (!start || !end) {
+      event.preventDefault();
+      showSalesReportError('Please select both start and end dates for a custom range.');
+      return;
+    }
+
+    const todayISO = new Date().toISOString().split('T')[0];
+    if (start > todayISO || end > todayISO) {
+      event.preventDefault();
+      showSalesReportError('Future dates are not allowed.');
+      return;
+    }
+
+    if (new Date(start) > new Date(end)) {
+      event.preventDefault();
+      showSalesReportError('Start date cannot be later than end date.');
+    }
+  }
+});
 </script>
 
 <%- include('../partials/admin/footer') %>
