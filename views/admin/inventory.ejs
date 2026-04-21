@@ -55,8 +55,8 @@
               <td class="px-6 py-4 status-cell" data-id="<%= p._id %>">
                 <% if (p.quantity === 0) { %>
                   <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800">Out of Stock</span>
-                <% } else if (p.quantity <= p.lowStockThreshold) { %>
-                  <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Low (<%= p.quantity %>)</span>
+                <% } else if (p.quantity <= 5) { %>
+                  <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Low Stock (<%= p.quantity %>)</span>
                 <% } else { %>
                   <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">In Stock</span>
                 <% } %>
@@ -138,7 +138,7 @@ $(document).on('click', '.save-stock', async function() {
       let statusHtml = '';
       if (response.quantity === 0) {
         statusHtml = '<span class="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Out of Stock</span>';
-      } else if (response.quantity <= (response.lowStockThreshold || 5)) {
+      } else if (response.quantity <= 5) {
         statusHtml = `<span class="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Low Stock (${response.quantity})</span>`;
       } else {
         statusHtml = '<span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">In Stock</span>';

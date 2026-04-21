@@ -42,8 +42,7 @@ req.session.resetEmail = email;
 req.session.otp = otp;
 req.session.otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
 
-console.log("OTP sent to email:", email);
-console.log("Generated OTP:", otp);
+
 
 await transporter.sendMail({
 to: email,
@@ -133,8 +132,13 @@ exports.profilePage = async (req, res) => {
   const successArr = req.flash('success') || [];
   const errorArr = req.flash('error') || [];
 
-  // Ignore messages that indicate missing products (these originate from shop/checkout flows)
-  const ignorePatterns = [/product not found/i, /product not found or unavailable/i];
+  // Ignore messages that originate from shop/checkout flows and should not leak into profile pages
+  const ignorePatterns = [
+    /product not found/i,
+    /product not found or unavailable/i,
+    /only \d+ left in stock/i,
+    /out of stock/i
+  ];
 
   const filteredError = errorArr.find(m => !ignorePatterns.some(p => p.test(m))) || null;
   const filteredSuccess = successArr.find(m => !ignorePatterns.some(p => p.test(m))) || (successArr[0] || null);
@@ -158,10 +162,15 @@ exports.addressPage = async (req, res) => {
   const user = await User.findById(userId).lean();
   user.addresses = user.addresses || [];
 
-  // Filter out unrelated flash errors (e.g., product-not-found) that may bleed in
+  // Filter out unrelated flash errors (e.g., product-not-found or stock warnings) that may bleed in
   const successArr = req.flash('success') || [];
   const errorArr = req.flash('error') || [];
-  const ignorePatterns = [/product not found/i, /product not found or unavailable/i];
+  const ignorePatterns = [
+    /product not found/i,
+    /product not found or unavailable/i,
+    /only \d+ left in stock/i,
+    /out of stock/i
+  ];
 
   const filteredError = errorArr.find(m => !ignorePatterns.some(p => p.test(m))) || null;
   const filteredSuccess = successArr.find(m => !ignorePatterns.some(p => p.test(m))) || (successArr[0] || null);
@@ -313,7 +322,6 @@ exports.updateProfile = async (req, res) => {
 
 exports.uploadProfilePicture = async (req, res) => {
   try {
-    console.log('uploadProfilePicture called, file present:', !!req.file, 'session user:', req.session.user?._id);
     const userId = req.session.user?._id || req.user?._id;
     if (!userId) return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.NOT_AUTHENTICATED });
 
@@ -349,9 +357,7 @@ const userId = req.session.user ? req.session.user._id : (req.user ? req.user._i
 if (!userId) return res.redirect('/login');
 const { otp } = req.body;
 
-// Debug: log session and OTP
-console.log("Session emailChange:", req.session.emailChange);
-console.log("Submitted OTP:", otp);
+
 
 if (req.session.emailChange && req.session.emailChange.otp === otp) {
 const user = await User.findById(userId);

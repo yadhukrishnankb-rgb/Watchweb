@@ -117,8 +117,7 @@ exports.getSalesReport = async (req, res) => {
 
       
 
-        console.log('Sales report query:', query);
-        console.log('Found orders:', orders.length);
+        
 
        res.render('admin/sales-report', {
       orders,

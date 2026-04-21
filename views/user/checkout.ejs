@@ -596,18 +596,18 @@ if (addAddressForm) {
         const data = {
             fullName: formData.get('fullName'),
             phone: formData.get('phone'),
-            address: formData.get('line1'),  // Map line1 to address
+            line1: formData.get('line1'),
             landmark: formData.get('landmark') || '',
             city: formData.get('city'),
             state: formData.get('state'),
-            pincode: formData.get('zip'),  // Map zip to pincode
+            zip: formData.get('zip'),
             country: formData.get('country'),
             isDefault: formData.get('isDefault') === 'on',
             type: formData.get('type')
         };
         
         // Validate required fields
-        if (!data.fullName || !data.phone || !data.address || !data.city || !data.state || !data.pincode) {
+        if (!data.fullName || !data.phone || !data.line1 || !data.city || !data.state || !data.zip) {
             alert('Please fill in all required fields');
             return;
         }
@@ -618,7 +618,7 @@ if (addAddressForm) {
         btn.textContent = 'Saving...';
         
         try {
-            const response = await fetch('/profile/address', {
+            const response = await fetch('/checkout/add-address', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',

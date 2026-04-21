@@ -8,6 +8,7 @@ const messages = require("../../constants/messages");
 const statusCodes = require("../../constants/statusCodes");
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
+const Review = require("../../models/reviewSchema");
 const { session } = require("passport");
 const { addToWallet } = require("./walletController");
 const { getOfferDetails } = require("../../helpers/priceUtils");
@@ -19,7 +20,6 @@ const { offerPopulate } = require("../../helpers/populateUtils");
 
     }catch (error){
     
-        console.log('Signup page error',error);
         res.status(500).send('Server Error')
     
     }
@@ -75,12 +75,47 @@ const injectOffer = (p) => {
     };
 };
 
+// Helper function to add ratings to products
+const addRatingsToProducts = async (products) => {
+    if (!products || products.length === 0) return products;
+    
+    const productIds = products.map(p => p._id);
+    const ratingsData = await Review.aggregate([
+        { $match: { product: { $in: productIds } } },
+        {
+            $group: {
+                _id: '$product',
+                averageRating: { $avg: '$rating' },
+                numReviews: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Create a map for quick lookup
+    const ratingsMap = new Map();
+    ratingsData.forEach(rating => {
+        ratingsMap.set(rating._id.toString(), {
+            averageRating: Math.round(rating.averageRating * 10) / 10, // Round to 1 decimal
+            numReviews: rating.numReviews
+        });
+    });
+
+    // Add ratings to products
+    return products.map(product => ({
+        ...product,
+        averageRating: ratingsMap.get(product._id.toString())?.averageRating || 0,
+        numReviews: ratingsMap.get(product._id.toString())?.numReviews || 0
+    }));
+};
+
 featuredProducts = featuredProducts.map(injectOffer);
 popularProducts = popularProducts.map(injectOffer);
 newArrivals = newArrivals.map(injectOffer);
 
-
-        // Fetch categories for filter
+        // Add ratings to all product arrays
+        featuredProducts = await addRatingsToProducts(featuredProducts);
+        popularProducts = await addRatingsToProducts(popularProducts);
+        newArrivals = await addRatingsToProducts(newArrivals);
         const categories = await Category.find({ isListed: true }).lean();
 
         if (user) {
@@ -102,7 +137,6 @@ newArrivals = newArrivals.map(injectOffer);
             });
         }
     } catch (error) {
-        console.log("Home page error:", error);
         res.status(500).send("Server error");
     }
 };
@@ -132,7 +166,6 @@ newArrivals = newArrivals.map(injectOffer);
                 html: `<b>Your OTP: ${otp}</b>`
             });
     
-            console.log('Email sent:', info.messageId);
             return info.accepted.length > 0;
         } catch(error) {
             console.error("Email error:", error);
@@ -158,7 +191,6 @@ const securepassword = async (password) => {
 const signup = async (req,res)=>{
     try {
         const {name, email, phone, password, confirmpassword, referralCode} = req.body;
-        console.log("Received data:", {name, email, phone, password, confirmpassword});
 
         // Validate all required fields
         if(!name || !email || !phone || !password || !confirmpassword) {
@@ -199,9 +231,7 @@ const signup = async (req,res)=>{
         req.session.userOtp = otp;
         req.session.userData = {name, phone, email, password,referredBy};
 
-        // Log OTP for debugging
-        console.log("OTP sent to email:", email);
-        console.log("Generated OTP:", otp);
+       
 
         return res.render("verify-otp");
 
@@ -217,7 +247,6 @@ const signup = async (req,res)=>{
 const verifyOtp = async (req,res) => {
     try {
         const {otp} = req.body;
-        console.log("Received OTP:", otp, "Session OTP:", req.session.userOtp);
 
         // Check if session data exists
         if(!req.session.userOtp || !req.session.userData) {
@@ -277,7 +306,6 @@ const verifyOtp = async (req,res) => {
           referrer.referralEarnings = (referrer.referralEarnings || 0) + referrerReward;
           await referrer.save();
 
-          console.log(`Referral reward credited: ${referrerReward} to referrer, ${referredReward} to new user`);
             }
         }
 
@@ -326,7 +354,6 @@ const resendOTP = async (req, res) => {
         }
 
         req.session.userOtp = newOTP;
-        console.log("resent otp", newOTP);
         return res.json({
             success: true,
             message: messages.OTP_RESENT_SUCCESS

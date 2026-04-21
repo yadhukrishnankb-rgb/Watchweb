@@ -10,6 +10,15 @@ const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
  const { getOfferDetails } = require('../../helpers/priceUtils');
 
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildSearchPattern(searchTerm) {
+    const text = escapeRegex(searchTerm.trim());
+    if (!text) return text;
+    return text.split('').map(char => char === ' ' ? '[\\W_]*' : char).join('[\\W_]*');
+}
 
 exports.listProducts = async (req, res) => {
     try {
@@ -24,12 +33,13 @@ exports.listProducts = async (req, res) => {
 
         // Search
         if (req.query.search) {
+            const searchPattern = buildSearchPattern(req.query.search);
             query.$or = [
-                { productName: { $regex: req.query.search, $options: 'i' } },
-                { brand: { $regex: req.query.search, $options: 'i' } }
+                { productName: { $regex: searchPattern, $options: 'i' } },
+                { brand: { $regex: searchPattern, $options: 'i' } },
+                { description: { $regex: searchPattern, $options: 'i' } }
             ];
         }
-        
 
         // Category Filter
         if (req.query.category) {
@@ -127,6 +137,35 @@ exports.listProducts = async (req, res) => {
 
             totalProducts = await Product.countDocuments(query);
         }
+
+        // Add ratings data to products
+        const productIds = products.map(p => p._id);
+        const ratingsData = await Review.aggregate([
+            { $match: { product: { $in: productIds } } },
+            {
+                $group: {
+                    _id: '$product',
+                    averageRating: { $avg: '$rating' },
+                    numReviews: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Create a map for quick lookup
+        const ratingsMap = new Map();
+        ratingsData.forEach(rating => {
+            ratingsMap.set(rating._id.toString(), {
+                averageRating: Math.round(rating.averageRating * 10) / 10, // Round to 1 decimal
+                numReviews: rating.numReviews
+            });
+        });
+
+        // Add ratings to products
+        products = products.map(product => ({
+            ...product,
+            averageRating: ratingsMap.get(product._id.toString())?.averageRating || 0,
+            numReviews: ratingsMap.get(product._id.toString())?.numReviews || 0
+        }));
 
         const totalPages = Math.ceil(totalProducts / limit);
 

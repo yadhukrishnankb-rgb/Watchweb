@@ -693,10 +693,11 @@ const addAddressFromCheckout = async (req, res) => {
     const userId = req.session.user?._id;
     if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
 
-    const { fullName, phone, line1, landmark, city, state, zip, country, type, isDefault } = req.body;
+    const { fullName, phone, line1, address, landmark, city, state, zip, country, type, isDefault } = req.body;
+    const streetLine = (line1 || address || '').trim();
 
     const errors = [];
-    if (!line1 || line1.trim().length < 5) errors.push('Address Line 1 must be at least 5 characters');
+    if (!streetLine || streetLine.length < 5) errors.push('Address Line 1 must be at least 5 characters');
     if (!city || city.trim().length < 2) errors.push('City must be at least 2 characters');
     if (!state || state.trim().length < 2) errors.push('State must be at least 2 characters');
     if (!zip || !/^\d{5,6}$/.test(zip.trim())) errors.push('Zip Code must be 5 or 6 digits');
@@ -717,10 +718,13 @@ const addAddressFromCheckout = async (req, res) => {
     const addrObj = {
       fullName: (fullName || '').trim(),
       phone: (phone || '').trim(),
-      street: (line1 || '').trim(),
+      street: streetLine,
+      line1: streetLine,
       landmark: (landmark || '').trim(),
+      locality: '',
       city: (city || '').trim(),
       state: (state || '').trim(),
+      zip: (zip || '').trim(),
       pincode: (zip || '').trim(),
       country: (country || 'India').trim(),
       type: (type || 'home').trim(),

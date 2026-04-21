@@ -250,6 +250,8 @@ const cancelOrder = async (req, res) => {
 
     await order.save();
 
+  
+
     return res.json({ success: true, message: messages.ORDER_CANCELLED_SUCCESS, orderId, newStatus: order.status });
   } catch (err) {
     console.error('Cancel order error →', err);
@@ -547,7 +549,6 @@ const requestReturnItem = async (req, res) => {
     const { orderId, itemId } = req.params;
     const { reason } = req.body;
 
-    console.log('requestReturnItem', { userId, orderId, itemId, reason });
 
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
@@ -564,13 +565,7 @@ const requestReturnItem = async (req, res) => {
       effectiveStatus = orderStatusLC;
     }
 
-    // if (effectiveStatus === 'return request' || effectiveStatus === 'returned') {
-    //   return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_ALREADY_REQUESTED });
-    // }
-
-    // if (effectiveStatus !== 'delivered') {
-    //   return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.ONLY_DELIVERED_CAN_RETURN });
-    // }
+    
 
     // Mark item-level return request (admin approval required)
     item.status = 'Return Request';
@@ -596,22 +591,7 @@ const requestReturnItem = async (req, res) => {
   }
 };
 
-// const getDeliveredOrdersByPrice = async (req,res) =>{
-//   try{
 
-//   const orders = await Order.find({
-//     status:"Delivered",
-//     totalPrice:{$gt:10000,$lte:30000}
-//   })
-//   res.render("orders")
-// }catch(error){
-
-//   console.log(error)
-//   res.status(500).send("server error")
-
-// }
-
-// }
 
 // 1. Create new Razorpay order for retry
 const retryPayment = async (req, res) => {
@@ -744,7 +724,7 @@ module.exports = {
     returnOrder,
     searchOrders,
     downloadInvoice,
-      cancelOrderItem,
+    cancelOrderItem,
     requestReturnItem,
     retryPayment,
     verifyRetryPayment
