@@ -9,7 +9,6 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* Core Palette */
   --g900: #1e2d1e;
   --g800: #2a3d2a;
   --g700: #3a4f3a;
@@ -36,6 +35,10 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
+
+  /* Responsive spacing */
+  --page-px: clamp(12px, 4vw, 24px);
+  --card-gap: clamp(12px, 2vw, 20px);
 }
 
 body {
@@ -50,14 +53,17 @@ body {
 @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
 @keyframes shimmer   { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
 @keyframes popIn     { 0%{transform:scale(.8);opacity:0} 70%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
-@keyframes drawerIn  { from{transform:translateX(-100%)} to{transform:translateX(0)} }
 @keyframes overlayIn { from{opacity:0} to{opacity:1} }
 @keyframes spin      { to{transform:rotate(360deg)} }
 
 /* ═══════════════════════════════════════════
    LAYOUT
    ═══════════════════════════════════════════ */
-.shop-wrap { max-width: 1440px; margin: 0 auto; padding: 0 24px 64px; }
+.shop-wrap {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 var(--page-px) 64px;
+}
 
 .shop-layout {
   display: grid;
@@ -65,7 +71,6 @@ body {
   gap: 28px;
   align-items: flex-start;
 }
-@media(max-width:900px){ .shop-layout{ grid-template-columns:1fr; } }
 
 /* ═══════════════════════════════════════════
    TOP BAR
@@ -74,8 +79,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 20px;
+  gap: 10px;
+  padding: 12px 16px;
   background: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -85,23 +90,28 @@ body {
   flex-wrap: wrap;
 }
 .top-bar__count {
-  font-size: .9rem;
+  font-size: .85rem;
   color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
 }
 .top-bar__count strong { color: var(--text); font-weight: 700; }
-.top-bar__right { display: flex; align-items: center; gap: 10px; }
+.top-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-/* Sort select in top bar */
+/* Sort select */
 .sort-select-wrap { position: relative; }
 .sort-select-wrap select {
   appearance: none;
-  padding: 9px 36px 9px 14px;
+  padding: 9px 34px 9px 12px;
   border: 1.5px solid var(--g200);
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .85rem;
+  font-size: .82rem;
   font-weight: 600;
   color: var(--text);
   background: #fff;
@@ -109,15 +119,16 @@ body {
   transition: border-color .2s, box-shadow .2s;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5e4a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px;
+  background-position: right 8px center;
+  background-size: 14px;
+  max-width: 140px;
 }
 .sort-select-wrap select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,94,74,.12); }
 
 /* View Toggle */
 .view-toggle { display: flex; gap: 4px; }
 .view-btn {
-  width: 36px; height: 36px;
+  width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--g200);
@@ -125,7 +136,7 @@ body {
   cursor: pointer;
   color: var(--text-muted);
   transition: all .2s;
-  font-size: 14px;
+  font-size: 13px;
 }
 .view-btn.active, .view-btn:hover {
   background: var(--g700); color: #fff; border-color: var(--g700);
@@ -135,21 +146,21 @@ body {
 .mobile-filter-btn {
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
+  gap: 6px;
+  padding: 9px 14px;
   background: var(--g700);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .85rem;
+  font-size: .82rem;
   font-weight: 700;
   cursor: pointer;
   transition: background .2s;
   letter-spacing: .02em;
+  white-space: nowrap;
 }
 .mobile-filter-btn:hover { background: var(--g900); }
-@media(max-width:900px){ .mobile-filter-btn{ display:flex; } }
 
 /* ═══════════════════════════════════════════
    FILTER SIDEBAR — Desktop
@@ -171,9 +182,8 @@ body {
 .filter-sidebar::-webkit-scrollbar { width: 4px; }
 .filter-sidebar::-webkit-scrollbar-thumb { background: var(--g200); border-radius: 4px; }
 
-/* Sidebar Header */
 .sidebar-header {
-  padding: 20px 22px 16px;
+  padding: 18px 20px 14px;
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -185,18 +195,18 @@ body {
 }
 .sidebar-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--text);
 }
 .clear-all-btn {
-  font-size: .78rem;
+  font-size: .76rem;
   font-weight: 700;
   color: var(--accent);
   background: var(--g50);
   border: 1.5px solid var(--g200);
   border-radius: 20px;
-  padding: 5px 12px;
+  padding: 4px 11px;
   cursor: pointer;
   transition: all .2s;
   font-family: 'DM Sans', sans-serif;
@@ -204,19 +214,15 @@ body {
 }
 .clear-all-btn:hover { background: var(--g600); color: #fff; border-color: var(--g600); }
 
-/* Search in sidebar */
-.sidebar-search {
-  padding: 16px 22px;
-  border-bottom: 1px solid var(--line);
-}
+.sidebar-search { padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .search-input-wrap { position: relative; }
 .search-input-wrap input {
   width: 100%;
-  padding: 11px 40px 11px 14px;
+  padding: 10px 38px 10px 12px;
   border: 1.5px solid var(--g200);
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .9rem;
+  font-size: .875rem;
   font-weight: 500;
   color: var(--text);
   background: var(--g50);
@@ -225,16 +231,16 @@ body {
 .search-input-wrap input:focus { outline:none; border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(74,94,74,.1); }
 .search-input-wrap input::placeholder { color: var(--text-muted); font-weight: 400; }
 .search-icon {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
   color: var(--text-muted); pointer-events: none;
 }
-.search-btns { display: flex; gap: 8px; margin-top: 10px; }
+.search-btns { display: flex; gap: 8px; margin-top: 8px; }
 .btn-search, .btn-clear-search {
   flex: 1;
-  padding: 9px 12px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .82rem;
+  font-size: .78rem;
   font-weight: 700;
   cursor: pointer;
   border: none;
@@ -247,7 +253,6 @@ body {
 .btn-clear-search { background: var(--g50); color: var(--text-md); border: 1.5px solid var(--g200); }
 .btn-clear-search:hover { background: var(--g100); }
 
-/* Accordion Filter Groups */
 .filter-group { border-bottom: 1px solid var(--line); }
 .filter-group:last-child { border-bottom: none; }
 
@@ -256,7 +261,7 @@ body {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 15px 22px;
+  padding: 13px 18px;
   background: none;
   border: none;
   cursor: pointer;
@@ -267,12 +272,12 @@ body {
 .filter-group-toggle:hover { background: var(--g50); }
 
 .filter-group-icon {
-  width: 30px; height: 30px;
+  width: 28px; height: 28px;
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   background: var(--g50);
   color: var(--g600);
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
   transition: background .2s;
 }
@@ -280,14 +285,14 @@ body {
 
 .filter-group-label {
   flex: 1;
-  font-size: .88rem;
+  font-size: .85rem;
   font-weight: 700;
   color: var(--text);
   letter-spacing: .01em;
 }
 .filter-group-arrow {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   transition: transform .25s ease;
 }
 .filter-group.open .filter-group-arrow { transform: rotate(180deg); }
@@ -296,21 +301,20 @@ body {
   overflow: hidden;
   max-height: 0;
   transition: max-height .3s cubic-bezier(.4,0,.2,1), padding .3s;
-  padding: 0 22px;
+  padding: 0 18px;
 }
 .filter-group.open .filter-group-body {
   max-height: 400px;
-  padding: 0 22px 18px;
+  padding: 0 18px 16px;
 }
 
-/* Select & input inside groups */
 .filter-select {
   width: 100%;
-  padding: 10px 36px 10px 12px;
+  padding: 10px 34px 10px 12px;
   border: 1.5px solid var(--g200);
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .875rem;
+  font-size: .85rem;
   font-weight: 500;
   color: var(--text);
   background: #fff;
@@ -319,7 +323,7 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5e4a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  background-size: 16px;
+  background-size: 14px;
   transition: all .2s;
 }
 .filter-select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,94,74,.1); }
@@ -329,11 +333,12 @@ body {
 .price-inputs span { color: var(--text-muted); font-size: .85rem; flex-shrink: 0; }
 .price-input {
   flex: 1;
-  padding: 10px 12px;
+  min-width: 0;
+  padding: 10px 10px;
   border: 1.5px solid var(--g200);
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: .875rem;
+  font-size: .85rem;
   font-weight: 500;
   color: var(--text);
   background: #fff;
@@ -358,8 +363,7 @@ body {
 .filter-drawer {
   position: fixed;
   top: 0; left: 0; bottom: 0;
-  width: 310px;
-  max-width: 90vw;
+  width: min(320px, 88vw);
   background: var(--white);
   z-index: 1000;
   overflow-y: auto;
@@ -371,18 +375,18 @@ body {
 
 .drawer-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--line);
   position: sticky; top: 0; background: #fff; z-index: 2;
 }
 .drawer-close {
-  width: 36px; height: 36px;
+  width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid var(--g200);
   border-radius: 50%;
   background: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-muted);
   transition: all .2s;
 }
@@ -393,19 +397,29 @@ body {
    ═══════════════════════════════════════════ */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
+  gap: var(--card-gap);
   margin-bottom: 40px;
 }
+
+/* List View */
 .products-grid.list-view {
   grid-template-columns: 1fr;
 }
 .products-grid.list-view .product-card {
   flex-direction: row;
-  height: 160px;
+  height: auto;
+  min-height: 140px;
 }
-.products-grid.list-view .card-image-wrap { width: 160px; flex-shrink: 0; height: 100%; }
-.products-grid.list-view .card-img { height: 100%; }
+.products-grid.list-view .card-image-wrap {
+  width: clamp(120px, 20vw, 180px);
+  flex-shrink: 0;
+  height: auto;
+}
+.products-grid.list-view .card-img {
+  height: 100%;
+  min-height: 140px;
+}
 .products-grid.list-view .card-body { flex: 1; }
 
 .product-card {
@@ -421,12 +435,11 @@ body {
   animation: fadeUp .4s ease both;
 }
 .product-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
   border-color: var(--g200);
 }
 
-/* Image Area */
 .card-image-wrap {
   position: relative;
   overflow: hidden;
@@ -434,7 +447,7 @@ body {
 }
 .card-img {
   width: 100%;
-  height: 220px;
+  height: clamp(160px, 22vw, 220px);
   object-fit: cover;
   display: block;
   transition: transform .5s cubic-bezier(.4,0,.2,1), opacity .3s;
@@ -450,14 +463,14 @@ body {
 .product-card:hover .card-img { transform: scale(1.06); }
 .product-card:hover .card-img-hover { opacity: 1; }
 
-/* Quick Actions */
+/* Quick Actions — always visible on touch devices */
 .card-actions {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   display: flex;
   justify-content: center;
   gap: 10px;
-  padding: 16px;
+  padding: 14px;
   background: linear-gradient(to top, rgba(30,45,30,.6) 0%, transparent 100%);
   transform: translateY(100%);
   transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
@@ -466,18 +479,18 @@ body {
 .product-card:hover .card-actions { transform: translateY(0); opacity: 1; }
 
 .action-btn {
-  width: 42px; height: 42px;
+  width: 40px; height: 40px;
   background: rgba(255,255,255,.95);
   border: none;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
   transition: all .2s;
   backdrop-filter: blur(4px);
-  animation: popIn .3s ease both;
+  -webkit-backdrop-filter: blur(4px);
 }
 .action-btn:nth-child(1) { animation-delay: .03s; }
 .action-btn:nth-child(2) { animation-delay: .07s; }
@@ -488,27 +501,35 @@ body {
   box-shadow: 0 8px 20px rgba(74,94,74,.35);
 }
 
-/* Badge */
+/* Touch: always show action buttons */
+@media (hover: none) {
+  .card-actions {
+    transform: translateY(0);
+    opacity: 1;
+    background: linear-gradient(to top, rgba(30,45,30,.55) 0%, transparent 100%);
+  }
+}
+
 .card-badge {
   position: absolute;
-  top: 12px; left: 12px;
+  top: 10px; left: 10px;
   background: linear-gradient(135deg, #e8435a, #c72d45);
   color: #fff;
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 800;
-  padding: 5px 10px;
+  padding: 4px 9px;
   border-radius: 20px;
   letter-spacing: .04em;
   box-shadow: 0 4px 12px rgba(232,67,90,.35);
   z-index: 2;
 }
 
-/* Out of Stock Overlay */
 .oos-overlay {
   position: absolute;
   inset: 0;
   background: rgba(255,255,255,.75);
   backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,24 +538,23 @@ body {
 .oos-tag {
   background: var(--g900);
   color: #fff;
-  padding: 8px 20px;
+  padding: 7px 18px;
   border-radius: 20px;
-  font-size: .8rem;
+  font-size: .75rem;
   font-weight: 800;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 
-/* Card Body */
 .card-body {
-  padding: 16px 18px 18px;
+  padding: 13px 15px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   flex: 1;
 }
 .card-category {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
@@ -546,7 +566,7 @@ body {
   width: fit-content;
 }
 .card-title {
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.35;
@@ -559,52 +579,27 @@ body {
 }
 .product-card:hover .card-title { color: var(--g600); }
 
-/* Stars */
-.card-stars {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.stars {
-  display: flex;
-  gap: 1px;
-}
-.star {
-  font-size: 12px;
-  color: var(--gold);
-}
+.card-stars { display: flex; align-items: center; gap: 4px; }
+.stars { display: flex; gap: 1px; }
+.star { font-size: 11px; color: var(--gold); }
 .star.empty { color: var(--g200); }
-.rating-count {
-  font-size: .75rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  margin-left: 2px;
-}
+.rating-count { font-size: .72rem; color: var(--text-muted); font-weight: 500; margin-left: 2px; }
 
-/* Pricing */
 .card-price {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   margin-top: auto;
+  flex-wrap: wrap;
 }
-.price-new {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--g700);
-}
-.price-old {
-  font-size: .85rem;
-  color: var(--text-muted);
-  text-decoration: line-through;
-  font-weight: 500;
-}
+.price-new { font-size: 1.05rem; font-weight: 800; color: var(--g700); }
+.price-old { font-size: .8rem; color: var(--text-muted); text-decoration: line-through; font-weight: 500; }
 .price-save {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #2ecc71, #27ae60);
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 20px;
   letter-spacing: .03em;
 }
@@ -614,8 +609,8 @@ body {
    ═══════════════════════════════════════════ */
 .skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
+  gap: var(--card-gap);
   margin-bottom: 40px;
 }
 .skeleton-card {
@@ -625,14 +620,14 @@ body {
   border: 1px solid var(--line);
 }
 .skeleton-img {
-  height: 220px;
+  height: clamp(160px, 22vw, 220px);
   background: linear-gradient(90deg, #e8f0e8 25%, #dde8dd 50%, #e8f0e8 75%);
   background-size: 600px 100%;
   animation: shimmer 1.4s infinite linear;
 }
-.skeleton-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.skeleton-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .skeleton-line {
-  height: 12px;
+  height: 11px;
   border-radius: 6px;
   background: linear-gradient(90deg, #e8f0e8 25%, #dde8dd 50%, #e8f0e8 75%);
   background-size: 600px 100%;
@@ -651,41 +646,41 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 80px 40px;
+  padding: clamp(40px, 8vw, 80px) clamp(20px, 5vw, 40px);
   background: linear-gradient(135deg, var(--g50), #fff);
   border-radius: var(--radius-xl);
   border: 2px dashed var(--g200);
   animation: fadeIn .5s ease;
 }
 .empty-illustration {
-  width: 100px; height: 100px;
+  width: 90px; height: 90px;
   background: linear-gradient(135deg, var(--g100), var(--g50));
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 24px;
-  font-size: 40px;
+  margin-bottom: 20px;
+  font-size: 36px;
 }
 .empty-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
   font-weight: 700;
   color: var(--text);
   margin-bottom: 8px;
 }
 .empty-desc {
   color: var(--text-muted);
-  font-size: .95rem;
-  margin-bottom: 24px;
+  font-size: clamp(.85rem, 2vw, .95rem);
+  margin-bottom: 20px;
   font-weight: 400;
 }
 .empty-cta {
-  padding: 12px 28px;
+  padding: 11px 26px;
   background: var(--g700);
   color: #fff;
   border: none;
   border-radius: 24px;
   font-family: 'DM Sans', sans-serif;
-  font-size: .9rem;
+  font-size: .875rem;
   font-weight: 700;
   cursor: pointer;
   transition: background .2s, transform .2s;
@@ -700,23 +695,24 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
-  margin-top: 40px;
+  margin-top: 36px;
+  padding: 0 4px;
 }
 .pg-btn {
-  min-width: 40px; height: 40px;
+  min-width: 38px; height: 38px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--g200);
   background: var(--white);
   color: var(--text-md);
   text-decoration: none;
-  font-size: .875rem;
+  font-size: .82rem;
   font-weight: 700;
   font-family: 'DM Sans', sans-serif;
   transition: all .2s;
-  padding: 0 12px;
+  padding: 0 10px;
 }
 .pg-btn:hover { background: var(--g50); border-color: var(--g400); transform: translateY(-2px); }
 .pg-btn.active {
@@ -740,37 +736,196 @@ body {
   justify-content: center;
   z-index: 10;
   backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 .products-loading.show { display: flex; }
 .spinner {
-  width: 32px; height: 32px;
+  width: 30px; height: 30px;
   border: 3px solid var(--g200);
   border-top-color: var(--g700);
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
 
-/* Products area wrapper */
 .products-area { position: relative; }
 
 /* ═══════════════════════════════════════════
-   RESPONSIVE TWEAKS
+   ── RESPONSIVE BREAKPOINTS ──
+   ═══════════════════════════════════════════
+
+   1200px  tablet-landscape / small desktop
+    900px  tablet-portrait
+    700px  large phone
+    480px  medium phone
+    380px  small phone
    ═══════════════════════════════════════════ */
-@media(max-width:900px){
-  .filter-sidebar { display: none; }
-  .top-bar { flex-direction: column; align-items: flex-start; }
+
+/* ── 1200px: narrow desktop / tablet-landscape ── */
+@media (max-width: 1200px) {
+  .shop-layout {
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+  }
 }
-@media(max-width:600px){
-  .shop-wrap { padding: 0 16px 48px; }
-  .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-  .card-img { height: 160px; }
+
+/* ── 900px: tablet-portrait → hide sidebar, show drawer ── */
+@media (max-width: 900px) {
+  .shop-layout {
+    grid-template-columns: 1fr;
+  }
+  .filter-sidebar {
+    display: none;
+  }
+  .mobile-filter-btn {
+    display: flex;
+  }
+  .top-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-bar__right {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
-@media(max-width:380px){
-  .products-grid { grid-template-columns: 1fr; }
+
+/* ── 700px: large phone ── */
+@media (max-width: 700px) {
+  .shop-wrap {
+    padding-bottom: 48px;
+  }
+  .top-bar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .top-bar__count {
+    font-size: .78rem;
+    width: 100%;
+  }
+  .top-bar__right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .sort-select-wrap select {
+    max-width: 130px;
+    font-size: .78rem;
+    padding: 8px 28px 8px 10px;
+  }
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .card-img {
+    height: clamp(150px, 40vw, 200px);
+  }
+  /* List view on mobile: stack vertically */
+  .products-grid.list-view .product-card {
+    flex-direction: column;
+    height: auto;
+  }
+  .products-grid.list-view .card-image-wrap {
+    width: 100%;
+    height: auto;
+  }
+  .products-grid.list-view .card-img {
+    height: clamp(150px, 40vw, 200px);
+    min-height: unset;
+  }
+}
+
+/* ── 480px: medium phone ── */
+@media (max-width: 480px) {
+  :root { --page-px: 12px; }
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .card-body {
+    padding: 10px 11px 13px;
+    gap: 5px;
+  }
+  .card-title { font-size: .82rem; }
+  .price-new { font-size: .95rem; }
+  .card-category { font-size: .62rem; padding: 2px 6px; }
+  .view-toggle { display: none; } /* hide grid/list toggle — always grid on small screens */
+  .mobile-filter-btn {
+    padding: 8px 12px;
+    font-size: .78rem;
+  }
+}
+
+/* ── 380px: small phone ── */
+@media (max-width: 380px) {
+  .products-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .card-img {
+    height: clamp(130px, 44vw, 170px);
+  }
+  .card-body { padding: 9px 10px 12px; }
+  .card-title { font-size: .78rem; }
+  .price-new { font-size: .88rem; }
+  .price-old, .price-save { display: none; } /* clean up on tiny screens */
+  .pg-btn { min-width: 34px; height: 34px; font-size: .78rem; }
+}
+
+/* ── Extra small: very small phones (≤320px) ── */
+@media (max-width: 320px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Tablet-specific improvements (481–900px) ── */
+@media (min-width: 481px) and (max-width: 900px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  }
+  .top-bar__count { width: auto; }
+}
+
+/* ── Large screens: 4 columns ── */
+@media (min-width: 1280px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+/* ── Landscape phone (short + wide) ── */
+@media (max-height: 500px) and (max-width: 900px) {
+  .filter-drawer {
+    top: 0;
+    padding-bottom: 0;
+  }
+  .filter-group-body.open { max-height: 200px; }
+}
+
+/* ── High DPI / Retina improvements ── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .card-img { image-rendering: auto; }
+}
+
+/* ── Safe area insets (iPhone notch / home bar) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .shop-wrap {
+    padding-left: max(var(--page-px), env(safe-area-inset-left));
+    padding-right: max(var(--page-px), env(safe-area-inset-right));
+    padding-bottom: max(64px, calc(64px + env(safe-area-inset-bottom)));
+  }
+  .filter-drawer {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
 }
 </style>
 
-<!-- Shared filterForm — used by both sidebar (desktop) and drawer (mobile) -->
+<!-- Hidden form for filter state -->
 <form id="filterForm" style="display:none">
   <input type="text"   id="searchInput"   name="search"    value="<%= query.search || '' %>">
   <select id="sortSelect"   name="sort">
@@ -799,7 +954,7 @@ body {
   </select>
 </form>
 
-<main style="padding: 24px 0;">
+<main style="padding: clamp(12px, 3vw, 24px) 0;">
   <div class="shop-wrap">
 
     <!-- ── Mobile Drawer Overlay ── -->
@@ -811,11 +966,13 @@ body {
         <span class="sidebar-title">Filters</span>
         <button class="drawer-close" onclick="closeDrawer()">✕</button>
       </div>
-      <div id="drawerContent"><!-- cloned from sidebar via JS --></div>
+      <div id="drawerContent"></div>
     </div>
 
-    <!-- ── Desktop Sidebar ── -->
+    <!-- ── Layout ── -->
     <div class="shop-layout">
+
+      <!-- ── Desktop Sidebar ── -->
       <aside class="filter-sidebar" id="desktopSidebar">
 
         <div class="sidebar-header">
@@ -828,7 +985,7 @@ body {
           <div class="search-input-wrap">
             <input type="text" id="sidebarSearch" placeholder="Search products…" value="<%= query.search || '' %>">
             <span class="search-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </span>
           </div>
           <div class="search-btns">
@@ -841,7 +998,7 @@ body {
         <div class="filter-group open" id="fg-sort">
           <button class="filter-group-toggle" onclick="toggleGroup('fg-sort')">
             <span class="filter-group-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
             </span>
             <span class="filter-group-label">Sort By</span>
             <span class="filter-group-arrow">▾</span>
@@ -864,7 +1021,7 @@ body {
         <div class="filter-group open" id="fg-category">
           <button class="filter-group-toggle" onclick="toggleGroup('fg-category')">
             <span class="filter-group-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             </span>
             <span class="filter-group-label">Category</span>
             <span class="filter-group-arrow">▾</span>
@@ -883,7 +1040,7 @@ body {
         <div class="filter-group open" id="fg-price">
           <button class="filter-group-toggle" onclick="toggleGroup('fg-price')">
             <span class="filter-group-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </span>
             <span class="filter-group-label">Price Range</span>
             <span class="filter-group-arrow">▾</span>
@@ -902,7 +1059,7 @@ body {
         <div class="filter-group open" id="fg-brand">
           <button class="filter-group-toggle" onclick="toggleGroup('fg-brand')">
             <span class="filter-group-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </span>
             <span class="filter-group-label">Brand</span>
             <span class="filter-group-arrow">▾</span>
@@ -917,9 +1074,9 @@ body {
           </div>
         </div>
 
-      </aside>
+      </aside><!-- /filter-sidebar -->
 
-      <!-- ── Products Area ── -->
+      <!-- ── Products Column ── -->
       <div>
 
         <!-- Top Bar -->
@@ -934,7 +1091,7 @@ body {
           <div class="top-bar__right">
             <!-- Mobile filter trigger -->
             <button class="mobile-filter-btn" onclick="openDrawer()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
               Filters
             </button>
 
@@ -955,10 +1112,10 @@ body {
             <!-- View Toggle -->
             <div class="view-toggle">
               <button class="view-btn active" id="viewGrid" onclick="setView('grid')" title="Grid view">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
               </button>
               <button class="view-btn" id="viewList" onclick="setView('list')" title="List view">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               </button>
             </div>
           </div>
@@ -970,7 +1127,6 @@ body {
             <div class="spinner"></div>
           </div>
 
-          <!-- Products -->
           <% if (products && products.length > 0) { %>
             <div class="products-grid" id="productsGrid">
               <% products.forEach((product, idx) => { %>
@@ -982,7 +1138,6 @@ body {
                       <img src="<%= product.productImage[1] || product.productImage[0] %>" alt="" class="card-img-hover" loading="lazy">
                     </a>
 
-                    <!-- Quick Action Buttons -->
                     <div class="card-actions">
                       <button class="action-btn" onclick="toggleWishlist('<%= product._id %>', this, event)" title="Add to wishlist">
                         <i class="fi fi-rs-heart"></i>
@@ -992,7 +1147,6 @@ body {
                       </button>
                     </div>
 
-                    <!-- Offer Badge -->
                     <%
                       let offerPct = 0;
                       if (product.offerPercent && product.offerPercent > 0) {
@@ -1005,7 +1159,6 @@ body {
                       <div class="card-badge"><%= offerPct %>% OFF</div>
                     <% } %>
 
-                    <!-- Out of Stock (optional, if product.stock === 0) -->
                     <% if (product.stock !== undefined && product.stock === 0) { %>
                       <div class="oos-overlay"><span class="oos-tag">Out of Stock</span></div>
                     <% } %>
@@ -1017,7 +1170,6 @@ body {
                       <h3 class="card-title"><%= product.productName %></h3>
                     </a>
 
-                    <!-- Stars -->
                     <%
                       const rating = product.averageRating || 0;
                       const fullStars = Math.floor(rating);
@@ -1034,7 +1186,6 @@ body {
                       <% } %>
                     </div>
 
-                    <!-- Price -->
                     <%
                       let displayPrice = product.salesPrice;
                       let originalPrice = null;
@@ -1056,6 +1207,7 @@ body {
                       <% } %>
                     </div>
                   </div>
+
                 </div>
               <% }); %>
             </div>
@@ -1076,14 +1228,25 @@ body {
                 <a href="?page=<%= currentPage-1 %>&<%= new URLSearchParams({...query, page: undefined}).toString() %>" class="pg-btn">‹</a>
               <% } %>
               <% for(let i=1;i<=totalPages;i++) { %>
-                <a href="?page=<%= i %>&<%= new URLSearchParams({...query, page: undefined}).toString() %>"
-                   class="pg-btn <%= currentPage===i?'active':'' %>"><%= i %></a>
+                <%
+                  // On mobile, show: first, last, current±1 to keep pagination compact
+                  const showPage = i===1 || i===totalPages || Math.abs(i-currentPage)<=1;
+                %>
+                <% if (showPage) { %>
+                  <a href="?page=<%= i %>&<%= new URLSearchParams({...query, page: undefined}).toString() %>"
+                     class="pg-btn <%= currentPage===i?'active':'' %>"><%= i %></a>
+                <% } else if (i===2 && currentPage > 4) { %>
+                  <span class="pg-btn" style="border:none;background:none;cursor:default;color:var(--text-muted)">…</span>
+                <% } else if (i===totalPages-1 && currentPage < totalPages-3) { %>
+                  <span class="pg-btn" style="border:none;background:none;cursor:default;color:var(--text-muted)">…</span>
+                <% } %>
               <% } %>
               <% if(currentPage < totalPages) { %>
                 <a href="?page=<%= currentPage+1 %>&<%= new URLSearchParams({...query, page: undefined}).toString() %>" class="pg-btn">›</a>
               <% } %>
             </div>
           <% } %>
+
         </section>
 
       </div><!-- /products column -->
@@ -1130,14 +1293,12 @@ function setView(mode) {
 function openDrawer() {
   const drawer = document.getElementById('filterDrawer');
   const overlay = document.getElementById('drawerOverlay');
-  // Clone sidebar content into drawer if empty
   const dc = document.getElementById('drawerContent');
   if (!dc.hasChildNodes()) {
     const sidebar = document.getElementById('desktopSidebar');
     const clone = sidebar.cloneNode(true);
     clone.id = 'drawerSidebarClone';
-    clone.style.cssText = 'position:static;max-height:none;box-shadow:none;border:none;border-radius:0';
-    // remove the sticky header border-bottom (cosmetic)
+    clone.style.cssText = 'position:static;max-height:none;box-shadow:none;border:none;border-radius:0;display:block';
     dc.appendChild(clone);
   }
   drawer.classList.add('open');
@@ -1149,6 +1310,11 @@ function closeDrawer() {
   document.getElementById('drawerOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+// Close drawer on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDrawer();
+});
 
 // ─── Filter Update Core ──────────────────────────────────────────────────────
 function showLoading(show) {
@@ -1170,21 +1336,30 @@ function updateProducts() {
       const doc = new DOMParser().parseFromString(html, 'text/html');
       const newSec = doc.querySelector('section.products-area') || doc.querySelector('#productsArea');
       const curSec = document.getElementById('productsArea');
-      if (newSec && curSec) curSec.innerHTML = newSec.innerHTML;
+      if (newSec && curSec) {
+        curSec.innerHTML = newSec.innerHTML;
+        // Scroll to top of products area on mobile
+        if (window.innerWidth <= 900) {
+          curSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
       history.pushState(null,'',url);
       showLoading(false);
     })
     .catch(e => { console.error(e); showLoading(false); });
 }
 
-// Sync a single filter key and trigger update
 function syncAndUpdate(key, value) {
   params[key] = value;
-  // Also sync the hidden form field
-  const el = document.getElementById({
-    sort:'sortSelect', category:'categorySelect', brand:'brandSelect'
-  }[key]);
+  const el = document.getElementById({ sort:'sortSelect', category:'categorySelect', brand:'brandSelect' }[key]);
   if (el) el.value = value;
+  // Keep topBarSort & sidebarSort in sync
+  if (key === 'sort') {
+    const tbs = document.getElementById('topBarSort');
+    const ss = document.getElementById('sidebarSort');
+    if (tbs) tbs.value = value;
+    if (ss) ss.value = value;
+  }
   updateProducts();
 }
 
@@ -1193,11 +1368,13 @@ function runSearch() {
   const val = document.getElementById('sidebarSearch')?.value || '';
   params.search = val;
   document.getElementById('searchInput').value = val;
+  closeDrawer();
   updateProducts();
 }
 function clearSearch() {
   params.search = '';
-  document.getElementById('sidebarSearch').value = '';
+  const si = document.getElementById('sidebarSearch');
+  if (si) si.value = '';
   document.getElementById('searchInput').value = '';
   updateProducts();
 }
@@ -1210,6 +1387,7 @@ function applyPrice() {
   params.maxPrice = mx;
   document.getElementById('minPriceInput').value = mn;
   document.getElementById('maxPriceInput').value = mx;
+  closeDrawer();
   updateProducts();
 }
 
@@ -1224,6 +1402,7 @@ function clearAllFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  closeDrawer();
   updateProducts();
 }
 
@@ -1231,7 +1410,10 @@ function clearAllFilters() {
 async function addToCart(productId, event) {
   const button = event?.target?.closest('button');
   const originalHTML = button ? button.innerHTML : null;
-  if (button) { button.disabled=true; button.innerHTML='<svg style="width:14px;height:14px;animation:spin .7s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'; }
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<svg style="width:13px;height:13px;animation:spin .7s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  }
   try {
     const response = await fetch('/cart/add', {
       method: 'POST',
@@ -1240,7 +1422,7 @@ async function addToCart(productId, event) {
     });
     const data = await response.json();
     if (data.success) {
-      if (button) { button.innerHTML='<i class="fi fi-rs-check"></i>'; }
+      if (button) button.innerHTML = '<i class="fi fi-rs-check"></i>';
       Swal.fire({icon:'success',title:'Added to Cart!',showConfirmButton:false,timer:1500,position:'top-end',toast:true});
       window.updateCartCount?.(data.cartCount);
       window.updateWishlistCount?.(data.wishlistCount);
@@ -1293,7 +1475,7 @@ async function toggleWishlist(productId, btn, event) {
   }
 }
 
-// ─── Enter key on search ──────────────────────────────────────────────────────
+// ─── Keyboard: Enter on search ───────────────────────────────────────────────
 document.getElementById('sidebarSearch')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
 });
@@ -1310,3 +1492,5 @@ document.getElementById('sidebarMax')?.addEventListener('change', function() {
 </script>
 
 <%- include('../partials/user/footer') %>
+
+
