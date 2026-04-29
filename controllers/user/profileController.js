@@ -25,12 +25,10 @@ pass: process.env.NODEMAILER_PASSWORD
 }
 });
 
-// 1. Show forgot password form
 exports.loadForgotPassword = (req, res) => {
 res.render('user/forgot-password', { message: null });
 };
 
-// 2. Handle email submission, generate OTP, send email, store in session
 exports.sendForgotPasswordOtp = async (req, res) => {
 const { email } = req.body;
 const user = await User.findOne({ email });
@@ -40,7 +38,7 @@ if (!user) {
 const otp = generateOtp();
 req.session.resetEmail = email;
 req.session.otp = otp;
-req.session.otpExpires = Date.now() + 2 * 60 * 1000; // 2 minutes
+req.session.otpExpires = Date.now() + 2 * 60 * 1000; 
 
 
 
@@ -54,13 +52,13 @@ html: `<p>Your OTP is <b>${otp}</b>. It is valid for 2 minutes.</p>`
 res.redirect('/forgot-password-otp');
 };
 
-// 3. Show OTP entry page
+
 exports.loadForgotPasswordOtp = (req, res) => {
 if (!req.session.resetEmail) return res.redirect('/forgot-password');
 res.render('user/forgot-password-otp', { message: null, timer: 120 });
 };
 
-// 4. Verify OTP
+
 exports.verifyForgotPasswordOtp = (req, res) => {
 const { otp } = req.body;
 if (!req.session.resetEmail) return res.redirect('/forgot-password');
@@ -79,7 +77,7 @@ req.session.otpVerified = true;
 res.redirect('/reset-password');
 };
 
-// 5. Resend OTP
+
 exports.resendForgotPasswordOtp = async (req, res) => {
 if (!req.session.resetEmail) return res.redirect('/forgot-password');
 const otp = generateOtp();
@@ -94,13 +92,13 @@ html: `<p>Your new OTP is <b>${otp}</b>. It is valid for 2 minutes.</p>`
 res.render('user/forgot-password-otp', { message: messages.OTP_RESENT, timer: 120 });
 };
 
-// 6. Show reset password form
+
 exports.loadResetPassword = (req, res) => {
 if (!req.session.otpVerified) return res.redirect('/forgot-password');
 res.render('user/reset-password', { message: null });
 };
 
-// 7. Handle reset password submission
+
 exports.handleResetPassword = async (req, res) => {
 if (!req.session.otpVerified) return res.redirect('/forgot-password');
 const { password, confirmpassword } = req.body;
@@ -120,7 +118,7 @@ res.redirect('/login');
 
 
 
-// // Show profile page
+
 exports.profilePage = async (req, res) => {
   const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
   if (!userId) return res.redirect('/login');
@@ -128,11 +126,9 @@ exports.profilePage = async (req, res) => {
   user.addresses = user.addresses || [];
   const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
 
-  // Collect flash messages and filter out unrelated product-level errors
   const successArr = req.flash('success') || [];
   const errorArr = req.flash('error') || [];
 
-  // Ignore messages that originate from shop/checkout flows and should not leak into profile pages
   const ignorePatterns = [
     /product not found/i,
     /product not found or unavailable/i,
@@ -162,7 +158,6 @@ exports.addressPage = async (req, res) => {
   const user = await User.findById(userId).lean();
   user.addresses = user.addresses || [];
 
-  // Filter out unrelated flash errors (e.g., product-not-found or stock warnings) that may bleed in
   const successArr = req.flash('success') || [];
   const errorArr = req.flash('error') || [];
   const ignorePatterns = [
@@ -186,13 +181,12 @@ exports.addressPage = async (req, res) => {
 
 
 
-//---------------------------------
-// Edit profile page
+
 exports.editProfilePage = async (req, res) => {
 const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
 if (!userId) return res.redirect('/login');
 const user = await User.findById(userId).lean();
-user.addresses = user.addresses || []; // Ensure addresses is always an array
+user.addresses = user.addresses || []; 
 res.render('user/edit-profile', { user, message: null });
 };
 
@@ -206,7 +200,7 @@ exports.updateProfile = async (req, res) => {
   const { name, phone, email, line1, landmark, city, state, zip, country } = req.body;
   const errors = [];
 
-  // === VALIDATION RULES ===
+  
   if (!name || name.trim().length < 2) {
     errors.push("Name must be at least 2 characters");
   }
@@ -217,7 +211,6 @@ exports.updateProfile = async (req, res) => {
     errors.push("Phone must be exactly 10 digits");
   }
 
-  // Optional Address Validation (only if any field is filled)
   const hasAddress = line1 || landmark || city || state || zip || country;
   if (hasAddress) {
     if (!line1 || line1.trim().length < 5) errors.push("Address Line 1 must be at least 5 characters");
@@ -239,7 +232,6 @@ exports.updateProfile = async (req, res) => {
   try {
     const user = await User.findById(userId);
 
-    // Check if email is being changed
     if (email !== user.email) {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -249,7 +241,6 @@ exports.updateProfile = async (req, res) => {
         });
       }
 
-      // Store in session for OTP verification
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       req.session.emailChange = {
         email: email.trim(),
@@ -278,7 +269,6 @@ exports.updateProfile = async (req, res) => {
       return res.redirect('/profile/verify-email');
     }
 
-    // If no email change → update directly
     user.name = name.trim();
     user.phone = phone.trim();
 
@@ -296,10 +286,8 @@ exports.updateProfile = async (req, res) => {
       };
 
       if (user.addresses.length > 0) {
-        // Update existing first address only
         user.addresses[0] = addrObj;
       } else {
-        // Add new address only if none exists
         user.addresses.push(addrObj);
       }
     }
@@ -318,7 +306,6 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-//-----------------
 
 exports.uploadProfilePicture = async (req, res) => {
   try {
@@ -332,9 +319,8 @@ exports.uploadProfilePicture = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.USER_NOT_FOUND });
 
-    // optional: delete previous Cloudinary image if stored and has predictable public_id
-    // store new URL
-    user.profileImage = req.file.path; // multer-storage-cloudinary sets `path` to the uploaded URL
+    
+    user.profileImage = req.file.path; 
     await user.save();
 
     return res.json({ success: true, message: messages.PROFILE_IMAGE_UPDATED, profileImage: user.profileImage });
@@ -345,8 +331,7 @@ exports.uploadProfilePicture = async (req, res) => {
 };
 
 
-//------------
-// Show verify email page
+
 exports.verifyEmailPage = (req, res) => {
 res.render('user/verify-email', { message: null });
 };
@@ -372,21 +357,17 @@ return res.redirect('/profile');
   return res.render('user/verify-email', { message: messages.INVALID_OTP });
 }
 };
-//--------------
 
 
 
-// Show change password page
 exports.changePasswordPage = (req, res) => {
-  // `req.flash('error')` will be used for server errors
   const errorMsg = req.flash('error')[0];
   res.render('user/change-password', {
-    message: errorMsg,   // old way (kept for backward compatibility)
+    message: errorMsg,   
     success: req.flash('success')[0] || null
   });
 };
 
-// Handle password change
 exports.changePassword = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   if (!userId) return res.redirect('/login');
@@ -394,7 +375,6 @@ exports.changePassword = async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
   const user = await User.findById(userId);
 
-  // ---- validation ----
   const match = await bcrypt.compare(oldPassword, user.password);
   if (!match) {
     req.flash('error', 'Old password incorrect');
@@ -405,19 +385,17 @@ exports.changePassword = async (req, res) => {
     return res.redirect('/profile/change-password');
   }
 
-  // ---- optional extra rules (8 chars, upper, lower, number) ----
   const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
   if (!pwdRegex.test(newPassword)) {
     req.flash('error', 'Password must be 8+ chars, contain upper, lower case and a number');
     return res.redirect('/profile/change-password');
   }
 
-  // ---- success ----
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
   req.flash('success', 'Password changed successfully!');
-  res.redirect('/profile/change-password');   // back to same page → flash + Swal
+  res.redirect('/profile/change-password');   
 };
 
 
@@ -428,7 +406,6 @@ exports.changePassword = async (req, res) => {
 exports.manageAddress = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   
-  // For AJAX requests, return JSON; for regular forms, redirect
   const isAjax = req.xhr || req.headers['content-type']?.includes('application/json');
   
   if (!userId) {
@@ -436,7 +413,6 @@ exports.manageAddress = async (req, res) => {
     return res.redirect('/login');
   }
 
-  // Handle field mapping: checkout sends 'address' & 'pincode', profile-address sends 'line1' & 'zip'
   const line1 = req.body.line1 || req.body.address || '';
   const landmark = req.body.landmark || '';
   const city = req.body.city || '';
@@ -446,7 +422,6 @@ exports.manageAddress = async (req, res) => {
   
   const errors = [];
 
-  // === VALIDATION RULES ===
   if (!line1 || line1.trim().length < 5) {
     errors.push('Address Line 1 must be at least 5 characters');
   }
@@ -525,7 +500,6 @@ exports.manageAddress = async (req, res) => {
         isDefault: req.body.isDefault === 'on' || req.body.isDefault === true
       };
       
-      // If setting as default, unset others
       if (newAddr.isDefault) {
         user.addresses.forEach(a => { if (a) a.isDefault = false; });
       }
@@ -536,7 +510,6 @@ exports.manageAddress = async (req, res) => {
 
     await user.save();
     
-    // Return appropriate response
     if (isAjax) {
       return res.json({ success: true, message: successMsg });
     }
@@ -578,12 +551,11 @@ exports.deleteAddress = async (req, res) => {
     }
     await user.save();
 
-    // RETURN JSON FOR AJAX + ALSO SUPPORT NORMAL REDIRECT
     if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
       return res.json({ success: true, message: 'Address deleted successfully' });
     } else {
       req.flash('success', 'Address deleted successfully');
-      return res.redirect('/profile/address');  // ← FIXED: Go back to address page!
+      return res.redirect('/profile/address');  
     }
   } catch (err) {
     console.error('Delete address error:', err);
@@ -610,10 +582,8 @@ exports.setDefaultAddress = async (req, res) => {
       return res.redirect('/profile/address');
     }
     
-    //remove default from all addresses
     user.addresses.forEach(addr => addr.isDefault = false);
   
-    //set selected as default
     user.addresses[index].isDefault = true;
 
    await user.save();

@@ -3,7 +3,6 @@ const pdfkit = require('pdfkit');
 const ExcelJS = require('exceljs');
 const moment = require('moment');
 
-// helper function to get date range based on filter
 function getDateRange(filterType, customStart, customEnd) {
 
     let start, end;
@@ -16,19 +15,16 @@ function getDateRange(filterType, customStart, customEnd) {
             break;
 
         case 'weekly':
-            // last 7 days including today
             start = moment().subtract(6, 'days').startOf('day');
             end = moment().endOf('day');
             break;
 
         case 'monthly':
-            // last 30 days including today
             start = moment().subtract(29, 'days').startOf('day');
             end = moment().endOf('day');
             break;
 
         case 'yearly':
-            // last 365 days including today
             start = moment().subtract(364, 'days').startOf('day');
             end = moment().endOf('day');
             break;
@@ -50,7 +46,6 @@ function isValidDateString(dateString) {
     return Boolean(dateString) && moment(dateString, 'YYYY-MM-DD', true).isValid();
 }
 
-// get sales report page
 exports.getSalesReport = async (req, res) => {
     try {
         const {filterType = 'monthly', start: customStart, end: customEnd, page: pageQuery} = req.query;
@@ -85,7 +80,6 @@ exports.getSalesReport = async (req, res) => {
 
         const {start, end} = getDateRange(filterType, customStart, customEnd);
 
-        // return all orders in the date range
         const query = {
           status:{$nin:["Cancelled","Returned"]},
             createdOn : {$gte: start, $lte: end}
@@ -139,14 +133,12 @@ exports.getSalesReport = async (req, res) => {
 }
 
 
-// Download PDF
 exports.downloadPdf = async (req, res) => {
   try {
     const { filterType = 'custom', start: customStart, end: customEnd } = req.query;
     const { start, end } = getDateRange(filterType, customStart, customEnd);
 
     const query = {
-      // status: 'Delivered',
       createdOn: { $gte: start, $lte: end }
     };
 
@@ -174,7 +166,6 @@ exports.downloadPdf = async (req, res) => {
     doc.text(`Total Discount (incl. coupons): ₹${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
     doc.moveDown(2);
 
-    // Table header
     let tableTop = doc.y;
     doc.fontSize(10).text('Order ID', 50, tableTop);
     doc.text('Date', 140, tableTop);

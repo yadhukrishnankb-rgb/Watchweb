@@ -145,4 +145,69 @@
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+async function addToCart(productId) {
+  try {
+    const response = await fetch('/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, quantity: 1 })
+    });
+    
+    // Check if user is not authenticated (redirect to login)
+    if (response.status === 401 || response.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Added to Cart!', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      window.updateCartCount?.(data.cartCount);
+      return;
+    }
+    
+    if (data.alreadyInCart) {
+      Swal.fire({ icon: 'info', title: 'Already in cart', text: data.message || '', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+      return;
+    }
+    
+    throw new Error(data.message || 'Error adding to cart');
+  } catch(error) {
+    Swal.fire({ icon: 'error', title: 'Oops…', text: error.message || 'Error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+  }
+}
+
+async function addToWishlist(productId) {
+  try {
+    const res = await fetch('/wishlist/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    });
+    
+    // Check if user is not authenticated (redirect to login)
+    if (res.status === 401 || res.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    const data = await res.json();
+    if (data.success) {
+      Swal.fire({ icon: 'success', title: 'Added to wishlist', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      return;
+    }
+    if (data.alreadyInWishlist) {
+      Swal.fire({ icon: 'info', title: 'Already in wishlist', toast: true, position: 'top-end', timer: 1400, showConfirmButton: false });
+      return;
+    }
+    throw new Error(data.message || 'Failed to add to wishlist');
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Something went wrong', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+  }
+}
+</script>
+
 <%- include("../partials/user/footer") %>

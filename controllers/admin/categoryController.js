@@ -13,7 +13,6 @@ exports.getCategories = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-        // Add isListed: true to only show non-deleted categories
         const query = {
             isListed: true,
             ...(searchQuery && {
@@ -45,13 +44,11 @@ exports.getCategories = async (req, res) => {
     }
 };
 
-// // Add new category
 exports.addCategory = async (req, res) => {
     try {
 
         let { name, description } = req.body;
         
-        // Trim whitespace and validate
         name = (name || '').toString().trim();
         description = (description || '').toString().trim();
 
@@ -62,7 +59,6 @@ exports.addCategory = async (req, res) => {
             });
         }
 
-        // Check if category already exists (case insensitive)
         const existingCategory = await Category.findOne({ 
             name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') }
         });
@@ -93,7 +89,6 @@ exports.addCategory = async (req, res) => {
 
 
 
-// Edit category
 exports.editCategory = async (req, res) => {
     try {
         const { id } = req.params;
@@ -109,7 +104,6 @@ exports.editCategory = async (req, res) => {
             });
         }
 
-        // Check if new name already exists for different category (case insensitive)
         const existingCategory = await Category.findOne({ 
             name: { $regex: new RegExp(`^${escapeRegExp(name)}$`, 'i') },
             _id: { $ne: id }
@@ -214,7 +208,6 @@ exports.setCategoryOffer = async (req, res) => {
             });
         }
 
-        // upsert category offer document
         let offerDoc = await Offer.findOne({ category: id, offerType: 'category' });
         if (offerDoc) {
             offerDoc.percentage = Math.round(pct);
@@ -233,7 +226,6 @@ exports.setCategoryOffer = async (req, res) => {
             });
             await offerDoc.save();
         }
-        // link to category
         await Category.findByIdAndUpdate(id, { offer: offerDoc._id });
 
         res.json({
@@ -295,7 +287,6 @@ exports.removeCategoryOffer = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // delete the offer document and clear reference
         await Offer.findOneAndDelete({ category: id, offerType: 'category' });
         await Category.findByIdAndUpdate(id, { offer: null });
 

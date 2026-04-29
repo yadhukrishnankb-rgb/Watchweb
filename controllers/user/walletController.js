@@ -3,12 +3,8 @@ const mongoose = require('mongoose');
 const razorpay = require('../../config/razorpay');  
 const crypto = require('crypto');
 
-// Helper: Add credit or debit to wallet (atomic & safe)
-// Uses a single atomic update to avoid requiring MongoDB transactions, which
-// aren't supported on standalone/development servers. This keeps the helper
-// compatible with replica sets, but gracefully works on local Mongo too.
+
 const addToWallet = async (userId, amount, type, reason, orderId = null) => {
-  // Validate inputs
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error('Invalid user ID');
   }
@@ -23,25 +19,22 @@ const addToWallet = async (userId, amount, type, reason, orderId = null) => {
   }
 
   const transaction = {
-    amount: Math.abs(amount), // always store positive value
+    amount: Math.abs(amount), 
     type,
     reason: reason.trim(),
     orderId: orderId ? new mongoose.Types.ObjectId(orderId) : null,
     date: new Date()
   };
 
-  // Read user to inspect wallet shape and repair if necessary.
   const existingUser = await User.findById(userId).select('wallet').lean();
   if (!existingUser) {
     throw new Error('User not found');
   }
 
-  // If wallet is missing, not an object, or an array, reset to default structure.
   let needsRepair = false;
   if (!existingUser.wallet || Array.isArray(existingUser.wallet)) {
     needsRepair = true;
   } else {
-    // ensure expected keys exist
     if (typeof existingUser.wallet.balance !== 'number' || !Array.isArray(existingUser.wallet.transactions)) {
       needsRepair = true;
     }
@@ -53,7 +46,6 @@ const addToWallet = async (userId, amount, type, reason, orderId = null) => {
     );
   }
 
-  // Build update object: push transaction and adjust balance.
   const update = {
     $push: { 'wallet.transactions': transaction }
   };
@@ -64,8 +56,6 @@ const addToWallet = async (userId, amount, type, reason, orderId = null) => {
     update.$inc = { 'wallet.balance': -amount };
   }
 
-  // Query must check balance for debit operations to prevent it going
-  // negative; findOneAndUpdate returns null if condition not met.
   const query = { _id: userId };
   if (type === 'debit') {
     query['wallet.balance'] = { $gte: amount };
@@ -75,7 +65,6 @@ const addToWallet = async (userId, amount, type, reason, orderId = null) => {
   const updated = await User.findOneAndUpdate(query, update, opts).lean();
 
   if (!updated) {
-    // Could be due to user not found or insufficient balance
     if (type === 'debit') {
       throw new Error('Insufficient wallet balance');
     }
@@ -89,7 +78,6 @@ const addToWallet = async (userId, amount, type, reason, orderId = null) => {
   };
 };
 
-// Get wallet details for the logged-in user
 const getWallet = async (req, res) => {
   try {
     if (!req.session?.user?._id) {
@@ -97,7 +85,7 @@ const getWallet = async (req, res) => {
     }
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = 10; // transactions per page
+    const limit = 10; 
     const skip = (page - 1) * limit;
 
     const user = await User.findById(req.session.user._id)
@@ -112,17 +100,14 @@ const getWallet = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Sort transactions by date (newest first)
     const sortedTransactions = (user.wallet.transactions || []).sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
 
-    // Calculate pagination
     const totalTransactions = sortedTransactions.length;
     const totalPages = Math.ceil(totalTransactions / limit);
     const paginatedTransactions = sortedTransactions.slice(skip, skip + limit);
 
-    // Ensure page is within valid range
     if (page > totalPages && totalPages > 0) {
       return res.redirect(`/wallet?page=${totalPages}`);
     }
@@ -150,7 +135,6 @@ const getWallet = async (req, res) => {
   }
 };
 
-// Initiate Razorpay order for wallet top-up
 const initiateAddMoney = async (req, res) => {
   try {
     const { amount } = req.body;
@@ -163,7 +147,6 @@ const initiateAddMoney = async (req, res) => {
       });
     }
     
-      // Ensure Razorpay keys are configured
       if (!process.env.RAZORPAY_KEY_ID) {
         console.error('Razorpay key id missing in env');
         return res.status(500).json({ success: false, message: 'Razorpay not configured on server' });
@@ -174,7 +157,6 @@ const initiateAddMoney = async (req, res) => {
     const rzpOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
-      // FIXED: Short receipt (under 40 chars)
       receipt: `wltp_${Date.now().toString().slice(-8)}_${Math.floor(Math.random() * 9000) + 1000}`,
       notes: {
         userId: userId.toString(),
@@ -212,19 +194,17 @@ const initiateAddMoney = async (req, res) => {
   }
 };
 
-// Verify payment and credit wallet
 const verifyAddMoney = async (req, res) => {
   try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      amount  // original amount in rupees
+      amount  
     } = req.body;
 
     const userId = req.session.user._id;
 
-    // Basic validation
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: 'Missing payment verification fields' });
     }
@@ -234,7 +214,6 @@ const verifyAddMoney = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Razorpay not configured on server' });
     }
 
-    // Verify Razorpay signature
     const generatedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -244,14 +223,13 @@ const verifyAddMoney = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Payment verification failed' });
     }
 
-    // Credit wallet
     const creditAmount = Number(amount);
     await addToWallet(
       userId,
       creditAmount,
       'credit',
       `Wallet Top-up via Razorpay`,
-      null  // no orderId for top-up
+      null  
     );
 
     res.json({

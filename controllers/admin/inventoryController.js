@@ -1,4 +1,3 @@
-// controllers/admin/inventoryController.js
 const Product = require('../../models/productSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
@@ -9,7 +8,7 @@ exports.getInventory = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
-    const stockFilter = req.query.stock || ''; // 'low', 'out', 'all'
+    const stockFilter = req.query.stock || ''; 
 
     let query = {};
     if (search) {

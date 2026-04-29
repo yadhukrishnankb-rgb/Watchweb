@@ -7,12 +7,20 @@ const User = require("../models/userSchema")
 const userAuth = async (req,res,next) => {
     try {
         if (!req.session.user || !req.session.user._id) {
+            // For AJAX/Fetch requests, return 401 instead of redirect
+            if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+                return res.status(401).json({ success: false, message: 'Please login to continue' });
+            }
             return res.redirect("/login");
         }
         const user = await User.findById(req.session.user._id).lean();
         if (!user || user.isBlocked) {
             // clear only user session, not entire session
             req.session.user = null;
+            // For AJAX/Fetch requests, return 401 instead of redirect
+            if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+                return res.status(401).json({ success: false, message: 'Please login to continue' });
+            }
             return res.redirect("/login");
         }
         // attach fresh user to req.user if needed

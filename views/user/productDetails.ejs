@@ -767,6 +767,13 @@ async function addToCartWithQty(productId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId, quantity: qty })
     });
+    
+    // Check if user is not authenticated (redirect to login)
+    if (res.status === 401 || res.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+    
     const data = await res.json();
 
     if (data.success) {

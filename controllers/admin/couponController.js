@@ -1,6 +1,5 @@
 const Coupon = require('../../models/couponSchema');
 
-// List all coupons
 
 const getCoupons = async (req, res) =>{
     try {

@@ -1420,6 +1420,13 @@ async function addToCart(productId, event) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({productId, quantity:1})
     });
+    
+    // Check if user is not authenticated (redirect to login)
+    if (response.status === 401 || response.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+    
     const data = await response.json();
     if (data.success) {
       if (button) button.innerHTML = '<i class="fi fi-rs-check"></i>';
@@ -1454,6 +1461,13 @@ async function toggleWishlist(productId, btn, event) {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({productId})
     });
+    
+    // Check if user is not authenticated (redirect to login)
+    if (res.status === 401 || res.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+    
     const data = await res.json();
     if (data.success) {
       btn.classList.toggle('added', !willRemove);

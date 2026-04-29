@@ -22,16 +22,13 @@ function buildSearchPattern(searchTerm) {
 
 exports.listProducts = async (req, res) => {
     try {
-        // Pagination
         const page = parseInt(req.query.page) || 1;
         const limit = 8;
         const skip = (page - 1) * limit;
 
-        // Build query
         let query = { isBlocked: false };
         let sortQuery = {};
 
-        // Search
         if (req.query.search) {
             const searchPattern = buildSearchPattern(req.query.search);
             query.$or = [
@@ -41,19 +38,16 @@ exports.listProducts = async (req, res) => {
             ];
         }
 
-        // Category Filter
         if (req.query.category) {
             query.category = req.query.category;
         }
 
-        // Price Range Filter
         if (req.query.minPrice || req.query.maxPrice) {
             query.salesPrice = {};
             if (req.query.minPrice) query.salesPrice.$gte = parseFloat(req.query.minPrice);
             if (req.query.maxPrice) query.salesPrice.$lte = parseFloat(req.query.maxPrice);
         }
 
-        // Brand filter and blocked-brand exclusion
         const blockedBrands = await Brand.find({ isBlocked: true }).distinct('name');
         if (req.query.brand) {
             const selectedBrand = req.query.brand;
@@ -66,7 +60,6 @@ exports.listProducts = async (req, res) => {
             query.brand = { $nin: blockedBrands };
         }
 
-        // Sorting
         let sortByEffectivePrice = false;
         switch (req.query.sort) {
             case 'price-asc':
@@ -138,7 +131,6 @@ exports.listProducts = async (req, res) => {
             totalProducts = await Product.countDocuments(query);
         }
 
-        // Add ratings data to products
         const productIds = products.map(p => p._id);
         const ratingsData = await Review.aggregate([
             { $match: { product: { $in: productIds } } },
@@ -151,16 +143,14 @@ exports.listProducts = async (req, res) => {
             }
         ]);
 
-        // Create a map for quick lookup
         const ratingsMap = new Map();
         ratingsData.forEach(rating => {
             ratingsMap.set(rating._id.toString(), {
-                averageRating: Math.round(rating.averageRating * 10) / 10, // Round to 1 decimal
+                averageRating: Math.round(rating.averageRating * 10) / 10, 
                 numReviews: rating.numReviews
             });
         });
 
-        // Add ratings to products
         products = products.map(product => ({
             ...product,
             averageRating: ratingsMap.get(product._id.toString())?.averageRating || 0,
@@ -169,11 +159,9 @@ exports.listProducts = async (req, res) => {
 
         const totalPages = Math.ceil(totalProducts / limit);
 
-        // Get all categories and brands for filters
         const categories = await Category.find({ isListed: true }).lean();
         const visibleBrands = await Product.distinct('brand', { isBlocked: false, brand: { $nin: blockedBrands } });
 
-        // Get price range for filter
         const priceRange = await Product.aggregate([
             { $match: { isBlocked: false, brand: { $nin: blockedBrands } } },
             {
@@ -207,12 +195,10 @@ exports.getProductDetails = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.redirect('/shop');
         }
 
-        // Get product with populated category
         const now = new Date();
         let product = await Product.findById(id)
             .populate({
@@ -222,14 +208,12 @@ exports.getProductDetails = async (req, res) => {
             .populate({ path: 'offer' })
             .lean();
 
-        // compute offer including category fallback - apply MAXIMUM discount
         let offerDetails = getOfferDetails(product);
         product = {
             ...product,
             ...offerDetails
         };
         
-        // Check if product exists and is available
         if (!product) {
             return res.redirect('/shop');
         }
@@ -242,7 +226,6 @@ exports.getProductDetails = async (req, res) => {
 
        
 
-        // Get related products from same category
         let relatedProducts = await Product.find({
             category: product.category._id,
             _id: { $ne: product._id },
@@ -261,22 +244,18 @@ exports.getProductDetails = async (req, res) => {
             return { ...p, ...offerDetails };
         });
 
-        // Get product reviews
         const reviews = await Review.find({ product: id })
             .populate('user', 'name')
             .sort({ createdAt: -1 })
             .lean();
 
             
-        // Calculate average rating
         const averageRating = reviews.length > 0 
             ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
             : 0;
 
-        // Check stock status
         const stockStatus = getStockStatus(product);
 
-        // Get applicable discounts/coupons
         const discounts = await Discount.find({
             validFrom: { $lte: new Date() },
             validUntil: { $gte: new Date() },
@@ -284,7 +263,6 @@ exports.getProductDetails = async (req, res) => {
             isActive: true
         }).lean() || [];
 
-            // Check if current user has this product in wishlist (for rendering wishlist button state)
             let isInWishlist = false;
             try {
                 if (req.session && req.session.user && req.session.user._id) {
@@ -293,9 +271,9 @@ exports.getProductDetails = async (req, res) => {
                         isInWishlist = wl.products.some(p => (p.productId && p.productId.toString()) === id.toString());
                     }
                 }
-            } catch (e) { /* ignore wishlist errors */ }
+            } catch (e) { }
 
-        // Generate breadcrumbs
+        
         const breadcrumbs = [
             { name: 'Home', url: '/' },
             { name: 'Shop', url: '/shop' },
@@ -310,12 +288,11 @@ exports.getProductDetails = async (req, res) => {
             reviews,
             averageRating,
             stockStatus,
-            discounts, // Pass discounts to the view
+            discounts, 
             breadcrumbs,
             user: req.session.user,
             reviewMessage: req.query.review || null,
             isInWishlist,
-            // Add additional data for better error handling
             isAvailable: ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus),
             stockMessage: getStockMessage(stockStatus, product.quantity)
         });
@@ -370,7 +347,6 @@ exports.addReview = async (req, res) => {
 };
 
 
-// Helper function for stock status
 function getStockStatus(product) {
     if (product.isBlocked) return 'UNAVAILABLE';
     if (product.status === 'Out of Stock' || product.quantity <= 0) return 'OUT_OF_STOCK';
@@ -378,7 +354,6 @@ function getStockStatus(product) {
     return 'IN_STOCK';
 }
 
-// Helper function for stock messages
 function getStockMessage(status, quantity) {
     switch(status) {
         case 'IN_STOCK':
@@ -401,12 +376,10 @@ exports.searchProducts = async (req, res) => {
     try {
         const searchQuery = req.query.q?.trim();
         
-        // If no search query, redirect to home
         if (!searchQuery) {
             return res.redirect('/');
         }
 
-        // Build search query
         const searchRegex = new RegExp(searchQuery, 'i');
         const query = {
             isBlocked: false,
@@ -417,7 +390,6 @@ exports.searchProducts = async (req, res) => {
             ]
         };
 
-        // Execute search with pagination
         const page = parseInt(req.query.page) || 1;
         const limit = 12;
         const skip = (page - 1) * limit;
@@ -434,7 +406,6 @@ exports.searchProducts = async (req, res) => {
             .limit(limit)
             .lean();
 
-        // compute offer fields as done in listProducts - apply MAXIMUM discount
         products = products.map(p => {
             const offerDetails = getOfferDetails(p);
             return { ...p, ...offerDetails };
@@ -443,7 +414,6 @@ exports.searchProducts = async (req, res) => {
         const totalProducts = await Product.countDocuments(query);
         const totalPages = Math.ceil(totalProducts / limit);
 
-        // Get categories for sidebar
         const categories = await Category.find({ isListed: true }).lean();
 
         res.render('user/search-results', {

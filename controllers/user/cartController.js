@@ -7,7 +7,6 @@ const statusCodes = require('../../constants/statusCodes');
 
 const MAX_QUANTITY_PER_ITEM = 10;
 
-// Shared pricing helper (moved to helpers/priceUtils.js)
 const { getEffectivePrice } = require('../../helpers/priceUtils');
 
 
@@ -15,7 +14,6 @@ const { getEffectivePrice } = require('../../helpers/priceUtils');
 exports.viewCart = async (req, res) => {
     try {
         const userId = req.session.user._id;
-        // populate products along with their offers and category offers so we can recompute price
         const cart = await Cart.findOne({ userId }).populate({
             path: 'items.productId',
             populate: [
@@ -28,10 +26,7 @@ exports.viewCart = async (req, res) => {
             return res.render('user/cart', { cart: { items: [] }, total: 0, user: req.session.user });
         }
     
-        // DO NOT filter out out-of-stock or blocked items anymore
-        // We want to show them as disabled instead of removing
-
-        // recalculate each item price in case offers changed since it was added
+        
         let recomputeNeeded = false;
         cart.items.forEach(item => {
             if (item.productId && !item.productId.isBlocked) {
@@ -45,7 +40,6 @@ exports.viewCart = async (req, res) => {
             }
         });
         if (recomputeNeeded) {
-            // persist updated prices back to database
             await Cart.findByIdAndUpdate(cart._id, { items: cart.items });
         }
 
@@ -71,7 +65,6 @@ exports.addToCart = async (req, res) => {
         const { productId, quantity = 1 } = req.body;
 
         
-        // ---- Guard: must be authenticated ----
         const user = req.session && req.session.user;
         if (!user || !user._id) {
             return res.status(statusCodes.UNAUTHORIZED).json({ success: false, message: messages.AUTH_REQUIRED });
@@ -81,7 +74,6 @@ exports.addToCart = async (req, res) => {
         // Validate productId
         if (!productId) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_ID_REQUIRED });
 
-        // Validate product; populate its own offer + category offer so pricing helper can evaluate both discounts
         const now = new Date();
         const product = await Product.findById(productId)
             .populate({ path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now } } })
@@ -93,7 +85,6 @@ exports.addToCart = async (req, res) => {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: "We apologize, but this product is currently unavailable." });
         }
 
-         //  Check latest stock
     if (product.quantity < quantity) {
       return res.json({
         success: false,
@@ -113,24 +104,20 @@ exports.addToCart = async (req, res) => {
 
     
 
-        // Use findOneAndUpdate with upsert to avoid duplicate insert race conditions.
-        // Ensure both 'userId' and legacy 'user' are set on insert (handles existing DB index on 'user').
+       
         let cart = await Cart.findOneAndUpdate(
             { userId },
             { $setOnInsert: { userId, user: userId, items: [] } },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         ).populate('items.productId');
 
-        // Safety: if upsert didn't return a doc, fetch/create
         if (!cart) {
             cart = await Cart.findOne({ userId }).populate('items.productId');
             if (!cart) cart = new Cart({ userId, user: userId, items: [] });
         }
 
-        // Normalize incoming productId to string for safe comparisons
         const incomingPid = productId ? productId.toString() : '';
 
-        // Find existing item (handle populated productId objects and nulls)
         const existingItem = cart.items.find(item => {
             if (!item || !item.productId) return false;
             const itemPid = (item.productId._id ? item.productId._id : item.productId).toString();
@@ -138,10 +125,8 @@ exports.addToCart = async (req, res) => {
         });                   
 
         if (existingItem) {
-            // Prevent duplicate cart entries: inform caller that item already exists
             return res.status(statusCodes.OK).json({ success: false, alreadyInCart: true, message: messages.PRODUCT_ALREADY_IN_CART });
         } else {
-            // Push new item; use discount if applicable (pass category for fallback)
             const effectivePrice = getEffectivePrice(product, product.category);
             const qtyInt = parseInt(quantity, 10);
             cart.items.push({
@@ -152,14 +137,11 @@ exports.addToCart = async (req, res) => {
             });
         }
 
-        // Remove from wishlist if exists (ignore errors)
         try {
-            // wishlist stores objects in `products` with shape { productId, addedOn }
             await Wishlist.updateOne({ userId }, { $pull: { products: { productId } } });
-        } catch (e) { /* ignore */ }
+        } catch (e) {  }
 
         await cart.save();
-        // return updated counts so client can update header badges without reload
         const freshCart = await Cart.findOne({ userId }).select('items').lean();
         const freshWishlist = await Wishlist.findOne({ userId }).select('products').lean();
         const cartCount = (freshCart && Array.isArray(freshCart.items)) ? freshCart.items.length : 0;
@@ -192,7 +174,6 @@ exports.updateQuantity = async (req, res) => {
             return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.CART_NOT_FOUND });
         }
 
-        // Locate cart item safely (handle populated product objects)
         const cartItem = cart.items.find(item => {
             if (!item || !item.productId) return false;
             const itemPid = (item.productId._id ? item.productId._id : item.productId).toString();

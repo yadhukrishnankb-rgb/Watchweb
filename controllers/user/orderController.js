@@ -66,7 +66,7 @@ const orderDetails = async (req, res) => {
 
     const plainOrder = order.toObject();
 
-    // --- NEW: robust address normalization/fallbacks ---
+   
     const raw = plainOrder.address || plainOrder.shippingAddress || {};
     const sessionUser = req.session.user || {};
     
@@ -110,16 +110,14 @@ const orderDetails = async (req, res) => {
     };
 
     plainOrder.address = normalizedAddress;
-    // keep shippingAddress consistent for invoice/export code
+   
     plainOrder.shippingAddress = plainOrder.shippingAddress || normalizedAddress;
-    // --- END normalization ---
+   
 
-    // Compute refunded and finalPaid server-side (prefer persisted values)
     (plainOrder.orderedItems || []).forEach(it => {
       if (it.refundAmount != null) it.refundAmount = Number(it.refundAmount);
     });
 
-    // Prefer stored original subtotal (saved at order creation). Fall back to summing item totals.
     const storedOriginalSubtotal = Number(plainOrder.originalSubtotal ?? plainOrder.subtotal ?? 0);
     const computedItemsSubtotal = (plainOrder.orderedItems || []).reduce((acc, it) => {
       return acc + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0);
@@ -130,14 +128,12 @@ const orderDetails = async (req, res) => {
     const originalShipping = Number(plainOrder.shipping || 0);
 
     const originalAmount = Math.round(((originalSubtotal + originalTax + originalShipping) + Number.EPSILON) * 100) / 100;
-    // attach for view usage
     plainOrder.originalAmount = originalAmount;
     plainOrder.originalSubtotal = Math.round((originalSubtotal + Number.EPSILON) * 100) / 100;
     plainOrder.originalTax = originalTax;
     plainOrder.originalShipping = originalShipping;
 
-    // Use reconstructed original values for refund allocation (protect against mutated order.subtotal)
-    const subtotal = originalSubtotal; // original items subtotal (pre-discount)
+    const subtotal = originalSubtotal; 
     const totalTax = originalTax;
     const totalDiscount = Number(plainOrder.discount || 0);
 
@@ -147,12 +143,9 @@ const orderDetails = async (req, res) => {
         const st = ((it.status||'').toString().toLowerCase());
         if (['cancelled','returned'].includes(st)) {
           if (it.refundAmount != null && !isNaN(Number(it.refundAmount))) return acc + Number(it.refundAmount);
-          const itemPaid = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0); // this is post-discount paid amount for the item
-          // tax share should be allocated according to original proportions; because discounts were distributed proportionally,
-          // using the ratio of itemPaid/discountedSubtotal yields the same original proportion. We fall back to computedItemsSubtotal.
+          const itemPaid = Number(it.totalPrice ?? (it.price * it.quantity) ?? 0); 
           const discountedSubtotal = computedItemsSubtotal || subtotal || 0;
           const taxShare = discountedSubtotal > 0 ? (itemPaid / discountedSubtotal) * totalTax : 0;
-          // The itemPaid already reflects the coupon share; do NOT subtract discountShare again (prevents double subtracting coupon)
           return acc + (itemPaid + taxShare);
         }
         return acc;
@@ -163,7 +156,6 @@ const orderDetails = async (req, res) => {
     const cappedRefunded = Math.min(roundedRefunded, Number(plainOrder.finalAmount || 0));
     const finalPaid = Math.max(0, Math.round(((plainOrder.finalAmount || 0) - cappedRefunded + Number.EPSILON) * 100) / 100);
 
-    // FORCE fullName from session if still missing (final safety)
     if (!plainOrder.address || !plainOrder.address.fullName || plainOrder.address.fullName === 'Customer') {
       plainOrder.address = {
         fullName: req.session.user?.name || 'Customer',
@@ -208,21 +200,17 @@ const cancelOrder = async (req, res) => {
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
 
     const current = (order.status || '').toLowerCase();
-    // Only allow full-order cancellation when order is in 'Pending' or 'Processing' state
     if (!['pending', 'processing'].includes(current)) {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.CANCEL_ONLY_PENDING });
     }
 
-    // Immediately cancel order (no admin approval)
     let totalRemoved = 0;
     for (const it of order.orderedItems) {
       const istatus = (it.status || '').toLowerCase();
       if (!['cancelled', 'returned', 'delivered'].includes(istatus)) {
-        // restore stock
         if (it.product) {
           await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
         }
-        // mark item cancelled
         it.status = 'Cancelled';
         it.cancelReason = reason || 'No reason provided';
         it.approvedAt = new Date();
@@ -237,11 +225,9 @@ const cancelOrder = async (req, res) => {
     order.cancelReason = reason || 'No reason provided';
     order.approvedAt = new Date();
 
-    // DO NOT modify order.subtotal or order.finalAmount - keep them as original
-    // The view will handle display logic based on item cancellation status
+    
 
 
-    //refund to wallet only if it was a paid (online) order
     if (totalRemoved > 0 && order.paymentMethod && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
        await addToWallet(userId, order.finalAmount, 'credit', 'Full Order Cancel Refund', orderId);
 
@@ -278,7 +264,6 @@ const returnOrder = async (req, res) => {
       return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.RETURN_NOT_ALLOWED });
     }
 
-        // Create order-level return request (do NOT update stock here)
         order.status = 'Return Request';
         order.returnReason = reason;
         order.requestedAt = new Date();
@@ -293,7 +278,6 @@ const returnOrder = async (req, res) => {
 
 
 const searchOrders = async (req, res) => {
-    // Integrated into listOrders via query param
     listOrders(req, res);
 };
 
@@ -314,22 +298,17 @@ const downloadInvoice = async (req, res) => {
 
         doc.pipe(res);
 
-        // ────────────────────── HEADER WITH BLUE BACKGROUND ──────────────────────
         doc.rect(0, 0, 600, 140).fill('#0066ff');
         
-        // Invoice Title - Centered
         doc.font('Helvetica-Bold').fontSize(48).fillColor('#ffffff').text('INVOICE', 50, 40, { align: 'center', width: 500 });
         
-        // Order Details on Right Side
         doc.font('Helvetica').fontSize(11).fillColor('#ffffff');
         doc.text(`Order ID: ${order.orderId}`, 350, 45, { align: 'right', width: 200 });
         doc.text(`Invoice Date: ${new Date(order.createdOn).toLocaleDateString('en-IN')}`, 350, 65, { align: 'right', width: 200 });
         doc.text(`Payment: ${order.paymentMethod || 'N/A'}`, 350, 85, { align: 'right', width: 200 });
 
-        // ────────────────────── COMPANY INFO & BILL TO SECTION ──────────────────────
         const infoY = 170;
         
-        // Left Side - Company Info (GoalZone equivalent is EVER TIME)
         doc.font('Helvetica-Bold').fontSize(20).fillColor('#000000').text('EVER TIME', 50, infoY);
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         doc.text('Premium Timepieces', 50, infoY + 28);
@@ -337,19 +316,15 @@ const downloadInvoice = async (req, res) => {
         doc.text('Kerala, India - 679536', 50, infoY + 60);
         doc.text('GSTIN: 32AAALCG7E567N1ZR', 50, infoY + 76);
 
-        // Right Side - Bill To
         doc.font('Helvetica-Bold').fontSize(14).fillColor('#000000').text('Bill To:', 350, infoY);
         
         const shipping = order.shippingAddress || {};
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         doc.text(`${shipping.name || req.session.user.name}`, 350, infoY + 24);
         doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 40);
-        // doc.text(`${shipping.address || 'N/A'}`, 350, infoY + 56, { width: 200 });
-        // doc.text(`Phone: ${shipping.phone || 'N/A'}`, 350, infoY + 88);
         doc.text(`Email:`, 350, infoY + 104);
         doc.text(`${shipping.email || req.session.user.email}`, 350, infoY + 120);
 
-        // ────────────────────── TABLE WITH SIMPLE DESIGN ──────────────────────
         const tableTop = infoY + 160;
         const col1 = 50;   // Item Description
         const col2 = 340;  // Price
@@ -366,7 +341,6 @@ const downloadInvoice = async (req, res) => {
         // Header underline
         doc.moveTo(50, tableTop + 18).lineTo(560, tableTop + 18).strokeColor('#cccccc').lineWidth(1).stroke();
 
-        // ────────────────────── TABLE ROWS ──────────────────────  
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         let y = tableTop + 30;
 
@@ -386,21 +360,17 @@ const downloadInvoice = async (req, res) => {
         // Bottom border line
         doc.moveTo(50, y + 10).lineTo(560, y + 10).strokeColor('#cccccc').lineWidth(1).stroke();
 
-        // ────────────────────── SUMMARY SECTION WITH LIGHT GRAY BOX ──────────────────────
         const summaryY = y + 40;
         const summaryBoxX = 380;
         const summaryBoxWidth = 180;
         const summaryBoxHeight = 140;
 
-        // Light gray background box
         doc.rect(summaryBoxX, summaryY, summaryBoxWidth, summaryBoxHeight).fill('#f5f5f5');
 
-        // Summary text
         doc.font('Helvetica').fontSize(10).fillColor('#333333');
         const labelX = summaryBoxX + 15;
         const valueX = summaryBoxX + summaryBoxWidth - 15;
 
-        // show subtotal before any coupon (fallback to current subtotal)
         const origSub = Number(order.originalSubtotal ?? order.subtotal ?? 0);
         const couponCode = order.couponCode || order.coupon || '';
         const discountVal = Number(order.couponDiscount ?? order.discount ?? 0);
@@ -419,12 +389,10 @@ const downloadInvoice = async (req, res) => {
         doc.text('GST (18%):', labelX, currentY);
         doc.text(`₹${(order.tax || 0).toFixed(2)}`, valueX - 80, currentY, { width: 80, align: 'right' });
 
-        // Grand Total in GREEN
         doc.font('Helvetica-Bold').fontSize(12).fillColor('#00cc66');
         doc.text('Grand Total:', labelX, summaryY + 95);
         doc.fontSize(14).text(`₹${(order.finalAmount || 0).toFixed(2)}`, valueX - 80, summaryY + 95, { width: 80, align: 'right' });
 
-        // ────────────────────── FOOTER ──────────────────────
         const footerY = 750;
         
         doc.font('Helvetica').fontSize(9).fillColor('#666666');
@@ -461,7 +429,6 @@ const cancelOrderItem  = async (req, res) => {
       return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_FOUND });
     }
 
-    // Ensure parent order is still pending or processing before allowing item cancel
     if (!['pending', 'processing'].includes((order.status || '').toLowerCase())) {
       return res.status(statusCodes.BAD_REQUEST).json({ 
         success: false, 
@@ -484,33 +451,27 @@ const cancelOrderItem  = async (req, res) => {
       });
     }
 
-    // Immediately cancel the item (no admin approval needed for cancellation)
     item.status = 'Cancelled';
     item.cancelReason = reason || 'No reason provided';
     item.approvedAt = new Date();
     item.requestedAt = new Date();
 
-    // Restore stock for this item
     if (item.product) {
       await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
     }
   
-    // Calculate refund for this single item
     const itemSubtotal = Number(item.totalPrice || (item.price * item.quantity) || 0);
     const taxShare = (order.subtotal > 0) 
       ? (itemSubtotal / order.subtotal) * Number(order.tax || 0) 
       : 0;
-    const refundAmount = Math.round((itemSubtotal + taxShare) * 100) / 100;  // round to 2 decimals
+    const refundAmount = Math.round((itemSubtotal + taxShare) * 100) / 100; 
 
-    // Refund to wallet ONLY if it was a paid online order (NOT COD)
     if (refundAmount > 0 && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
       await addToWallet(userId, refundAmount, 'credit', 'Item Cancel Refund', order._id);
       
-      // Optional: Record refund on the item for display/invoice
       item.refundAmount = refundAmount;
     }
 
-    // If all items are cancelled → mark full order as cancelled
     const allCancelled = order.orderedItems.every(it => (it.status || '').toLowerCase() === 'cancelled');
     if (allCancelled) {
       order.status = 'Cancelled';
@@ -559,7 +520,6 @@ const requestReturnItem = async (req, res) => {
     const itemStatusLC = ((item.status || '').toString().trim().toLowerCase());
     const orderStatusLC = ((order.status || '').toString().trim().toLowerCase());
 
-    // Prefer item-level status when meaningful; otherwise fall back to parent order status
     let effectiveStatus = itemStatusLC;
     if (!effectiveStatus || effectiveStatus === 'pending') {
       effectiveStatus = orderStatusLC;
@@ -567,17 +527,14 @@ const requestReturnItem = async (req, res) => {
 
     
 
-    // Mark item-level return request (admin approval required)
     item.status = 'Return Request';
     item.returnReason = reason;
     item.requestedAt = new Date();
 
-    // Check if all items have return requests
     const allHaveReturnRequests = order.orderedItems.every(it => 
       it.status === 'Return Request' || it.status === 'Returned'
     );
     
-    // Update order status to Return Request if all items are in return process
     if (allHaveReturnRequests) {
       order.status = 'Return Request';
     }
@@ -593,7 +550,6 @@ const requestReturnItem = async (req, res) => {
 
 
 
-// 1. Create new Razorpay order for retry
 const retryPayment = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -604,19 +560,16 @@ const retryPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Only allow retry for failed Razorpay orders
     if (order.paymentStatus !== 'Failed' || order.paymentMethod !== 'RAZORPAY') {
       return res.status(400).json({ success: false, message: 'Cannot retry this order' });
     }
 
-    // Optional: limit retries
     if (order.paymentAttempts >= 5) {
       return res.status(400).json({ success: false, message: 'Maximum retry attempts reached' });
     }
 
     const amountInPaise = Math.round(order.finalAmount * 100);
 
-    // Create fresh Razorpay order
     const rzpOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
@@ -624,7 +577,6 @@ const retryPayment = async (req, res) => {
       notes: { userId: userId.toString(), retryFor: orderId.toString() }
     });
 
-    // Increment attempt count
     order.paymentAttempts = (order.paymentAttempts || 0) + 1;
     await order.save();
 
@@ -651,7 +603,6 @@ const retryPayment = async (req, res) => {
   }
 };
 
-// 2. Verify retry payment (same logic as original verify)
 const verifyRetryPayment = async (req, res) => {
   try {
     const {
@@ -675,12 +626,10 @@ const verifyRetryPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Already paid? (edge case)
     if (order.paymentStatus === 'Paid') {
       return res.json({ success: true, message: 'Order already paid' });
     }
 
-    // Update payment details
     order.paymentStatus = 'Paid';
     order.razorpayPaymentId = razorpay_payment_id;
     order.razorpaySignature = razorpay_signature;
@@ -694,7 +643,6 @@ const verifyRetryPayment = async (req, res) => {
       {$set: { items: []}}
     )
 
-   //  Reduce stock
     for (let item of order.orderedItems) {
       await Product.updateOne(
         { _id: item.product },

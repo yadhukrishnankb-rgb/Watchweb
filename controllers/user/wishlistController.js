@@ -5,7 +5,6 @@ const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const { getOfferDetails } = require('../../helpers/priceUtils');
 
-// Show user's wishlist
 exports.viewWishlist = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -14,7 +13,6 @@ exports.viewWishlist = async (req, res) => {
       populate: { path: 'category' }
     });
     if (!wishlist) wishlist = { products: [] };
-    // attach offerPercent to accessed products for ease of rendering
     if (wishlist.products && Array.isArray(wishlist.products)) {
       wishlist.products = wishlist.products.map(item => {
         const p = item.productId;
@@ -31,7 +29,6 @@ exports.viewWishlist = async (req, res) => {
   }
 };
 
-// Add product to wishlist
 exports.addToWishlist = async (req, res) => {
   try {
     const user = req.session && req.session.user;
@@ -53,7 +50,6 @@ exports.addToWishlist = async (req, res) => {
 
     wishlist.products.push({ productId });
     await wishlist.save();
-    // return updated wishlist count for header update
     const freshWishlist = await Wishlist.findOne({ userId }).select('products').lean();
     const wishlistCount = (freshWishlist && Array.isArray(freshWishlist.products)) ? freshWishlist.products.length : 0;
     res.json({ success: true, message: messages.WISHLIST_ADDED, wishlistCount });
@@ -63,7 +59,6 @@ exports.addToWishlist = async (req, res) => {
   }
 };
 
-// Remove product from wishlist
 exports.removeFromWishlist = async (req, res) => {
   try {
     const user = req.session && req.session.user;
@@ -74,7 +69,6 @@ exports.removeFromWishlist = async (req, res) => {
 
     const result = await Wishlist.updateOne({ userId }, { $pull: { products: { productId } } });
     if (result.modifiedCount === 0) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ITEM_NOT_IN_WISHLIST });
-    // return updated wishlist count for header
     const freshWishlist = await Wishlist.findOne({ userId }).select('products').lean();
     const wishlistCount = (freshWishlist && Array.isArray(freshWishlist.products)) ? freshWishlist.products.length : 0;
     res.json({ success: true, message: messages.WISHLIST_REMOVED, wishlistCount });

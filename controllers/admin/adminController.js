@@ -1,5 +1,4 @@
 
-// controllers/admin/adminController.js
 require('dotenv').config();
 const User   = require('../../models/userSchema');
 const Product = require('../../models/productSchema');   
@@ -82,9 +81,7 @@ const logout = (req, res) => {
 
 
 
-/* -------------------------------------------------
-   DASHBOARD – ALL STATS
-------------------------------------------------- */
+
 const loadDashboard = async (req, res) => {
   try {
     if (!req.session.admin) return res.redirect('/admin/login');
@@ -94,10 +91,10 @@ const loadDashboard = async (req, res) => {
     const chartStartDate = getChartStartDate(range);
     const chartDateFormat = range === 'yearly' ? '%Y' : '%Y-%m';
 
-    // 1. Total products
+    //  Total products
     const totalProducts = await Product.countDocuments();
 
-    // 2. Low‑stock products (≤5 and >0)
+    //  Low‑stock products 
     const lowStockProducts = await Product.find({
       quantity: { $lte: 5, $gt: 0 }
     })
@@ -105,20 +102,20 @@ const loadDashboard = async (req, res) => {
       .limit(5)
       .lean();
 
-    // 3. Total orders
+    //  Total orders
     const totalOrders = await Order.countDocuments();
 
-    // 4. Total revenue (only Delivered orders)
+    //  Total revenue 
     const revenueAgg = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $group: { _id: null, total: { $sum: '$finalAmount' } } }
     ]);
     const totalRevenue = revenueAgg[0]?.total || 0;
 
-    // 5. Total customers (non‑admin users)
+    // Total customers 
     const totalCustomers = await User.countDocuments({ isAdmin: { $ne: true } });
 
-    // 6. Sales chart data
+    // Sales chart data
     const chartAgg = await Order.aggregate([
       { $match: { status: 'Delivered', createdAt: { $gte: chartStartDate } } },
       {
@@ -142,7 +139,7 @@ const loadDashboard = async (req, res) => {
     const rangeOrders = await Order.countDocuments({ status: 'Delivered', createdAt: { $gte: chartStartDate } });
     const averageOrderValue = rangeOrders ? rangeRevenue / rangeOrders : 0;
 
-    // 7. Best-selling products
+    // Best-selling products
     const topProducts = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $unwind: '$orderedItems' },
@@ -158,7 +155,8 @@ const loadDashboard = async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // 8. Best-selling categories
+    
+    //  bestselling categories
     const topCategories = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $unwind: '$orderedItems' },
@@ -194,7 +192,7 @@ const loadDashboard = async (req, res) => {
       quantity: item.quantity
     })));
 
-    // 9. Best-selling brands
+    // Best-selling brands
     const topBrands = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $unwind: '$orderedItems' },

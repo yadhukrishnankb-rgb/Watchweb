@@ -1,4 +1,3 @@
-// controllers/admin/orderController.js
 const Order = require('../../models/orderSchema');  
 const Product = require('../../models/productSchema')
 const User = require('../../models/userSchema');
@@ -28,7 +27,6 @@ const computePendingOrderRefund = (order) => {
   return round2(Math.max(0, paidAmount - refunded));
 };
 
-// GET /admin/orders
 exports.getOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -83,7 +81,6 @@ exports.getOrders = async (req, res) => {
   }
 };
 
-// GET /admin/orders/:id
 exports.getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -105,7 +102,6 @@ exports.getOrderDetails = async (req, res) => {
 
 
 
-// PATCH /admin/orders/:id/status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -120,10 +116,9 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
     }
 
-    const currentStatus = order.status.trim(); // e.g., "Pending"
+    const currentStatus = order.status.trim(); 
     const newStatus = status.trim();
 
-    // Normalize requested status to a schema-allowed enum value (case-insensitive)
     const statusEnum = Order.schema.path('status').enumValues || [];
     const normalizeStatus = (s) => {
       if (!s) return s;
@@ -132,7 +127,6 @@ exports.updateOrderStatus = async (req, res) => {
     };
     const newStatusNormalized = normalizeStatus(newStatus);
 
-    // === STRICT TRANSITION RULES (EXACTLY AS YOU SPECIFIED) ===
     const validTransitions = {
       'Pending': ['Processing', 'Cancelled'],
       'Processing': ['Shipped', 'Cancelled'],
@@ -143,10 +137,8 @@ exports.updateOrderStatus = async (req, res) => {
       'Returned': [],
       'Cancellation Request': ['Cancelled'],
       'Return Request': ['Returned']
-      // 'Return Request' → only admin can approve to 'Returned'
     };
 
-    // Normalize for comparison (case-insensitive + trim)
     const currentKey = Object.keys(validTransitions).find(
       key => key.toLowerCase() === currentStatus.toLowerCase()
     );
@@ -171,7 +163,6 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Special Rule: Only allow 'Return Request' → 'Returned' via admin approval
     if (newStatusNormalized === 'Returned' && currentStatus !== 'Return Request') {
       return res.status(statusCodes.BAD_REQUEST).json({
         success: false,
@@ -179,7 +170,6 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // === REFUND ON DIRECT ADMIN CANCEL/RETURN ===
     const isRefundableAdminAction = ['Cancelled', 'Returned'].includes(newStatusNormalized)
       && order.paymentStatus === 'Paid'
       && order.paymentMethod !== 'COD';
@@ -196,23 +186,18 @@ exports.updateOrderStatus = async (req, res) => {
       }
     }
 
-    // All checks passed → update order status
     order.status = newStatusNormalized;
 
-    // === SYNC ITEM STATUSES ===
     order.orderedItems.forEach(item => {
-      // Already final items remain final
       if (item.status === 'Cancelled' || item.status === 'Returned') {
         return;
       }
 
-      // If the order is being finalised as Cancelled or Returned, update request/pending items too
       if (['Cancelled', 'Returned'].includes(newStatusNormalized)) {
         item.status = newStatusNormalized;
         return;
       }
 
-      // Keep explicit requests untouched on non-final status changes
       if (item.status === 'Cancellation Request' || item.status === 'Return Request') {
         return;
       }
@@ -240,9 +225,8 @@ exports.getRequests = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-    const requestType = req.query.type || ''; // 'cancel' or 'return'
+    const requestType = req.query.type || ''; 
 
-    // Find orders that have RETURN requests only. Cancellations are handled immediately
     const combinedQuery = {
       $or: [
         { 'orderedItems.status': { $regex: 'return request', $options: 'i' } },
@@ -257,14 +241,12 @@ exports.getRequests = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // If filtering by type, keep only matching items/orders
     orders = orders.map(order => {
       const filteredItems = order.orderedItems.filter(item => {
         if (requestType === 'return') return /return request/i.test(item.status || '');
         return /return request/i.test(item.status || '');
       });
 
-      // keep order-level requests (no matching items) by leaving filteredItems empty but mark order
       return { ...order, orderedItems: filteredItems };
     })
     .filter(order => {
@@ -292,11 +274,10 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-// PATCH /admin/orders/:id/approve-request (or whatever your route is)
 exports.approveRequest = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
-    const { action } = req.body; // 'approve' or 'reject'
+    const { action } = req.body; 
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.ORDER_NOT_FOUND });
@@ -308,23 +289,19 @@ exports.approveRequest = async (req, res) => {
     }
 
     if (!item) {
-      // === FULL ORDER LEVEL REQUEST ===
       const isCancel = order.status === 'Cancellation Request';
       const isReturn = order.status === 'Return Request';
 
       if (action === 'approve') {
-        // Restore stock for all items
         for (const it of order.orderedItems) {
           if (it.product) {
             await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
           }
         }
 
-        // Compute and persist refunds per item and aggregate order.refunded
         const subtotal = Number(order.subtotal || 0);
         const totalTax = Number(order.tax || 0);
         const totalDiscount = Number(order.discount || 0);
-        // compute discounted subtotal from stored item totals (fallback to subtotal)
         const discountedSubtotal = (order.orderedItems || []).reduce((s, it) => s + Number(it.totalPrice ?? (it.price * it.quantity) ?? 0), 0) || subtotal;
         let totalRefund = 0;
 
@@ -338,7 +315,6 @@ exports.approveRequest = async (req, res) => {
 
         order.refunded = Math.round(((Number(order.refunded || 0) + totalRefund) + Number.EPSILON) * 100) / 100;
 
-        // === WALLET REFUND ONLY FOR RETURNS (not cancellations) ===
         if (isReturn && totalRefund > 0) {
           await addToWallet(order.user, totalRefund, 'credit', 'Full Order Return Refund', order._id);
         }
@@ -353,7 +329,6 @@ exports.approveRequest = async (req, res) => {
           newStatus: order.status 
         });
       } else {
-        // Reject → revert status
         order.status = order.paymentStatus === 'Paid' ? 'Delivered' : 'Pending';
         order.requestedAt = null;
         await order.save();
@@ -365,11 +340,9 @@ exports.approveRequest = async (req, res) => {
       }
     }
 
-    // === ITEM-LEVEL REQUEST ===
     const itemType = item.status;
 
     if (action === 'approve') {
-      // Restore stock
       if (item.product) {
         await Product.updateOne({ _id: item.product }, { $inc: { quantity: item.quantity } });
       }
@@ -382,7 +355,6 @@ exports.approveRequest = async (req, res) => {
 
       item.approvedAt = new Date();
 
-      // Calculate and persist refund for this item
       const subtotal = Number(order.subtotal || 0);
       const totalTax = Number(order.tax || 0);
       const totalDiscount = Number(order.discount || 0);
@@ -394,7 +366,6 @@ exports.approveRequest = async (req, res) => {
       item.refundAmount = refundForItem;
       order.refunded = Math.round(((Number(order.refunded || 0) + refundForItem) + Number.EPSILON) * 100) / 100;
 
-      // === WALLET REFUND ONLY FOR RETURNS (not cancellations) ===
       if (itemType === 'Return Request' && refundForItem > 0) {
         await addToWallet(order.user, refundForItem, 'credit', 'Item Return Refund', order._id);
       }
@@ -409,7 +380,6 @@ exports.approveRequest = async (req, res) => {
       item.requestedAt = null;
     }
 
-    // Check if all items are now returned/cancelled
     const allReturned = order.orderedItems.every(it => it.status === 'Returned');
     const allCancelled = order.orderedItems.every(it => it.status === 'Cancelled');
     

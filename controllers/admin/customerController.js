@@ -2,20 +2,18 @@ const Customer = require('../../models/userSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 
-// Get all customers
 exports.getCustomers = async (req, res) => {
     try {
         const page = Math.max(parseInt(req.query.page) || 1, 1);
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const query = {}; // modify if you want filters
+        const query = {}; 
         
         const [totalCustomers, customers] = await Promise.all([
     Customer.countDocuments(query),
     Customer.find(query)
         .select('name email isBlocked createdAt')
-        // newest first (createdAt desc), tie-breaker by _id desc for deterministic order
         .sort({ createdAt: -1, _id: -1 })
         .skip(skip)
         .limit(limit)
@@ -30,7 +28,6 @@ exports.getCustomers = async (req, res) => {
         }));
 
         const totalPages = Math.max(Math.ceil(totalCustomers / limit), 1);
-        // generate pages array for view
         const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
         res.render('admin/customers', {
@@ -49,7 +46,6 @@ exports.getCustomers = async (req, res) => {
 
 
 
-// Search customers
 exports.searchCustomers = async (req, res) => {
     try {
         const searchQuery = req.body.query || '';
@@ -69,7 +65,6 @@ const [totalCustomers, customers] = await Promise.all([
     Customer.countDocuments(query),
     Customer.find(query)
         .select('name email isBlocked createdAt')
-        // newest first (createdAt desc), tie-breaker by _id desc
         .sort({ createdAt: -1, _id: -1 })
         .skip(skip)
         .limit(limit)
@@ -101,7 +96,6 @@ const [totalCustomers, customers] = await Promise.all([
     }
 };
 
-// Block customer
 exports.blockCustomer = async (req, res) => {
     try {
         const customer = await Customer.findByIdAndUpdate(
@@ -114,7 +108,6 @@ exports.blockCustomer = async (req, res) => {
             return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.CUSTOMER_NOT_FOUND });
         }
 
-        // preserve page and search query when redirecting if provided
         const redirectPage = req.query.page ? `?page=${req.query.page}` : '';
         const redirectSearch = req.query.search ? `${redirectPage ? '&' : '?'}search=${encodeURIComponent(req.query.search)}` : '';
         res.redirect('/admin/customers' + redirectPage + (req.query.search ? `&search=${encodeURIComponent(req.query.search)}` : ''));
@@ -124,7 +117,6 @@ exports.blockCustomer = async (req, res) => {
     }
 };
 
-// Unblock customer
 exports.unblockCustomer = async (req, res) => {
     try {
         const customer = await Customer.findByIdAndUpdate(

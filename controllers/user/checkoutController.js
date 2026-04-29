@@ -10,19 +10,14 @@ const razorpay = require('../../config/razorpay');
 const crypto = require('crypto');
 const { addToWallet } = require('./walletController');
 
-// Global timestamp (used in multiple places — only declared once)
 const now = new Date();
 
-// Business rules
 const COD_FIXED_SHIPPING = 79;
 const FREE_SHIPPING_THRESHOLD = 1000;
 
-// Shared pricing helper (moved to helpers/priceUtils.js)
 const { getEffectivePrice } = require('../../helpers/priceUtils');
 
-// ────────────────────────────────────────────────────────────────
-// Safe address helpers 
-// ────────────────────────────────────────────────────────────────
+
 function _safeAddresses(user) {
   if (!user || !Array.isArray(user.addresses)) return [];
   return user.addresses.filter(Boolean);
@@ -45,9 +40,7 @@ function getAddressById(user, addressId) {
   return addrs.find(a => a?._id?.toString() === addressId) || null;
 }
 
-// ────────────────────────────────────────────────────────────────
-// LOAD CHECKOUT PAGE
-// ────────────────────────────────────────────────────────────────
+
 const loadCheckout = async (req, res) => {
   try {
     const userId = req.session.user?._id;
@@ -68,11 +61,9 @@ const loadCheckout = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    // Adjustments tracking
     const adjustedItems = [];
     const itemsToRemove = [];
 
-    // Auto-adjust quantities & remove invalid items
     cart.items = cart.items.filter(item => {
       const p = item.productId;
       if (!p || p.isBlocked || p.category?.isBlocked) {
@@ -108,7 +99,6 @@ const loadCheckout = async (req, res) => {
       return true;
     });
 
-    // Always recalc prices to account for changed offers
     const updatedItems = cart.items.map(item => ({
       productId: item.productId._id,
       quantity: item.quantity,
@@ -133,7 +123,6 @@ const loadCheckout = async (req, res) => {
     const tax = subtotal * 0.18;
     const shipping = subtotal >= 1000 ? 0 : 79;
 
-    // Coupon from session
     let discount = 0;
     let appliedCoupon = req.session.appliedCoupon;
     if (appliedCoupon?.discountAmount) {
@@ -150,7 +139,6 @@ const loadCheckout = async (req, res) => {
 
     const defaultAddress = safeDefaultAddress(user);
 
-    // Fetch valid coupons
     const coupons = await Coupon.find({
   isActive: true,
   expiryDate: { $gt: now },
@@ -190,9 +178,7 @@ const availableCoupons = coupons.filter(c => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// PLACE ORDER (COD / Wallet / Razorpay)
-// ────────────────────────────────────────────────────────────────
+
 const placeOrder = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -214,7 +200,6 @@ const placeOrder = async (req, res) => {
         return res.status(400).json({ success: false, message: "Product ID and quantity required" });
       }
 
-      // we need full product info including active offers and category offer
       const now = new Date();
       const product = await Product.findById(productId)
         .populate({ path: 'offer', match: { startDate: { $lte: now }, endDate: { $gte: now } } })
@@ -236,7 +221,7 @@ const placeOrder = async (req, res) => {
         product: product._id,
         name: product.productName,
         quantity: qty,
-        originalPrice: Number(product.price || 0), // price before any offers
+        originalPrice: Number(product.price || 0), 
         price,
         totalPrice,
         productSnapshot: { image: product.productImage?.[0] || '' },
@@ -283,7 +268,6 @@ const placeOrder = async (req, res) => {
       subtotal = itemsToOrder.reduce((s, i) => s + i.totalPrice, 0);
     }
 
-    // calculate original price before offers for each item
     const preOfferSubtotal = itemsToOrder.reduce((s, i) => {
       const base = Number(i.originalPrice ?? i.price ?? 0);
       return s + base * (i.quantity || 0);
@@ -292,7 +276,6 @@ const placeOrder = async (req, res) => {
 
     const originalSubtotal = subtotal;
 
-    // Re-evaluate coupon
     let couponDiscount = 0;
     if (appliedCoupon?.discountAmount) {
       if (subtotal < (appliedCoupon.minAmount || 0)) {
@@ -303,7 +286,7 @@ const placeOrder = async (req, res) => {
       } else {
         couponDiscount = appliedCoupon.discountAmount;
         if (couponDiscount > subtotal) couponDiscount = subtotal;
-        discount = couponDiscount; // keep legacy field for backwards compatibility
+        discount = couponDiscount; 
       }
     }
 
@@ -311,7 +294,7 @@ const placeOrder = async (req, res) => {
     const shipping = paymentMethod === 'cod'
       ? COD_FIXED_SHIPPING
       : (originalSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : COD_FIXED_SHIPPING);
-    const total = originalSubtotal + tax + shipping - (couponDiscount); // offers already baked into subtotal
+    const total = originalSubtotal + tax + shipping - (couponDiscount); 
 
     if (paymentMethod === 'cod' && subtotal > 1000) {
       return res.status(400).json({
@@ -353,7 +336,7 @@ const placeOrder = async (req, res) => {
       shipping,
       offerDiscount,
       couponDiscount,
-      discount: couponDiscount + offerDiscount, // total discount amount
+      discount: couponDiscount + offerDiscount, 
       totalPrice: total,
       finalAmount: total,
       originalSubtotal,
@@ -367,7 +350,7 @@ const placeOrder = async (req, res) => {
       couponCode: appliedCoupon?.code
     };
 
-    // ── WALLET PAYMENT ──
+    
     if (paymentMethod === 'wallet') {
       if (user.wallet?.balance < total) {
         return res.status(400).json({
@@ -408,7 +391,7 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // ── COD ──
+    
     if (paymentMethod === 'cod') {
       const order = await Order.create(orderData);
 
@@ -437,7 +420,7 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    // ── RAZORPAY ──
+    
     const amountInPaise = Math.round(total * 100);
 
     const rzpOrder = await razorpay.orders.create({
@@ -478,9 +461,7 @@ const placeOrder = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// VERIFY RAZORPAY PAYMENT
-// ────────────────────────────────────────────────────────────────
+
 const verifyPayment = async (req, res) => {
   try {
     const {
@@ -514,7 +495,7 @@ const verifyPayment = async (req, res) => {
 
     await order.save();
 
-    // Track coupon usage
+    
     if (order.couponApplied && order.couponCode) {
       const sessionCoupon = req.session.appliedCoupon;
       if (sessionCoupon?.couponId) {
@@ -526,14 +507,14 @@ const verifyPayment = async (req, res) => {
       delete req.session.appliedCoupon;
     }
 
-    // Deduct stock
+   
     const stockDeducted = await atomicDeductStock(
       order.orderedItems.map(it => ({ product: it.product, quantity: it.quantity }))
     );
 
     if (!stockDeducted) {
       console.error("Stock deduction failed after payment verification!");
-      // In production: initiate refund or mark as critical
+      
     }
 
     await Cart.deleteOne({ user: order.user });
@@ -549,9 +530,7 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// ORDER SUCCESS PAGE
-// ────────────────────────────────────────────────────────────────
+
 const orderSuccess = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -569,9 +548,7 @@ const orderSuccess = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// DIRECT CHECKOUT (Buy Now)
-// ────────────────────────────────────────────────────────────────
+
 const directCheckout = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -662,9 +639,7 @@ const directCheckout = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// ATOMIC STOCK DEDUCTION (used in placeOrder & verifyPayment)
-// ────────────────────────────────────────────────────────────────
+
 const atomicDeductStock = async (items) => {
   for (const item of items) {
     const result = await Product.updateOne(
@@ -672,7 +647,7 @@ const atomicDeductStock = async (items) => {
       { $inc: { quantity: -item.quantity } }
     );
     if (result.modifiedCount === 0) {
-      // Rollback previous deductions
+      
       for (const prev of items.slice(0, items.indexOf(item))) {
         await Product.updateOne(
           { _id: prev.product },
@@ -685,9 +660,7 @@ const atomicDeductStock = async (items) => {
   return true;
 };
 
-// ────────────────────────────────────────────────────────────────
-// ADD ADDRESS FROM CHECKOUT
-// ────────────────────────────────────────────────────────────────
+
 const addAddressFromCheckout = async (req, res) => {
   try {
     const userId = req.session.user?._id;
@@ -743,9 +716,7 @@ const addAddressFromCheckout = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// APPLY COUPON
-// ────────────────────────────────────────────────────────────────
+
 const applyCoupon = async (req, res) => {
   try {
     const { code, productId, quantity } = req.body;
@@ -771,7 +742,7 @@ const applyCoupon = async (req, res) => {
     let subtotal = 0;
 
     if (productId) {
-      // Direct purchase
+      
       const product = await Product.findById(productId);
       if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
@@ -835,9 +806,7 @@ const applyCoupon = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────────
-// REMOVE COUPON
-// ────────────────────────────────────────────────────────────────
+
 const removeCoupon = (req, res) => {
   if (req.session.appliedCoupon) {
     delete req.session.appliedCoupon;
@@ -846,9 +815,7 @@ const removeCoupon = (req, res) => {
   res.json({ success: false, message: 'No coupon applied' });
 };
 
-// ────────────────────────────────────────────────────────────────
-// EXPORTS
-// ────────────────────────────────────────────────────────────────
+
 module.exports = {
   loadCheckout,
   placeOrder,

@@ -3,7 +3,6 @@ const User = require("../../models/userSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt");
-// const crypto = require('crypto');
 const messages = require("../../constants/messages");
 const statusCodes = require("../../constants/statusCodes");
 const Product = require("../../models/productSchema");
@@ -41,22 +40,22 @@ const loadHomepage = async (req, res) => {
     try {
         const user = req.session.user;
 
-        // Reusable base query with proper population
+        
         const baseQuery = Product.find({ isBlocked: false })
-            .populate(offerPopulate)   // ← Clean & consistent
+            .populate(offerPopulate)   
             .lean();
 
-        // Fetch featured products
+        
         let featuredProducts = await baseQuery.clone()
             .sort({ createdAt: -1 })
             .limit(10);
 
-        // Fetch popular products
+        
         let popularProducts = await baseQuery.clone()
             .sort({ salesCount: -1 })
             .limit(10);
 
-        // Fetch new arrivals
+        
         let newArrivals = await baseQuery.clone()
             .sort({ createdAt: -1 })
             .limit(10);
@@ -67,7 +66,7 @@ const injectOffer = (p) => {
     return { 
         ...p, 
         ...offerDetails,
-        // Ensure we have clean fields for EJS
+        
         displayPrice: offerDetails.effectivePrice,
         originalPrice: offerDetails.offerPercent > 0 ? 
                       Math.round((typeof p.salesPrice === 'number' ? p.salesPrice : (p.price || p.regularPrice || 0)) * 100) / 100 : 
@@ -75,7 +74,6 @@ const injectOffer = (p) => {
     };
 };
 
-// Helper function to add ratings to products
 const addRatingsToProducts = async (products) => {
     if (!products || products.length === 0) return products;
     
@@ -91,11 +89,10 @@ const addRatingsToProducts = async (products) => {
         }
     ]);
 
-    // Create a map for quick lookup
     const ratingsMap = new Map();
     ratingsData.forEach(rating => {
         ratingsMap.set(rating._id.toString(), {
-            averageRating: Math.round(rating.averageRating * 10) / 10, // Round to 1 decimal
+            averageRating: Math.round(rating.averageRating * 10) / 10, 
             numReviews: rating.numReviews
         });
     });
@@ -154,7 +151,7 @@ newArrivals = newArrivals.map(injectOffer);
                 secure: true,
                 auth: {
                     user: process.env.NODEMAILER_EMAIL,
-                    pass: process.env.NODEMAILER_PASSWORD // Make sure no spaces in password
+                    pass: process.env.NODEMAILER_PASSWORD // no spaces in password
                 }
             });
     
@@ -260,7 +257,7 @@ const verifyOtp = async (req,res) => {
             const user = req.session.userData;
             const passwordHash = await securepassword(user.password);
 
-            // Create new user after OTP verification
+           
             const saveUserData = new User({
                 name: user.name,
                 email: user.email,
@@ -271,7 +268,7 @@ const verifyOtp = async (req,res) => {
 
             await saveUserData.save();
 
-            //referal reward logic
+            //referal reward 
             if(saveUserData.referredBy && !saveUserData.referralRewardClaimed) {
                 const referrer = await User.findById(saveUserData.referredBy);
 
@@ -297,11 +294,11 @@ const verifyOtp = async (req,res) => {
                     null
                 );
 
-                // Mark as claimed (prevents double credit if bug)
+                
           saveUserData.referralRewardClaimed = true;
           await saveUserData.save();
 
-          // Optional: update referrer stats
+          
           referrer.referralCount = (referrer.referralCount || 0) + 1;
           referrer.referralEarnings = (referrer.referralEarnings || 0) + referrerReward;
           await referrer.save();
@@ -309,7 +306,7 @@ const verifyOtp = async (req,res) => {
             }
         }
 
-            // Clear sensitive session data
+            
             req.session.userOtp = null;
             req.session.userData = null;
 
@@ -394,7 +391,7 @@ const login = async (req, res) => {
             });
         }
 
-        // Check if user is blocked
+       
         if (user.isBlocked) {
             return res.status(statusCodes.FORBIDDEN).json({
                 success: false,
@@ -402,7 +399,7 @@ const login = async (req, res) => {
             });
         }
 
-        // Check if user has a password (if not, it's a Google account)
+        
         if (!user.password) {
             return res.status(statusCodes.UNAUTHORIZED).json({
                 success: false,
@@ -443,7 +440,7 @@ const logout = async (req, res) => {
   try {
    if (!req.session) return res.redirect('/login');
 
-  req.session.user = null;    // remove only user
+  req.session.user = null;    
   res.redirect('/login');
   } catch (error) {
     console.error('Logout Error:', error);

@@ -16,7 +16,6 @@ exports.getProducts = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-        // Remove isBlocked: false from the query to show all products
         const query = {
             ...(searchQuery && {
                 $or: [
@@ -30,7 +29,6 @@ exports.getProducts = async (req, res) => {
         const [products, totalProducts] = await Promise.all([
             Product.find(query)
                 .populate('category', 'name')
-                // include offer reference regardless of dates so admin can manage it
                 .populate('offer')
                 .sort({ createdAt: -1,_id:-1 })
                 .skip(skip)
@@ -39,7 +37,6 @@ exports.getProducts = async (req, res) => {
             Product.countDocuments(query)
         ]);
 
-        // Add status indicator to products
         const processedProducts = products.map(product => ({
             ...product,
             category: product.category || { name: 'Uncategorized' },
@@ -70,7 +67,6 @@ exports.getProducts = async (req, res) => {
 
 
 
-// Get product by ID
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -118,7 +114,6 @@ exports.addProduct = async (req, res) => {
             
         } = req.body;
 
-        // Validate required fields
         if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
@@ -129,7 +124,6 @@ exports.addProduct = async (req, res) => {
            
         
      
-        // Check images
         if (!req.files || req.files.length < 3) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
@@ -137,7 +131,6 @@ exports.addProduct = async (req, res) => {
             });
         }
 
-        // Get Cloudinary URLs from uploaded files
         const productImages = req.files.map(file => file.path);
 
         const product = new Product({
@@ -187,7 +180,6 @@ exports.editProduct = async (req, res) => {
                 message: messages.PRODUCT_NOT_FOUND
             });
         }
-            // Normalize removedImages from the form (may be string, array or JSON string)
             let removed = [];
             if (req.body.removedImages) {
                 if (Array.isArray(req.body.removedImages)) removed = req.body.removedImages;
@@ -200,7 +192,6 @@ exports.editProduct = async (req, res) => {
                 }
             }
 
-            // Build update data from allowed fields
             const updateData = {};
             const allowed = ['productName','description','brand','category','regularPrice','salesPrice','quantity','color','status'];
             for (const key of allowed) {
@@ -213,11 +204,9 @@ exports.editProduct = async (req, res) => {
 
             const existingImages = Array.isArray(oldProduct.productImage) ? oldProduct.productImage.slice() : [];
 
-            // Compute remaining images after removal
             const removedSet = new Set(removed);
             const remainingImages = existingImages.filter(img => !removedSet.has(img));
 
-            // Delete removed images from Cloudinary (only those explicitly removed)
             for (const img of existingImages) {
                 if (removedSet.has(img)) {
                     try {
@@ -229,11 +218,9 @@ exports.editProduct = async (req, res) => {
                 }
             }
         
-            // Handle newly uploaded images (these are appended to remaining images)
             const newImagePaths = req.files?.length > 0 ? req.files.map(f => f.path) : [];
             const finalImages = [...remainingImages, ...newImagePaths];
 
-            // If there are any productImage changes, validate minimum count
             if (finalImages.length < 3) {
                 return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_MIN_IMAGES });
             }
@@ -270,13 +257,11 @@ exports.deleteProduct = async (req, res) => {
             });
         }
 
-        // Delete images from Cloudinary
         for (let imageUrl of product.productImage) {
             const publicId = imageUrl.split('/').pop().split('.')[0];
             await cloudinary.uploader.destroy(publicId);
         }
     
-        // remove any linked offer
         await Offer.deleteOne({ product: id });
         await Product.findByIdAndDelete(id);
     
@@ -306,12 +291,10 @@ exports.blockProduct = async (req, res) => {
         const product = await Product.findByIdAndUpdate(id, { isBlocked: true, status: 'Blocked' }, { new: true });
         if (!product) return res.status(statusCodes.NOT_FOUND).json({ success: false, message: messages.PRODUCT_NOT_FOUND });
 
-    // respond with JSON (API)
     if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
             return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_BLOCK_SUCCESS, product });
     }
 
-    // fallback: redirect back when called from a normal form
     return res.redirect(req.get('referer') || '/admin/products');
   } catch (err) {
     console.error('Error blocking product:', err);
@@ -363,7 +346,6 @@ exports.unblockProduct = async (req, res) => {
     }
 };
 
-// Set or update an offer for a specific product (percentage and date range)
 exports.setProductOffer = async (req, res) => {
     try {
         const { id } = req.params;
@@ -390,7 +372,6 @@ exports.setProductOffer = async (req, res) => {
             return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: 'Invalid start or end date' });
         }
 
-        // upsert offer document
         let offerDoc = await Offer.findOne({ product: id
             ,offerType: 'product'
          });
@@ -411,7 +392,6 @@ exports.setProductOffer = async (req, res) => {
             });
             await offerDoc.save();
         }
-        // ensure product points at updated/created offer
         await Product.findByIdAndUpdate(id, { offer: offerDoc._id });
 
         return res.status(statusCodes.OK).json({ success: true, message: messages.PRODUCT_UPDATE_SUCCESS, offer: offerDoc });
@@ -421,7 +401,6 @@ exports.setProductOffer = async (req, res) => {
     }
 };
 
-// Remove the current offer for a specific product
 exports.removeProductOffer = async (req, res) => {
     try {
         const { id } = req.params;
