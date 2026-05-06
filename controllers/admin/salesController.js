@@ -166,24 +166,33 @@ exports.downloadPdf = async (req, res) => {
     doc.text(`Total Discount (incl. coupons): ₹${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
     doc.moveDown(2);
 
+    const columnPositions = {
+      orderId: { x: 50, width: 85 },
+      date: { x: 140, width: 65 },
+      customer: { x: 210, width: 105 },
+      amount: { x: 325, width: 65 },
+      payment: { x: 405, width: 75 },
+      discount: { x: 495, width: 55 }
+    };
+
     let tableTop = doc.y;
-    doc.fontSize(10).text('Order ID', 50, tableTop);
-    doc.text('Date', 140, tableTop);
-    doc.text('Customer', 230, tableTop);
-    doc.text('Amount', 330, tableTop);
-    doc.text('Payment', 410, tableTop);
-    doc.text('Discount', 500, tableTop);
+    doc.fontSize(10).text('Order ID', columnPositions.orderId.x, tableTop, { width: columnPositions.orderId.width, ellipsis: true });
+    doc.text('Date', columnPositions.date.x, tableTop, { width: columnPositions.date.width, ellipsis: true });
+    doc.text('Customer', columnPositions.customer.x, tableTop, { width: columnPositions.customer.width, ellipsis: true });
+    doc.text('Amount', columnPositions.amount.x, tableTop, { width: columnPositions.amount.width, ellipsis: true });
+    doc.text('Payment', columnPositions.payment.x, tableTop, { width: columnPositions.payment.width, ellipsis: true });
+    doc.text('Discount', columnPositions.discount.x, tableTop, { width: columnPositions.discount.width, ellipsis: true });
     doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
 
     // Function to draw table header
     const drawTableHeader = () => {
       tableTop = doc.y;
-      doc.fontSize(10).text('Order ID', 50, tableTop);
-      doc.text('Date', 140, tableTop);
-      doc.text('Customer', 230, tableTop);
-      doc.text('Amount', 330, tableTop);
-      doc.text('Payment', 410, tableTop);
-      doc.text('Discount', 500, tableTop);
+      doc.fontSize(10).text('Order ID', columnPositions.orderId.x, tableTop, { width: columnPositions.orderId.width, ellipsis: true });
+      doc.text('Date', columnPositions.date.x, tableTop, { width: columnPositions.date.width, ellipsis: true });
+      doc.text('Customer', columnPositions.customer.x, tableTop, { width: columnPositions.customer.width, ellipsis: true });
+      doc.text('Amount', columnPositions.amount.x, tableTop, { width: columnPositions.amount.width, ellipsis: true });
+      doc.text('Payment', columnPositions.payment.x, tableTop, { width: columnPositions.payment.width, ellipsis: true });
+      doc.text('Discount', columnPositions.discount.x, tableTop, { width: columnPositions.discount.width, ellipsis: true });
       doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
       return tableTop + 25;
     };
@@ -200,12 +209,12 @@ exports.downloadPdf = async (req, res) => {
         y = drawTableHeader();
       }
 
-      doc.text(order.orderId, 50, y);
-      doc.text(moment(order.createdOn).format('DD-MM-YYYY'), 140, y);
-      doc.text(order.user?.name || 'Guest', 230, y);
-      doc.text(`₹${(order.finalAmount || 0).toLocaleString('en-IN')}`, 330, y);
-      doc.text(order.paymentMethod || 'N/A', 410, y);
-      doc.text(`₹${((order.discount || 0) + (order.couponDiscount || 0)).toLocaleString('en-IN')}`, 500, y);
+      doc.text(order.orderId || '', columnPositions.orderId.x, y, { width: columnPositions.orderId.width, ellipsis: true });
+      doc.text(moment(order.createdOn).format('DD-MM-YYYY'), columnPositions.date.x, y, { width: columnPositions.date.width, ellipsis: true });
+      doc.text(order.user?.name || 'Guest', columnPositions.customer.x, y, { width: columnPositions.customer.width, ellipsis: true });
+      doc.text(`₹${(order.finalAmount || 0).toLocaleString('en-IN')}`, columnPositions.amount.x, y, { width: columnPositions.amount.width, ellipsis: true });
+      doc.text(order.paymentMethod || 'N/A', columnPositions.payment.x, y, { width: columnPositions.payment.width, ellipsis: true });
+      doc.text(`₹${((order.discount || 0) + (order.couponDiscount || 0)).toLocaleString('en-IN')}`, columnPositions.discount.x, y, { width: columnPositions.discount.width, ellipsis: true });
       y += 20;
     });
 

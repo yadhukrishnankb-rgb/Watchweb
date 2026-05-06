@@ -16,7 +16,7 @@ try {
 }
 
 
-const passport = require("passport"); // Changed from local path to package
+const passport = require("passport"); 
  
 
 
@@ -28,7 +28,7 @@ const Cart = require('./models/cartSchema');
 const Wishlist = require('./models/wishlistSchema');
 const { autoCancelExpiredPendingOrders } = require('./helpers/pendingOrderCleanup');
 
-// Initialize database
+
 db();
 
 // Middleware
@@ -38,11 +38,10 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-// --- SESSION (single configuration, persisted to MongoDB) ---
-app.set('trust proxy', 1); // if behind proxy (Heroku/nginx) — keep if needed
+
+app.set('trust proxy', 1); 
 
 
-// create store (MongoStore if available, otherwise MemoryStore)
 const store = MongoStore
   ? MongoStore.create({
       mongoUrl: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/project',
@@ -61,38 +60,37 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store,
-    rolling: true, // refresh cookie expiration on activity
+    rolling: true, 
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // set true in production with HTTPS
+        secure: process.env.NODE_ENV === 'production', 
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+        maxAge: 14 * 24 * 60 * 60 * 1000 
     }
 }));
 
 
 
 // Passport initialization
-require("./config/passport"); // Add passport config
+require("./config/passport"); 
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Cache control
 app.use((req, res, next) => {
-    res.set('Cache-Control', 'no-store'); // Fixed casing
+    res.set('Cache-Control', 'no-store'); 
     next();
 });
 // Use flash for one-time messages
 app.use(flash());
 
-// Populate template-local `user` so EJS views (header etc.) can access
-// the logged-in user whether using session-based auth or Passport (OAuth).
+
 app.use((req, res, next) => {
     res.locals.user = req.session && req.session.user ? req.session.user : (req.user || null);
     next();
 });
 
-// Populate cart and wishlist counts for the header badges
+
 app.use(async (req, res, next) => {
     try {
         const user = req.session && req.session.user ? req.session.user : (req.user || null);

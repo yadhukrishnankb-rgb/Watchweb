@@ -4,24 +4,15 @@ const userController = require("../controllers/user/userController")
 const passport = require("passport")
 const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController");
-
 const cartController = require("../controllers/user/cartController")
 const wishlistController = require("../controllers/user/wishlistController")
-
 const checkoutController = require("../controllers/user/checkoutController");
-
 const orderController = require("../controllers/user/orderController")
-
-const walletController = require('../controllers/user/walletController'); // adjust path if needed
-
+const walletController = require('../controllers/user/walletController'); 
 const { cancelOrder } = require('../controllers/user/orderController');
-
 const Order = require('../models/orderSchema');
-
 const { userAuth: isUser, checkBlockedStatus } = require('../middlewares/auth');
-
 const { profileUpload } = require('../middlewares/multerConfig');
-
 
 
 router.get("/pageNotFound",userController.pageNotFound)
@@ -32,17 +23,9 @@ router.post("/verify-otp",userController.verifyOtp)
 router.post("/resend-otp",userController.resendOTP)
 router.get('/shop',productController.listProducts);
 
-
-
 router.get('/login', userController.loadLogin);
 router.post('/login', userController.login);
 router.get('/logout', userController.logout);
-
-
-
-
-
-
 router.get('/forgot-password', profileController.loadForgotPassword);
 router.post('/forgot-password', profileController.sendForgotPasswordOtp);
 router.get('/forgot-password-otp', profileController.loadForgotPasswordOtp);
@@ -52,16 +35,12 @@ router.get('/reset-password', profileController.loadResetPassword);
 router.post('/reset-password', profileController.handleResetPassword);
 
 
-
 // === PROFILE & ADDRESS ROUTES - FINAL WORKING ORDER ===
 router.delete('/profile/address/:index/delete', isUser, profileController.deleteAddress);
-
 router.post('/profile/address', isUser, profileController.manageAddress);
 router.post('/profile/address/:index/edit', isUser, profileController.manageAddress);
 router.get('/profile/address', isUser, profileController.addressPage);
-
 router.get('/profile/address/:index/default', profileController.setDefaultAddress)
-
 router.get('/profile/edit', isUser, profileController.editProfilePage);
 router.post('/profile/edit', isUser, profileController.updateProfile);
 router.get('/profile/verify-email', isUser, profileController.verifyEmailPage);
@@ -75,20 +54,10 @@ router.post('/profile/upload-picture', isUser, profileUpload, profileController.
 // MOST GENERAL ROUTE - ABSOLUTELY LAST!
 router.get('/profile', isUser, profileController.profilePage);
 
-
-
-
-
-
-
 router.get('/product/:id', productController.getProductDetails);
 router.post('/product/:id/review', isUser, productController.addReview);
 // Add this route with your other routes
 router.get('/search', productController.searchProducts);
-
-
-
-
 
 // Cart Routes (Protected)
 router.get('/cart', isUser, checkBlockedStatus, cartController.viewCart);
@@ -109,8 +78,6 @@ router.post('/wishlist/remove', isUser, (req, res, next) => {
     try { return wishlistController.removeFromWishlist(req, res, next); }
     catch (e) { next(e); }
 });
-
-
 
 router.get('/checkout', isUser, checkBlockedStatus, checkoutController.loadCheckout);
 router.post('/checkout/order-success', isUser, checkBlockedStatus, checkoutController.placeOrder);

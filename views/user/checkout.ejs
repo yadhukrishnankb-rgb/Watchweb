@@ -158,6 +158,16 @@
         cursor: not-allowed;
     }
 
+    .form-error {
+        color: #b91c1c;
+        background: rgba(248, 113, 113, 0.08);
+        border: 1px solid rgba(185, 28, 28, 0.2);
+        padding: 0.85rem 1rem;
+        border-radius: 0.75rem;
+        margin-top: 0.75rem;
+        font-size: 0.95rem;
+    }
+
 </style>
 
 <div class="container">
@@ -352,7 +362,7 @@
                         <h3 style="margin:0;">Add Delivery Address</h3>
                         <button id="closeAddAddressModal" type="button" style="background:transparent;border:none;font-size:1.2rem;">×</button>
                     </div>
-                    <form id="addAddressForm">
+                    <form id="addAddressForm" novalidate>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
                             <input name="fullName" placeholder="Full name" required />
                             <input name="phone" placeholder="Phone" required />
@@ -363,6 +373,7 @@
                             <input name="zip" placeholder="ZIP / PIN" required />
                             <input name="country" placeholder="Country" value="India" required />
                         </div>
+                        <div id="addAddressError" class="form-error" style="display:none;"></div>
                         <div style="display:flex; gap:0.75rem; align-items:center; margin-top:0.75rem;">
                             <label style="display:flex; gap:0.4rem; align-items:center;"><input type="checkbox" name="isDefault" /> Set as default</label>
                             <select name="type" style="margin-left:auto;">
@@ -455,7 +466,8 @@
                 <!-- Payment Method Selector + Place Order Button -->
                 <form id="checkoutForm"
                       action="/checkout/order-success"
-                      method="POST">
+                      method="POST"
+                      novalidate>
                     <input type="hidden" name="addressId" id="selectedAddressId" value="">
                     <% if (isDirect) { %>
                         <input type="hidden" name="productId" value="<%= directProductId %>">
@@ -483,6 +495,7 @@
                         </label>
                     </div>
 
+                    <div id="checkoutError" class="form-error" style="display:none;"></div>
                     <button type="submit" id="placeOrderBtn" class="place-order-btn">
                         <%= isDirect ? 'Buy Now' : 'Place Order' %> – ₹<%= total.toLocaleString() %>
                     </button>
@@ -514,6 +527,27 @@
 <script>
 // Payment method selection visual feedback + COD limit check
 <% const orderSubtotal = (typeof subtotal === 'number' ? subtotal : 0); %>
+const addAddressError = document.getElementById('addAddressError');
+const checkoutError = document.getElementById('checkoutError');
+
+function setFormError(container, message) {
+    if (!container) return;
+    container.textContent = message || '';
+    container.style.display = message ? 'block' : 'none';
+}
+
+function showAddressError(message) {
+    setFormError(addAddressError, message);
+}
+
+function showCheckoutError(message) {
+    setFormError(checkoutError, message);
+}
+
+function clearCheckoutError() {
+    showCheckoutError('');
+}
+
 document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', function() {
         document.querySelectorAll('.payment__option').forEach(opt => {
@@ -556,6 +590,7 @@ if (openAddressBtn) {
     openAddressBtn.addEventListener('click', () => {
         addAddressModal.style.display = 'flex';
         addAddressForm.reset();
+        showAddressError('');
     });
 }
 
@@ -563,6 +598,7 @@ if (openAddressEmptyBtn) {
     openAddressEmptyBtn.addEventListener('click', () => {
         addAddressModal.style.display = 'flex';
         addAddressForm.reset();
+        showAddressError('');
     });
 }
 
@@ -570,6 +606,7 @@ if (openAddressEmptyBtn) {
 if (closeAddressBtn) {
     closeAddressBtn.addEventListener('click', () => {
         addAddressModal.style.display = 'none';
+        showAddressError('');
     });
 }
 
@@ -577,6 +614,7 @@ if (cancelAddressBtn) {
     cancelAddressBtn.addEventListener('click', () => {
         addAddressModal.style.display = 'none';
         addAddressForm.reset();
+        showAddressError('');
     });
 }
 
@@ -608,9 +646,10 @@ if (addAddressForm) {
         
         // Validate required fields
         if (!data.fullName || !data.phone || !data.line1 || !data.city || !data.state || !data.zip) {
-            alert('Please fill in all required fields');
+            showAddressError('Please fill in all required fields');
             return;
         }
+        showAddressError('');
         
         const btn = addAddressForm.querySelector('button[type="submit"]');
         btn.disabled = true;
@@ -767,10 +806,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await resp.json();
                 if (data.success) location.reload();
-                else alert(data.message);
+                else document.getElementById('couponMsg').textContent = data.message;
             } catch (err) {
                 console.error('remove coupon error', err);
-                alert('Could not remove coupon');
+                const couponMsg = document.getElementById('couponMsg');
+                if (couponMsg) couponMsg.textContent = 'Could not remove coupon';
             }
         });
     }
@@ -781,14 +821,15 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
 
             const selectedAddr = document.getElementById('selectedAddressId').value;
+            clearCheckoutError();
             if (!selectedAddr) {
-                alert("Please select a delivery address");
+                showCheckoutError("Please select a delivery address");
                 return;
             }
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             if (!paymentMethod) {
-                alert("Please select a payment method");
+                showCheckoutError("Please select a payment method");
                 return;
             }
 
@@ -840,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.redirectUrl) {
                         window.location.href = data.redirectUrl;
                     } else {
-                        alert(data.message || 'Wallet payment failed');
+                        showCheckoutError(data.message || 'Wallet payment failed');
                     }
                     return;
                 }
@@ -899,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             } catch (err) {
                 console.error('Checkout error:', err);
-                alert(err.message || "Something went wrong. Please try again.");
+                showCheckoutError(err.message || "Something went wrong. Please try again.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
