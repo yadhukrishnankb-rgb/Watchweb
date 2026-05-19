@@ -1,4 +1,5 @@
 const Brand = require('../../models/brandSchema');
+const Product = require('../../models/productSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 
@@ -65,7 +66,28 @@ exports.editBrand = async (req,res) =>{
         const { id } = req.params;
         let { name } = req.body;
 
+        if (typeof name !== 'string') {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Brand name is required"
+            });
+        }
+
         name = name.trim();
+        if (!name) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Brand name is required"
+            });
+        }
+
+        const brand = await Brand.findById(id);
+        if (!brand) {
+            return res.status(statusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Brand not found"
+            });
+        }
 
         const existingBrand = await Brand.findOne({
             name: { $regex: `^${name}$`, $options: 'i'},
@@ -79,7 +101,12 @@ exports.editBrand = async (req,res) =>{
             })
         }
 
+        const oldName = brand.name;
         await Brand.findByIdAndUpdate(id, { name });
+
+        if (oldName !== name) {
+            await Product.updateMany({ brand: oldName }, { brand: name });
+        }
         
         res.json({
             success: true,
@@ -149,3 +176,21 @@ exports.deleteBrand = async (req, res) => {
         });
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
