@@ -7,7 +7,7 @@ const statusCodes = require('../../constants/statusCodes');
 
 const MAX_QUANTITY_PER_ITEM = 10;
 
-const { getEffectivePrice } = require('../../helpers/priceUtils');
+const { getEffectivePrice, getFinalPrice, calculateCartSubtotal } = require('../../helpers/priceUtils');
 
 
 // View Cart
@@ -30,7 +30,7 @@ exports.viewCart = async (req, res) => {
         let recomputeNeeded = false;
         cart.items.forEach(item => {
             if (item.productId && !item.productId.isBlocked) {
-                const newPrice = getEffectivePrice(item.productId, item.productId.category);
+                const newPrice = getFinalPrice(item.productId, item.productId.category);
                 const newTotal = newPrice * item.quantity;
                 if (newPrice !== item.price || newTotal !== item.totalPrice) {
                     item.price = newPrice;
@@ -43,12 +43,9 @@ exports.viewCart = async (req, res) => {
             await Cart.findByIdAndUpdate(cart._id, { items: cart.items });
         }
 
-        const total = cart.items.reduce((sum, item) => {
-            if (item.productId && !item.productId.isBlocked && item.productId.quantity >= item.quantity) {
-                return sum + item.totalPrice;
-            }
-            return sum;
-        }, 0);
+        const total = calculateCartSubtotal(
+            cart.items.filter(item => item.productId && !item.productId.isBlocked && item.productId.quantity >= item.quantity)
+        );
 
      
 
@@ -127,7 +124,7 @@ exports.addToCart = async (req, res) => {
         if (existingItem) {
             return res.status(statusCodes.OK).json({ success: false, alreadyInCart: true, message: messages.PRODUCT_ALREADY_IN_CART });
         } else {
-            const effectivePrice = getEffectivePrice(product, product.category);
+            const effectivePrice = getFinalPrice(product, product.category);
             const qtyInt = parseInt(quantity, 10);
             cart.items.push({
                 productId,
@@ -208,7 +205,7 @@ exports.updateQuantity = async (req, res) => {
         }
 
         cartItem.quantity = newQuantity;
-        const effectivePrice = getEffectivePrice(product, product.category);
+        const effectivePrice = getFinalPrice(product, product.category);
         cartItem.price = effectivePrice;
         cartItem.totalPrice = effectivePrice * newQuantity;
         await cart.save();

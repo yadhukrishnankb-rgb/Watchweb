@@ -339,11 +339,6 @@
                                     <span>Price × Qty</span>
                                     <span>
                                         ₹<%= item.price.toLocaleString() %> × <%= item.quantity %>
-                                        <% if (item.productId && item.productId.salesPrice && item.price < item.productId.salesPrice) { %>
-                                            <br><small style="color:#888;text-decoration:line-through;">
-                                                ₹<%= item.productId.salesPrice.toLocaleString() %> × <%= item.quantity %>
-                                            </small>
-                                        <% } %>
                                     </span>
                                 </div>
                                 <div class="price-line">
@@ -731,6 +726,12 @@ document.addEventListener('DOMContentLoaded', function() {
         first.checked = true;
         document.getElementById('selectedAddressId').value = first.value;
     }
+
+    document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('selectedAddressId').value = radio.value;
+        });
+    });
 
     // COUPON HANDLING CODE - MOVED INSIDE DOMContentLoaded
     const couponForm = document.getElementById('couponForm');

@@ -44,6 +44,25 @@
         </div>
       </div>
 
+      <div class="mb-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-lg border border-gray-200 bg-white p-4">
+          <h3 class="font-bold mb-2">Payment Method</h3>
+          <p class="text-sm text-gray-700"><%= (order.paymentMethod || 'N/A').toString().toUpperCase() %></p>
+        </div>
+
+        <div class="rounded-lg border border-gray-200 bg-white p-4">
+          <h3 class="font-bold mb-2">Coupon</h3>
+          <% if (order.couponApplied && order.couponCode) { %>
+            <p class="text-sm text-gray-700"><strong>Code:</strong> <%= order.couponCode %></p>
+            <% if (order.couponDiscount) { %>
+              <p class="text-sm text-green-700 mt-1"><strong>Discount:</strong> ₹<%= Number(order.couponDiscount).toLocaleString() %></p>
+            <% } %>
+          <% } else { %>
+            <p class="text-sm text-gray-500">No coupon applied</p>
+          <% } %>
+        </div>
+      </div>
+
       <div class="mb-6">
  <label class="block font-medium mb-2">Update Status</label>
 <form id="statusForm" class="flex gap-3 items-end">

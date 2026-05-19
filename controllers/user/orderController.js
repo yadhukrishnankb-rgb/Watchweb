@@ -461,10 +461,22 @@ const cancelOrderItem  = async (req, res) => {
     }
   
     const itemSubtotal = Number(item.totalPrice || (item.price * item.quantity) || 0);
+    
+    // Calculate proportional tax, coupon, and offer discounts for this item
     const taxShare = (order.subtotal > 0) 
       ? (itemSubtotal / order.subtotal) * Number(order.tax || 0) 
       : 0;
-    const refundAmount = Math.round((itemSubtotal + taxShare) * 100) / 100; 
+    
+    const couponDiscountShare = (order.subtotal > 0) 
+      ? (itemSubtotal / order.subtotal) * Number(order.couponDiscount || 0) 
+      : 0;
+    
+    const offerDiscountShare = (order.subtotal > 0) 
+      ? (itemSubtotal / order.subtotal) * Number(order.offerDiscount || 0) 
+      : 0;
+    
+    // Refund = Item subtotal + tax - coupon - offer
+    const refundAmount = Math.round((itemSubtotal + taxShare - couponDiscountShare - offerDiscountShare + Number.EPSILON) * 100) / 100;
 
     if (refundAmount > 0 && order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
       await addToWallet(userId, refundAmount, 'credit', 'Item Cancel Refund', order._id);

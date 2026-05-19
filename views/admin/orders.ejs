@@ -46,6 +46,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
           </tr>
@@ -61,6 +62,7 @@
                 <%= (order.user?.name) ? order.user.name : (order.address?.fullName || order.address?.name || 'N/A') %>
               </td>
               <td class="px-6 py-4 text-sm font-bold">₹<%= order.finalAmount.toLocaleString() %></td>
+              <td class="px-6 py-4 text-sm text-gray-700"><%= (order.paymentMethod || 'N/A').toString().toUpperCase() %></td>
               <td class="px-6 py-4">
                 <span class="status-badge <%= order.status.toLowerCase().replace(/\s/g,'-') %>">
                   <%= order.status %>

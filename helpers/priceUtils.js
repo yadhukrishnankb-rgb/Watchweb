@@ -1,12 +1,18 @@
 
 // helpers/priceUtils.js
 
+const getBasePrice = (product) => {
+  if (!product) return 0;
+  if (Number.isFinite(product.salesPrice)) return Number(product.salesPrice);
+  if (Number.isFinite(product.regularPrice)) return Number(product.regularPrice);
+  if (Number.isFinite(product.price)) return Number(product.price);
+  return 0;
+};
+
 const getEffectivePrice = (product, categoryData = null) => {
   if (!product) return 0;
 
-  const base = typeof product.salesPrice === 'number'
-    ? product.salesPrice
-    : (product.price || product.regularPrice || 0);
+  const base = getBasePrice(product);
 
   const nowDate = new Date();
 
@@ -85,9 +91,7 @@ const getOfferDetails = (product) => {
   let productDiscount = 0;
   let categoryDiscount = 0;
 
-  const basePrice = typeof product.salesPrice === 'number'
-    ? product.salesPrice
-    : (product.price || product.regularPrice || 0);
+  const basePrice = getBasePrice(product);
 
   // Helper function to safely get discount percentage from any offer
   const getDiscountFromOffer = (offer) => {
@@ -149,4 +153,19 @@ const getOfferDetails = (product) => {
   return result;
 };
 
-module.exports = { getEffectivePrice, getOfferDetails };
+const getFinalPrice = (product, categoryData = null) => getEffectivePrice(product, categoryData);
+
+const calculateCartSubtotal = (items) => {
+  if (!Array.isArray(items)) return 0;
+
+  return items.reduce((sum, item) => {
+    if (!item) return sum;
+    const product = item.productId || item.product;
+    const quantity = Number(item.quantity || 0);
+    if (!product || quantity <= 0) return sum;
+    const categoryData = product.category || item.category || null;
+    return sum + getEffectivePrice(product, categoryData) * quantity;
+  }, 0);
+};
+
+module.exports = { getBasePrice, getEffectivePrice, getFinalPrice, calculateCartSubtotal, getOfferDetails };

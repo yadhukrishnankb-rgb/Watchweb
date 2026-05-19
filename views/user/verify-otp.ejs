@@ -3,131 +3,447 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OTP Verification</title>
+<title>OTP Verification - EverTime</title>
 
-<!-- ...existing code... -->
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-</head>
-
 <style>
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* ═══════════════════════════════════════════════════════════
+   BEAUTIFUL OTP VERIFICATION PAGE - GREEN THEME
+   ═══════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --green:      #4a5e4a;
+    --green-dk:   #3a4a3a;
+    --green-lt:   #5a7a5a;
+    --bg:         #f0f4f0;
+    --text:       #2a3a2a;
+    --muted:      #7a9080;
+    --red:        #e8435a;
+    --success:    #2ecc71;
 }
 
 body {
-background: linear-gradient(135deg, #6e8efb, #a777e3);
-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #2a3a2a 0%, #3a4a3a 25%, #4a5e4a 50%, #5a7a5a 75%, #6a8a6a 100%);
+    background-size: 400% 400%;
+    animation: gradientFlow 15s ease infinite;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
+@keyframes gradientFlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Decorative floating circles */
+body::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    top: -200px;
+    right: -100px;
+    animation: float 20s ease-in-out infinite;
+    pointer-events: none;
+}
+
+body::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.03);
+    bottom: -100px;
+    left: -80px;
+    animation: float 15s ease-in-out infinite reverse;
+    pointer-events: none;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-20px) rotate(5deg); }
+    50% { transform: translateY(-30px) rotate(-5deg); }
+    75% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* Container with glass effect */
 .container {
-background-color: white;
-padding: 30px;
-border-radius: 10px;
-box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-width: 90%;
-max-width: 400px;
-text-align: center;
+    background: white;
+    padding: 3rem 2.5rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 60px rgba(74,94,74, 0.3);
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    animation: slideIn 0.8s ease-out;
+    border: 2px solid rgba(255,255,255,0.1);
 }
 
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Icon badge */
+.icon-badge {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 8px 24px rgba(74,94,74, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.icon-badge svg {
+    width: 40px;
+    height: 40px;
+    color: white;
+}
+
+/* Typography */
 h1 {
-font-size: 24px;
-color: #333;
-margin-bottom: 10px;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
 }
 
 p {
-color: #666;
-margin-bottom: 25px;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.6;
 }
 
+/* Timer Container */
 .timer-container {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #f8faf8, #f0f4f0);
+    border-radius: 1rem;
+    border: 2px solid var(--green);
+    border-style: dashed;
+}
+
+.timer-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 0.9rem;
 }
 
 .timer {
-font-size: 18px;
-color: #f44336;
-font-weight: bold;
+    font-size: 1.5rem;
+    color: var(--red);
+    font-weight: 900;
+    letter-spacing: 1px;
+    font-family: 'Courier New', monospace;
 }
 
+/* Resend Button */
 .resend-btn {
-background-color: #8bc34a;
-color: white;
-border: none;
-padding: 8px 15px;
-border-radius: 5px;
-font-size: 14px;
-font-weight: bold;
-cursor: pointer;
-transition: background-color 0.3s;
+    background: linear-gradient(135deg, var(--success), #0ea573);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16,185,129, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Nunito', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+.resend-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.resend-btn:hover::before {
+    left: 100%;
 }
 
 .resend-btn:hover {
-background-color: #7cb342;
+    background: linear-gradient(135deg, #0ea573, #0d8f65);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16,185,129, 0.4);
 }
 
+.resend-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* OTP Input */
 .otp-input {
-width: 100%;
-height: 50px;
-font-size: 24px;
-letter-spacing: 15px;
-padding: 10px;
-text-align: center;
-border: 2px solid #ddd;
-border-radius: 5px;
-margin-bottom: 25px;
-outline: none;
-transition: border-color 0.3s;
+    width: 100%;
+    height: 65px;
+    font-size: 2rem;
+    letter-spacing: 20px;
+    padding: 0 1.5rem;
+    text-align: center;
+    border: 3px solid #c8d8c8;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    outline: none;
+    transition: all 0.3s ease;
+    font-weight: 800;
+    color: var(--text);
+    background: white;
+    font-family: 'Courier New', monospace;
+}
+
+.otp-input::placeholder {
+    color: #c8d8c8;
+    font-weight: 600;
 }
 
 .otp-input:focus {
-border-color: #6e8efb;
+    border-color: var(--green);
+    box-shadow: 0 0 0 5px rgba(74,94,74, 0.1),
+                0 8px 24px rgba(74,94,74, 0.15);
+    transform: translateY(-2px);
 }
 
+/* Verify Button */
 .verify-btn {
-background-color: #6e8efb;
-color: white;
-border: none;
-padding: 12px 0;
-width: 100%;
-border-radius: 5px;
-font-size: 16px;
-font-weight: bold;
-cursor: pointer;
-transition: background-color 0.3s;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    color: white;
+    border: none;
+    padding: 1.125rem 0;
+    width: 100%;
+    border-radius: 1rem;
+    font-size: 1.125rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(74,94,74, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Nunito', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+.verify-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.6s;
+}
+
+.verify-btn:hover::before {
+    left: 100%;
 }
 
 .verify-btn:hover {
-background-color: #5a7df9;
+    background: linear-gradient(135deg, var(--green-dk), #2a3a2a);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 36px rgba(74,94,74, 0.4);
+}
+
+.verify-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(74,94,74, 0.3);
+}
+
+/* Helper text */
+.helper-text {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.helper-text strong {
+    color: var(--green);
+    font-weight: 800;
+}
+
+/* Loading spinner */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .container {
+        padding: 2.5rem 2rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    .icon-badge {
+        width: 70px;
+        height: 70px;
+    }
+
+    .icon-badge svg {
+        width: 35px;
+        height: 35px;
+    }
+
+    .otp-input {
+        height: 60px;
+        font-size: 1.75rem;
+        letter-spacing: 15px;
+    }
+
+    .timer-container {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .resend-btn {
+        width: 100%;
+    }
+
+    .verify-btn {
+        font-size: 1rem;
+    }
+}
+
+/* SweetAlert2 customization */
+.swal2-popup {
+    border-radius: 1.25rem !important;
+    font-family: 'Nunito', sans-serif !important;
+}
+
+.swal2-title {
+    color: var(--green) !important;
+    font-weight: 800 !important;
+}
+
+.swal2-confirm {
+    background: linear-gradient(135deg, var(--green), var(--green-dk)) !important;
+    border-radius: 0.75rem !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 2rem !important;
 }
 </style>
 
+</head>
+
 <body>
 <div class="container">
-<h1>Verification Code</h1>
-<p>Please enter the 6-digit code sent to your phone</p>
+    <!-- Icon Badge -->
+    <div class="icon-badge">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+    </div>
 
-<div class="timer-container">
-  <div class="timer" id="timer">01:00</div>
-  <button type="button" class="resend-btn" id="resendBtn">Resend OTP</button>
+    <h1>Verification Code</h1>
+    <p>Please enter the 6-digit code sent to your email</p>
+
+    <div class="timer-container">
+        <div class="timer-label">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Time Remaining
+        </div>
+        <div class="timer" id="timer">01:00</div>
+    </div>
+
+    <form id="otp" action="/verify-otp" method="post" onsubmit="return validateOTPForm()">
+        <input 
+            type="text" 
+            name="otp" 
+            class="otp-input" 
+            maxlength="6" 
+            placeholder="● ● ● ● ● ●" 
+            id="otpInput" 
+            required
+            autocomplete="off"
+        >
+        <button type="submit" class="verify-btn">Verify Code</button>
+    </form>
+
+    <button type="button" class="resend-btn" id="resendBtn" style="width: 100%; margin-top: 1.5rem;">
+        Resend OTP
+    </button>
+
+    <div class="helper-text">
+        Didn't receive the code? Check your spam folder or click <strong>Resend OTP</strong>
+    </div>
 </div>
 
-<form id="otp" action="/verify-otp" method="post" onsubmit="return validateOTPForm()">
-<input type="text" name="otp" class="otp-input" maxlength="6" placeholder="------" id="otpInput" required>
-<button type="submit" class="verify-btn">Verify</button>
-</form>
-</div>
 <script>
   // DOM Elements
   const timerDisplay = document.getElementById('timer');
@@ -167,6 +483,8 @@ background-color: #5a7df9;
       try {
           resendButton.disabled = true;
           resendButton.style.opacity = "0.5";
+          const originalText = resendButton.innerHTML;
+          resendButton.innerHTML = '<span class="spinner"></span>Sending...';
 
           const response = await fetch('/resend-otp', {
               method: 'POST',
@@ -180,11 +498,14 @@ background-color: #5a7df9;
           if (data.success) {
               startTimer();
               otpInput.value = '';
+              resendButton.innerHTML = originalText;
               
               Swal.fire({
                   icon: 'success',
-                  title: 'OTP Resent',
-                  text: 'Please check your email'
+                  title: 'OTP Resent!',
+                  text: 'Please check your email',
+                  confirmButtonColor: '#4a5e4a',
+                  timer: 2000
               });
           } else {
               throw new Error(data.message);
@@ -193,11 +514,13 @@ background-color: #5a7df9;
           console.error('Error:', error);
           resendButton.disabled = false;
           resendButton.style.opacity = "1";
+          resendButton.innerHTML = 'Resend OTP';
           
           Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: error.message || 'Failed to resend OTP'
+              text: error.message || 'Failed to resend OTP',
+              confirmButtonColor: '#4a5e4a'
           });
       }
   }
@@ -208,11 +531,17 @@ background-color: #5a7df9;
       if (!otpValue || otpValue.length !== 6) {
           Swal.fire({
               icon: "error",
-              title: "Error",
-              text: "Please enter a valid 6-digit OTP"
+              title: "Invalid OTP",
+              text: "Please enter a valid 6-digit OTP",
+              confirmButtonColor: '#4a5e4a'
           });
           return false;
       }
+
+      const verifyBtn = document.querySelector('.verify-btn');
+      const originalText = verifyBtn.innerHTML;
+      verifyBtn.innerHTML = '<span class="spinner"></span>Verifying...';
+      verifyBtn.disabled = true;
 
       $.ajax({
           type: "POST",
@@ -223,26 +552,34 @@ background-color: #5a7df9;
               if(response.success) {
                   Swal.fire({
                       icon: "success",
-                      title: "OTP Verified Successfully",
+                      title: "Success!",
+                      text: "OTP Verified Successfully",
                       showConfirmButton: false,
-                      timer: 1500
+                      timer: 1500,
+                      confirmButtonColor: '#4a5e4a'
                   }).then(() => {
                       window.location.href = response.redirectUrl;
                   });
               } else {
+                  verifyBtn.innerHTML = originalText;
+                  verifyBtn.disabled = false;
                   Swal.fire({
                       icon: "error",
-                      title: "Error",
-                      text: response.message
+                      title: "Verification Failed",
+                      text: response.message,
+                      confirmButtonColor: '#4a5e4a'
                   });
               }
           },
           error: function(xhr, status, error) {
               console.error("Error:", error);
+              verifyBtn.innerHTML = originalText;
+              verifyBtn.disabled = false;
               Swal.fire({
                   icon: "error",
                   title: "Invalid OTP",
-                  text: "Please try again"
+                  text: "Please try again",
+                  confirmButtonColor: '#4a5e4a'
               });
           }
       });
@@ -261,8 +598,11 @@ background-color: #5a7df9;
       otpInput.addEventListener('input', (e) => {
           e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
       });
+
+      // Auto-focus on OTP input
+      otpInput.focus();
   });
 </script>
-<!-- <%- include("../../views/partials/user/footer") %> -->
+
 </body>
 </html>

@@ -460,8 +460,8 @@
                     </div>
                 <% } else { %>
                     <% 
-                        // show item price and if it differs from current salesPrice include original
-                        const basePrice = item.productId ? (item.productId.salesPrice || 0) : item.price;
+                        // show item price and if it differs from original list price include original
+                        const basePrice = item.productId ? (item.productId.regularPrice || item.productId.salesPrice || 0) : item.price;
                     %>
                     <div class="item-price">
                         ₹<%= item.price.toLocaleString() %>
