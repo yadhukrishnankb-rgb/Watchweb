@@ -198,9 +198,16 @@ const signup = async (req,res)=>{
             return res.render('signup', {message: messages.PASSWORD_MISMATCH});
         }
 
-        const findUser = await User.findOne({email});
-        if(findUser) {
+        // Check if email already exists
+        const findUserByEmail = await User.findOne({email});
+        if(findUserByEmail) {
             return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
+        }
+
+        // Check if phone already exists
+        const findUserByPhone = await User.findOne({phone});
+        if(findUserByPhone) {
+            return res.render('signup', {message: "Phone number already registered"});
         }
 
         //Find referral if code provided
@@ -255,6 +262,29 @@ const verifyOtp = async (req,res) => {
         
         if(otp === req.session.userOtp) {
             const user = req.session.userData;
+
+            // Check if email already exists (race condition check)
+            const existingEmail = await User.findOne({ email: user.email });
+            if (existingEmail) {
+                req.session.userOtp = null;
+                req.session.userData = null;
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "Email already registered"
+                });
+            }
+
+            // Check if phone already exists (race condition check)
+            const existingPhone = await User.findOne({ phone: user.phone });
+            if (existingPhone) {
+                req.session.userOtp = null;
+                req.session.userData = null;
+                return res.status(statusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: "Phone number already registered"
+                });
+            }
+
             const passwordHash = await securepassword(user.password);
 
            
@@ -267,6 +297,10 @@ const verifyOtp = async (req,res) => {
             });
 
             await saveUserData.save();
+
+            // Clear session immediately after successful user creation
+            req.session.userOtp = null;
+            req.session.userData = null;
 
             //referal reward 
             if(saveUserData.referredBy && !saveUserData.referralRewardClaimed) {
@@ -307,8 +341,6 @@ const verifyOtp = async (req,res) => {
         }
 
             
-            req.session.userOtp = null;
-            req.session.userData = null;
 
             return res.json({
                 success: true,
@@ -322,6 +354,21 @@ const verifyOtp = async (req,res) => {
         }
     } catch(error) {
         console.error("Error verifying OTP:", error);
+
+        // Clear session on error
+        req.session.userOtp = null;
+        req.session.userData = null;
+
+        // Handle MongoDB E11000 duplicate key errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            const message = field === 'phone' ? 'Phone number already registered' : 'Email already registered';
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: message
+            });
+        }
+
         return res.status(statusCodes.INTERNAL_ERROR).json({
             success: false,
             message: messages.VERIFY_ERROR
