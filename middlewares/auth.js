@@ -21,7 +21,10 @@ const userAuth = async (req,res,next) => {
             if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
                 return res.status(401).json({ success: false, message: 'Please login to continue' });
             }
-            return res.redirect("/login");
+            if (user && user.isBlocked) {
+                return res.redirect('/login?error=blocked');
+            }
+            return res.redirect('/login');
         }
         // attach fresh user to req.user if needed
         req.user = user;
@@ -70,10 +73,13 @@ const checkBlockedStatus = async (req, res, next) => {
             const user = await User.findById(req.session.user._id);
             if (user && user.isBlocked) {
                 req.session.user = null;
-                return res.status(403).json({
-                    success: false,
-                    message: 'Your account has been blocked'
-                });
+                if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Your account has been blocked'
+                    });
+                }
+                return res.redirect('/login?error=blocked');
             }
         }
         next();

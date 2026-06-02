@@ -1,4 +1,5 @@
 
+const mongoose = require('mongoose');
 const Order = require('../../models/orderSchema');
 const Product = require('../../models/productSchema');
 const PDFDocument = require('pdfkit');
@@ -56,13 +57,17 @@ const orderDetails = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const orderId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(statusCodes.NOT_FOUND).render('page-404', { message: 'Order not found' });
+    }
   
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate('orderedItems.product', 'productName price productImage')
       .exec();
 
 
-    if (!order) return res.status(statusCodes.NOT_FOUND).redirect('/orders');
+    if (!order) return res.status(statusCodes.NOT_FOUND).render('page-404', { message: 'Order not found' });
 
     const plainOrder = order.toObject();
 

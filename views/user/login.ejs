@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - EverTime</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -171,6 +170,30 @@
         font-size: 18px;
     }
 
+    .error-message {
+        color: #e8435a;
+        font-size: 0.9rem;
+        margin-top: 6px;
+        display: none;
+        font-weight: 600;
+    }
+
+    .form-error {
+        background: #fde8ec;
+        color: #9a1928;
+        border: 1px solid rgba(232,67,90,0.3);
+        border-radius: 0.75rem;
+        padding: 14px 18px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .form-group input.is-invalid {
+        border-color: #e8435a;
+    }
+
     .form-group input[type="password"],
     .form-group input[type="text"] {
         padding-right: 48px;
@@ -327,12 +350,14 @@
             <p>Login to your EverTime account</p>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" action="/login" method="POST" novalidate>
+            <div id="loginFormError" class="form-error" style="display:<%= loginError ? 'block' : 'none' %>"><%= loginError || '' %></div>
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <div class="input-wrapper">
                     <input type="email" id="email" name="email" placeholder="Enter your email" required>
                 </div>
+                <div id="emailError" class="error-message"></div>
             </div>
 
             <div class="form-group">
@@ -343,6 +368,7 @@
                         <i class="fas fa-eye" id="toggleIcon"></i>
                     </button>
                 </div>
+                <div id="passwordError" class="error-message"></div>
             </div>
 
             <button type="submit" class="btn login-btn">Login</button>
@@ -390,45 +416,104 @@
 
     // Login Form Handler
     $(document).ready(function() {
+        const emailInput = $('#email');
+        const passwordInput = $('#password');
+        const emailError = $('#emailError');
+        const passwordError = $('#passwordError');
+        const formError = $('#loginFormError');
+        const serverLoginError = <%= JSON.stringify(loginError || '') %>;
+
+        if (serverLoginError) {
+            formError.text(serverLoginError).show();
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'blocked') {
+                formError.text('Your account has been blocked. Please contact administrator.').show();
+            }
+        }
+
+        function clearFieldErrors() {
+            emailError.text('').hide();
+            passwordError.text('').hide();
+            emailInput.removeClass('is-invalid');
+            passwordInput.removeClass('is-invalid');
+        }
+
+        function clearFormError() {
+            formError.text('').hide();
+        }
+
+        function validateEmail() {
+            const value = emailInput.val().trim();
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!value) {
+                emailError.text('Email is required').show();
+                emailInput.addClass('is-invalid');
+                return false;
+            }
+            if (!emailPattern.test(value)) {
+                emailError.text('Enter a valid email address').show();
+                emailInput.addClass('is-invalid');
+                return false;
+            }
+            return true;
+        }
+
+        function validatePassword() {
+            const value = passwordInput.val().trim();
+            if (!value) {
+                passwordError.text('Password is required').show();
+                passwordInput.addClass('is-invalid');
+                return false;
+            }
+            return true;
+        }
+
+        emailInput.on('input', function() {
+            clearFieldErrors();
+            clearFormError();
+        });
+
+        passwordInput.on('input', function() {
+            clearFieldErrors();
+            clearFormError();
+        });
+
         $('#loginForm').on('submit', function(e) {
             e.preventDefault();
-            
+            clearFieldErrors();
+            clearFormError();
+
+            const emailValid = validateEmail();
+            const passwordValid = validatePassword();
+            if (!emailValid || !passwordValid) {
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url: '/login',
                 data: {
-                    email: $('#email').val(),
-                    password: $('#password').val()
+                    email: emailInput.val().trim(),
+                    password: passwordInput.val().trim()
                 },
                 success: function(response) {
                     if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Login Successful',
-                            showConfirmButton: false,
-                            timer: 1500,
-                            confirmButtonColor: '#4a5e4a'
-                        }).then(() => {
-                            window.location.href = '/';
-                        });
+                        window.location.href = '/';
+                    } else {
+                        formError.text(response.message || 'Login failed').show();
                     }
                 },
                 error: function(xhr) {
-                    let message = 'An error occurred';
+                    let message = 'Login failed';
                     if (xhr.status === 403) {
                         message = 'Your account has been blocked. Please contact administrator.';
                     } else if (xhr.status === 401) {
                         message = 'Invalid email or password';
                     } else {
-                        message = xhr.responseJSON?.message || 'Login failed';
+                        message = xhr.responseJSON?.message || message;
                     }
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Login Failed',
-                        text: message,
-                        confirmButtonColor: '#4a5e4a'
-                    });
+                    formError.text(message).show();
                 }
             });
         });

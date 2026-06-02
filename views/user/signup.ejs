@@ -127,6 +127,10 @@
             color: var(--text);
         }
 
+        .input-group {
+            position: relative;
+        }
+
         .form-control::placeholder {
             color: #aaa;
             font-weight: 500;
@@ -141,7 +145,8 @@
         .form-control-icon {
             position: absolute;
             right: 16px;
-            top: 43px;
+            top: 50%;
+            transform: translateY(-50%);
             color: var(--muted);
             transition: color 0.3s ease;
         }
@@ -314,7 +319,7 @@
                 <h2>Create Your Account</h2>
             </div>
             
-            <form id="signform" action="/signup" method="POST">
+            <form id="signform" action="/signup" method="POST" novalidate>
                 <div class="form-group">
                     <label for="name" class="form-label">Full Name</label>
                     <div class="input-group">
@@ -428,11 +433,13 @@
             if (nameval === "") {
                 error1.style.display = "block";
                 error1.innerHTML = "Please enter a valid name";
+                nameid.classList.remove('is-valid');
                 nameid.classList.add('is-invalid');
                 return false;
             } else if (!namepattern.test(nameval)) {
                 error1.style.display = "block";
                 error1.innerHTML = "Name can only contain alphabets and spaces";
+                nameid.classList.remove('is-valid');
                 nameid.classList.add('is-invalid');
                 return false;
             } else {
@@ -448,9 +455,16 @@
             const emailval = emailid.value.trim();
             const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         
-            if (!emailPattern.test(emailval)) {
+            if (emailval === "") {
+                error2.style.display = "block";
+                error2.innerHTML = "Email is required";
+                emailid.classList.remove('is-valid');
+                emailid.classList.add('is-invalid');
+                return false;
+            } else if (!emailPattern.test(emailval)) {
                 error2.style.display = "block";
                 error2.innerHTML = "Invalid email format";
+                emailid.classList.remove('is-valid');
                 emailid.classList.add('is-invalid');
                 return false;
             } else {
@@ -467,12 +481,14 @@
             
             if (phoneval === "") {
                 error3.style.display = "block";
-                error3.innerHTML = "Enter a valid phone number";
+                error3.innerHTML = "Phone number is required";
+                phoneid.classList.remove('is-valid');
                 phoneid.classList.add('is-invalid');
                 return false;
             } else if (!/^\d{10}$/.test(phoneval)) {
                 error3.style.display = "block";
                 error3.innerHTML = "Enter exactly 10 digits";
+                phoneid.classList.remove('is-valid');
                 phoneid.classList.add('is-invalid');
                 return false;
             } else {
@@ -491,7 +507,12 @@
             const digit = /\d/;
             let isValid = true;
         
-            if (passval.length < 8) {
+            if (passval === "") {
+                error4.style.display = "block";
+                error4.innerHTML = "Password is required";
+                passid.classList.add('is-invalid');
+                isValid = false;
+            } else if (passval.length < 8) {
                 error4.style.display = "block";
                 error4.innerHTML = "Password should have at least 8 characters";
                 passid.classList.add('is-invalid');
@@ -508,12 +529,17 @@
                 passid.classList.add('is-valid');
             }
         
-            if (passval !== cpassval) {
+            if (cpassval === "") {
+                error5.style.display = "block";
+                error5.innerHTML = "Confirm Password is required";
+                cpassid.classList.add('is-invalid');
+                isValid = false;
+            } else if (passval !== cpassval) {
                 error5.style.display = "block";
                 error5.innerHTML = "Passwords do not match";
                 cpassid.classList.add('is-invalid');
                 isValid = false;
-            } else if (cpassval !== "") {
+            } else {
                 error5.style.display = "none";
                 error5.innerHTML = "";
                 cpassid.classList.remove('is-invalid');
@@ -535,12 +561,11 @@
                 let emailValid = emailValidateChecking();
                 let phoneValid = phoneValidateChecking();
                 let passValid = passValidateChecking();
-        
+
                 if (!nameValid || !emailValid || !phoneValid || !passValid) {
                     e.preventDefault();
                 }
             });
-        });
-    </script>
+        });    </script>
 </body>
 </html>

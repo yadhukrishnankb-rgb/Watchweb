@@ -176,10 +176,28 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.fg { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
-.fg label { font-size: 12px; font-weight: 700; color: var(--green-dk); text-transform: uppercase; letter-spacing: .5px; }
-.fg input {
-  padding: 12px 16px;
+.form-group {
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--green-dk);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 48px 12px 16px;
   border: 2px solid #c8d8c8;
   border-radius: 10px;
   font-family: 'Nunito', sans-serif;
@@ -189,8 +207,44 @@ body {
   background: #fff;
   transition: border-color .2s, box-shadow .2s;
 }
-.fg input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(74,94,74,.1); }
-.fg input.error { border-color: var(--red); }
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(74,94,74,.1);
+}
+
+.form-control-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.form-control.is-invalid {
+  border-color: var(--red);
+}
+
+.error-message {
+  color: var(--red);
+  font-size: 0.875rem;
+  margin-top: 8px;
+  display: none;
+  font-weight: 600;
+}
+
+.alert-danger {
+  background: #fde8ec;
+  color: #9a1928;
+  border: 1px solid rgba(232,67,90,0.3);
+  border-radius: 0.75rem;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 20px;
+}
 
 .form-actions { display: flex; gap: 12px; margin-top: 20px; }
 .fa-save {
@@ -352,31 +406,55 @@ body {
 
   <!-- Add/Edit Form -->
   <div id="address-form-container" class="addr-form">
-    <form id="address-form" action="/profile/address" method="POST">
+    <form id="address-form" action="/profile/address" method="POST" novalidate>
       <input type="hidden" name="addressId" id="addressId" value="">
-      <div class="fg">
-        <label>Address Line 1</label>
-        <input type="text" name="line1" id="line1" required>
+      <div class="form-group">
+        <label class="form-label" for="line1">Address Line 1</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="line1" id="line1" required>
+          <span class="form-control-icon"><i class="fas fa-road"></i></span>
+        </div>
+        <div id="line1Error" class="error-message"></div>
       </div>
-      <div class="fg">
-        <label>Landmark (optional)</label>
-        <input type="text" name="landmark" id="landmark" placeholder="Near Mall / Opposite Park">
+      <div class="form-group">
+        <label class="form-label" for="landmark">Landmark (optional)</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="landmark" id="landmark" placeholder="Near Mall / Opposite Park">
+          <span class="form-control-icon"><i class="fas fa-map-marker-alt"></i></span>
+        </div>
+        <div id="landmarkError" class="error-message"></div>
       </div>
-      <div class="fg">
-        <label>City</label>
-        <input type="text" name="city" id="city" required>
+      <div class="form-group">
+        <label class="form-label" for="city">City</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="city" id="city" required>
+          <span class="form-control-icon"><i class="fas fa-city"></i></span>
+        </div>
+        <div id="cityError" class="error-message"></div>
       </div>
-      <div class="fg">
-        <label>State</label>
-        <input type="text" name="state" id="state" required>
+      <div class="form-group">
+        <label class="form-label" for="state">State</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="state" id="state" required>
+          <span class="form-control-icon"><i class="fas fa-map"></i></span>
+        </div>
+        <div id="stateError" class="error-message"></div>
       </div>
-      <div class="fg">
-        <label>ZIP Code</label>
-        <input type="text" name="zip" id="zip" required>
+      <div class="form-group">
+        <label class="form-label" for="zip">ZIP Code</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="zip" id="zip" required>
+          <span class="form-control-icon"><i class="fas fa-mail-bulk"></i></span>
+        </div>
+        <div id="zipError" class="error-message"></div>
       </div>
-      <div class="fg">
-        <label>Country</label>
-        <input type="text" name="country" id="country" required>
+      <div class="form-group">
+        <label class="form-label" for="country">Country</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="country" id="country" required>
+          <span class="form-control-icon"><i class="fas fa-globe"></i></span>
+        </div>
+        <div id="countryError" class="error-message"></div>
       </div>
       <div class="form-actions">
         <button type="submit" class="fa-save">Save Address</button>
@@ -427,102 +505,105 @@ body {
 <script>
   const form = document.getElementById('address-form');
   if (form) {
+    const addressFormErrors = document.getElementById('addressFormErrors');
     const line1Input = document.getElementById('line1');
     const landmarkInput = document.getElementById('landmark');
     const cityInput = document.getElementById('city');
     const stateInput = document.getElementById('state');
     const zipInput = document.getElementById('zip');
     const countryInput = document.getElementById('country');
-    const inputs = form.querySelectorAll('input');
+    const inputs = Array.from(form.querySelectorAll('input')).filter(i => i.type !== 'hidden');
 
-  const validationRules = {
-    line1: value => value.length >= 5,
-    city: value => value.length >= 2,
-    state: value => value.length >= 2,
-    zip: value => /^\d{5,6}$/.test(value),
-    country: value => value.length >= 2,
-    landmark: value => value.length === 0 || value.length >= 3
-  };
+    const validationRules = {
+      line1: value => value.length >= 5,
+      city: value => value.length >= 2,
+      state: value => value.length >= 2,
+      zip: value => /^\d{5,6}$/.test(value),
+      country: value => value.length >= 2,
+      landmark: value => value.length === 0 || value.length >= 3
+    };
 
-  const validationMessages = {
-    line1: 'Address must be at least 5 characters',
-    city: 'City must be at least 2 characters',
-    state: 'State must be at least 2 characters',
-    zip: 'ZIP must be 5 or 6 digits',
-    country: 'Country must be at least 2 characters',
-    landmark: 'Landmark must be at least 3 characters when provided'
-  };
+    const requiredMessages = {
+      line1: 'Address is required',
+      city: 'City is required',
+      state: 'State is required',
+      zip: 'ZIP code is required',
+      country: 'Country is required'
+    };
 
-  inputs.forEach(input => {
-    input.addEventListener('invalid', (e) => {
-      e.target.classList.add('error');
-      e.preventDefault();
-    });
-    input.addEventListener('input', (e) => {
-      e.target.classList.remove('error');
-    });
-  });
+    const validationMessages = {
+      line1: 'Address must be at least 5 characters',
+      city: 'City must be at least 2 characters',
+      state: 'State must be at least 2 characters',
+      zip: 'ZIP must be 5 or 6 digits',
+      country: 'Country must be at least 2 characters',
+      landmark: 'Landmark must be at least 3 characters when provided'
+    };
 
-  function getValidationMessage(input, value) {
-    if (input.required && !value) {
-      return 'This field is required';
-    }
-    return validationMessages[input.name] || 'Invalid input';
-  }
-
-  function validateField(input) {
-    const name = input.name;
-    const value = input.value.trim();
-    const isValid = validationRules[name] ? validationRules[name](value) : true;
-
-    if (!isValid) {
-      input.classList.add('error');
-      return false;
+    function getValidationMessage(input) {
+      const value = input.value.trim();
+      if (input.required && !value) {
+        return requiredMessages[input.name] || 'This field is required';
+      }
+      return validationMessages[input.name] || 'Invalid input';
     }
 
-    input.classList.remove('error');
-    return true;
-  }
+    function setFieldError(input, message) {
+      const errorEl = document.getElementById(`${input.id}Error`);
+      if (!errorEl) return;
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      input.classList.add('is-invalid');
+    }
 
-  [line1Input, cityInput, stateInput, zipInput, countryInput, landmarkInput].forEach(input => {
-    input.addEventListener('blur', () => {
-      validateField(input);
-      if (input.required && !input.value.trim()) {
-        showError(input.id, getValidationMessage(input, ''));
+    function clearFieldError(input) {
+      const errorEl = document.getElementById(`${input.id}Error`);
+      if (!errorEl) return;
+      errorEl.textContent = '';
+      errorEl.style.display = 'none';
+      input.classList.remove('is-invalid');
+    }
+
+    function validateInput(input) {
+      const value = input.value.trim();
+      const rule = validationRules[input.name];
+      if (!rule) return '';
+      if (!rule(value)) {
+        return getValidationMessage(input);
+      }
+      return '';
+    }
+
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        clearFieldError(input);
+      });
+      input.addEventListener('blur', () => {
+        const error = validateInput(input);
+        if (error) {
+          setFieldError(input, error);
+        } else {
+          clearFieldError(input);
+        }
+      });
+    });
+
+    form.addEventListener('submit', function(e) {
+      const errors = [];
+      [line1Input, cityInput, stateInput, zipInput, countryInput, landmarkInput].forEach(input => {
+        const error = validateInput(input);
+        if (error) {
+          setFieldError(input, error);
+          errors.push(error);
+        } else {
+          clearFieldError(input);
+        }
+      });
+
+      if (errors.length > 0) {
+        e.preventDefault();
       }
     });
-  });
-
-  form.addEventListener('submit', function(e) {
-    let hasError = false;
-    [line1Input, cityInput, stateInput, zipInput, countryInput, landmarkInput].forEach(input => {
-      const valid = validateField(input);
-      if (!valid && !hasError) {
-        const value = input.value.trim();
-        showError(input.id, getValidationMessage(input, value));
-      }
-      hasError = hasError || !valid;
-    });
-
-    if (hasError) {
-      e.preventDefault();
-    }
-  });
-
-  function showError(id, message) {
-    const input = document.getElementById(id);
-    input.classList.add('error');
-    input.focus();
-    Swal.fire({
-      icon: 'error',
-      title: 'Invalid Input',
-      text: message,
-      toast: true,
-      position: 'top-end',
-      timer: 3000,
-      showConfirmButton: false
-    });
-  }
 
   // Toggle form
   const formContainer = document.getElementById('address-form-container');
@@ -545,27 +626,11 @@ body {
     form.reset();
     addressIdInput.value = '';
     form.action = '/profile/address';
-    inputs.forEach(i => i.classList.remove('error'));
-  }
+    inputs.forEach(i => {
+      i.classList.remove('is-invalid');
+      clearFieldError(i);
+    });
 
-  function editAddress(button, i) {
-    const l1 = button.dataset.line1 || '';
-    const lm = button.dataset.landmark || '';
-    const c = button.dataset.city || '';
-    const s = button.dataset.state || '';
-    const z = button.dataset.zip || '';
-    const co = button.dataset.country || '';
-    document.getElementById('line1').value = l1;
-    document.getElementById('landmark').value = lm;
-    document.getElementById('city').value = c;
-    document.getElementById('state').value = s;
-    document.getElementById('zip').value = z;
-    document.getElementById('country').value = co;
-    addressIdInput.value = i;
-    form.action = `/profile/address/${i}/edit`;
-    formContainer.classList.add('active');
-    inputs.forEach(i => i.classList.remove('error'));
-    window.scrollTo({top: formContainer.offsetTop - 100, behavior: 'smooth'});
   }
 
   window.deleteAddress = async function deleteAddress(index) {

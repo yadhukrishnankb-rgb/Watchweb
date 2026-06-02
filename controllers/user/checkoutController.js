@@ -4,6 +4,7 @@ const User = require('../../models/userSchema');
 const Product = require('../../models/productSchema');
 const Order = require('../../models/orderSchema');
 const Coupon = require('../../models/couponSchema');
+const Brand = require('../../models/brandSchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const razorpay = require('../../config/razorpay');
@@ -596,8 +597,19 @@ const directCheckout = async (req, res) => {
       .lean();
 
     if (!product) {
-      req.flash('error', 'Product not found');
-      return res.redirect('/shop');
+      return res.status(404).render('page-404', { message: 'Product not found' });
+    }
+
+    const blockedBrands = await Brand.find({ isBlocked: true }).distinct('name');
+    const normalizedProductBrand = product.brand ? product.brand.toLowerCase() : '';
+    const isBrandBlocked = blockedBrands.some(b => b.toLowerCase() === normalizedProductBrand);
+
+    if (product.isBlocked || isBrandBlocked || product.category?.isBlocked) {
+      return res.status(403).render('error', {
+        status: 403,
+        title: 'Product Blocked',
+        message: 'This product is blocked and cannot be purchased.'
+      });
     }
 
     const qty = parseInt(quantity);
@@ -657,8 +669,11 @@ const directCheckout = async (req, res) => {
 
   } catch (err) {
     console.error('Direct checkout error:', err);
-    req.flash('error', messages.CHECKOUT_LOAD_ERROR);
-    res.redirect('/shop');
+    res.status(statusCodes.INTERNAL_ERROR).render('error', {
+      status: statusCodes.INTERNAL_ERROR,
+      title: 'Checkout Error',
+      message: messages.CHECKOUT_LOAD_ERROR
+    });
   }
 };
 

@@ -259,12 +259,24 @@
     <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
       <div class="mt-3">
         <h3 class="text-lg leading-6 font-medium text-gray-900">Add New Product</h3>
-        <form id="addProductForm" class="mt-4" enctype="multipart/form-data">
+        <form id="addProductForm" class="mt-4" enctype="multipart/form-data" novalidate>
+          <div id="addProductErrorContainer" class="hidden mb-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">
+            <div class="flex items-start gap-2">
+              <svg class="h-5 w-5 flex-shrink-0 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 2a10 10 0 110 20 10 10 0 010-20z" />
+              </svg>
+              <div>
+                <p class="font-semibold">Please fix the highlighted fields.</p>
+                <ul id="addProductErrorsList" class="mt-2 list-disc pl-5 space-y-1"></ul>
+              </div>
+            </div>
+          </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Product Name*</label>
               <input type="text" name="productName" required
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <p id="errorProductName" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Brand*</label>
@@ -275,6 +287,7 @@
                   <option value="<%= brand.name %>"><%= brand.name %><%= brand.isBlocked ? ' (Blocked)' : '' %></option>
                 <% }); %>
               </select>
+              <p id="errorBrand" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Category*</label>
@@ -287,27 +300,32 @@
                   </option>
                 <% }); %>
               </select>
+              <p id="errorCategory" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Regular Price*</label>
               <input type="number" name="regularPrice" required min="0" step="0.01"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <p id="errorRegularPrice" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Sales Price*</label>
               <input type="number" name="salesPrice" required min="0" step="0.01"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <p id="errorSalesPrice" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <!-- Product offer managed separately; removed from add form -->
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Quantity*</label>
               <input type="number" name="quantity" required min="0"
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <p id="errorQuantity" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             <div class="mb-4">
               <label class="block text-gray-700 text-sm font-bold mb-2">Color*</label>
               <input type="text" name="color" required
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+              <p id="errorColor" class="mt-1 text-sm text-red-600 hidden"></p>
             </div>
             
 
@@ -318,6 +336,7 @@
             <label class="block text-gray-700 text-sm font-bold mb-2">Description*</label>
             <textarea name="description" required rows="3"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+            <p id="errorDescription" class="mt-1 text-sm text-red-600 hidden"></p>
           </div>
 
           <div class="mb-4">
@@ -325,6 +344,7 @@
             <input type="file" name="productImages" required multiple accept="image/*"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               onchange="previewAndCropImages(event)">
+            <p id="errorProductImages" class="mt-1 text-sm text-red-600 hidden"></p>
             <div id="imagePreview" class="mt-2 flex gap-2"></div>
             <p class="text-sm text-gray-500 mt-1">Please select 3-4 images</p>
           </div>
@@ -394,7 +414,8 @@
       // For edit form (editNewImagePreview) allow 1-4 images since existing images may remain.
       if (previewId === 'imagePreview') {
         if (files.length < 3 || files.length > 4) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 3-4 images' });
+          showAddProductErrors(['Please select 3-4 images.']);
+          showAddProductFieldError('ProductImages', 'Please select 3-4 images.');
           event.target.value = '';
           return;
         }
@@ -522,13 +543,47 @@
       document.getElementById('addModal').classList.remove('hidden');
       document.getElementById('addProductForm').reset();
       document.getElementById('imagePreview').innerHTML = '';
+      clearAddProductErrors();
     }
 
     function closeAddModal() {
       document.getElementById('addModal').classList.add('hidden');
       document.getElementById('addProductForm').reset();
       document.getElementById('imagePreview').innerHTML = '';
+      clearAddProductErrors();
       resetCropState();
+    }
+
+    function showAddProductErrors(errors) {
+      const container = document.getElementById('addProductErrorContainer');
+      const list = document.getElementById('addProductErrorsList');
+      list.innerHTML = errors.map(err => `<li>${err}</li>`).join('');
+      container.classList.remove('hidden');
+    }
+
+    function showAddProductFieldError(fieldName, message) {
+      const errorEl = document.getElementById(`error${fieldName}`);
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function clearAddProductFieldError(fieldName) {
+      const errorEl = document.getElementById(`error${fieldName}`);
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      }
+    }
+
+    function clearAddProductErrors() {
+      const container = document.getElementById('addProductErrorContainer');
+      const list = document.getElementById('addProductErrorsList');
+      if (container) container.classList.add('hidden');
+      if (list) list.innerHTML = '';
+      ['ProductName','Brand','Category','RegularPrice','SalesPrice','Quantity','Color','Description','ProductImages']
+        .forEach(clearAddProductFieldError);
     }
 
     function closeEditModal() {
@@ -673,22 +728,102 @@
     /* === ADD PRODUCT FORM === */
     const addForm = document.getElementById('addProductForm');
     if (addForm) {
+      addForm.addEventListener('input', (e) => {
+        if (e.target && e.target.name) {
+          clearAddProductFieldError(e.target.name.charAt(0).toUpperCase() + e.target.name.slice(1));
+        }
+        clearAddProductErrors();
+      });
       addForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fileInput = e.target.querySelector('input[name="productImages"]');
-        if (!fileInput.files || fileInput.files.length < 3 || fileInput.files.length > 4) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 3-4 images' });
+        clearAddProductErrors();
+
+        const form = e.target;
+        const fieldErrors = {};
+        const errors = [];
+        const productName = form.elements.productName?.value?.trim();
+        const brand = form.elements.brand?.value?.trim();
+        const category = form.elements.category?.value?.trim();
+        const regularPriceValue = form.elements.regularPrice?.value;
+        const salesPriceValue = form.elements.salesPrice?.value;
+        const quantityValue = form.elements.quantity?.value;
+        const color = form.elements.color?.value?.trim();
+        const description = form.elements.description?.value?.trim();
+        const fileInput = form.querySelector('input[name="productImages"]');
+
+        if (!productName) {
+          fieldErrors.ProductName = 'Product Name is required.';
+          errors.push(fieldErrors.ProductName);
+        }
+        if (!brand) {
+          fieldErrors.Brand = 'Brand is required.';
+          errors.push(fieldErrors.Brand);
+        }
+        if (!category) {
+          fieldErrors.Category = 'Category is required.';
+          errors.push(fieldErrors.Category);
+        }
+        if (!regularPriceValue) {
+          fieldErrors.RegularPrice = 'Regular Price is required.';
+          errors.push(fieldErrors.RegularPrice);
+        }
+        if (!salesPriceValue) {
+          fieldErrors.SalesPrice = 'Sales Price is required.';
+          errors.push(fieldErrors.SalesPrice);
+        }
+        if (!quantityValue) {
+          fieldErrors.Quantity = 'Quantity is required.';
+          errors.push(fieldErrors.Quantity);
+        }
+        if (!color) {
+          fieldErrors.Color = 'Color is required.';
+          errors.push(fieldErrors.Color);
+        }
+        if (!description) {
+          fieldErrors.Description = 'Description is required.';
+          errors.push(fieldErrors.Description);
+        }
+
+        const regularPrice = Number(regularPriceValue);
+        if (regularPriceValue && (isNaN(regularPrice) || regularPrice < 0)) {
+          fieldErrors.RegularPrice = 'Regular Price must be a valid non-negative number.';
+          errors.push(fieldErrors.RegularPrice);
+        }
+
+        const salesPrice = Number(salesPriceValue);
+        if (salesPriceValue && (isNaN(salesPrice) || salesPrice < 0)) {
+          fieldErrors.SalesPrice = 'Sales Price must be a valid non-negative number.';
+          errors.push(fieldErrors.SalesPrice);
+        }
+
+        const quantity = Number(quantityValue);
+        if (quantityValue && (!Number.isInteger(quantity) || quantity < 0)) {
+          fieldErrors.Quantity = 'Quantity must be a valid non-negative integer.';
+          errors.push(fieldErrors.Quantity);
+        }
+
+        if (!fileInput?.files || fileInput.files.length < 3 || fileInput.files.length > 4) {
+          fieldErrors.ProductImages = 'Please select 3-4 product images.';
+          errors.push(fieldErrors.ProductImages);
+        }
+
+        if (errors.length) {
+          Object.entries(fieldErrors).forEach(([field, message]) => showAddProductFieldError(field, message));
+          showAddProductErrors(['Please fix the highlighted fields.']);
           return;
         }
-        const formData = new FormData(e.target);
+
+        const formData = new FormData(form);
         try {
           const data = await fetchJson('/admin/products', { method: 'POST', body: formData });
           if (data.success) {
             Swal.fire({ icon: 'success', title: 'Success!', text: data.message, showConfirmButton: false, timer: 1500 })
               .then(() => location.reload());
-          } else throw new Error(data.message || 'Add failed');
+          } else {
+            showAddProductErrors([data.message || 'Add failed']);
+          }
         } catch (err) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error adding product' });
+          showAddProductErrors([err.message || 'Error adding product']);
         }
       });
     }

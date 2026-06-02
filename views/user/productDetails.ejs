@@ -434,10 +434,10 @@ body {
             </span>
           </div>
 
-          <% if (product.isBlocked) { %>
+          <% if (blockedReason) { %>
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 mt-4" role="alert">
               <p class="font-bold">Unavailable</p>
-              <p>This product is currently not available for purchase.</p>
+              <p><%= blockedReason %></p>
             </div>
           <% } %>
 
@@ -510,7 +510,7 @@ body {
 
           <!-- Add to Cart Button -->
           <button
-            onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : `addToCartWithQty('${product._id}')` %>"
+            onclick="<%= product.isBlocked || blockedReason ? `showUnavailableMessage(${JSON.stringify(blockedReason || 'This product is blocked.')})` : `addToCartWithQty('${product._id}')` %>"
             class="add-to-cart-btn w-full py-3 px-8 text-white font-medium <%= product.quantity <= 0 && !product.isBlocked ? 'opacity-50 cursor-not-allowed' : '' %>"
             <%=product.quantity <=0 && !product.isBlocked ? 'disabled' : '' %>>
             Add to Cart
@@ -520,7 +520,8 @@ body {
           <button id="wishlistBtn" type="button"
             class="w-full mt-2 py-3 px-8 border-2 wishlist-border rounded-lg font-bold flex items-center justify-center gap-2"
             style="color: var(--green);"
-            data-state="<%= isInWishlist ? 'remove' : 'add' %>" onclick="toggleWishlist('<%= product._id %>')">
+            data-state="<%= isInWishlist ? 'remove' : 'add' %>"
+            onclick="<%= blockedReason ? `showUnavailableMessage(${JSON.stringify(blockedReason)})` : `toggleWishlist('${product._id}')` %>">
             <svg id="wishlistIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500"
               viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd"
@@ -536,8 +537,8 @@ body {
           <form action="/checkout/direct" method="POST" id="buyNowForm">
             <input type="hidden" name="productId" value="<%= product._id %>">
             <input type="hidden" name="quantity" id="buyNowQuantity" value="1">
-            <button type="<%= product.isBlocked ? 'button' : 'submit' %>"
-              onclick="<%= product.isBlocked ? 'showUnavailableMessage()' : 'captureBuyNowQuantity()' %>"
+            <button type="<%= product.isBlocked || blockedReason ? 'button' : 'submit' %>"
+              onclick="<%= product.isBlocked || blockedReason ? `showUnavailableMessage(${JSON.stringify(blockedReason || 'This product is blocked.')})` : 'captureBuyNowQuantity()' %>"
               class="add-to-cart-btn w-full py-3 px-8 text-white font-medium bg-green-600 hover:bg-green-700 <%= product.quantity <= 0 && !product.isBlocked ? 'opacity-50 cursor-not-allowed' : '' %>"
               <%=product.quantity <=0 && !product.isBlocked ? 'disabled' : '' %>>
               Buy Now
@@ -746,18 +747,24 @@ function changeMainImage(src, btn) {
   btn.classList.add('border-blue-500');
 }
 
-function showUnavailableMessage() {
-  Swal.fire({
-    icon: 'info',
-    title: 'Item Unavailable',
-    text: 'We apologize, but this item is currently unavailable for purchase.',
-    confirmButtonColor: '#4a5e4a',
-    confirmButtonText: 'OK'
-  });
-}
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showUnavailableMessage(message = 'This product is blocked.') {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'info',
+      title: 'Product Blocked',
+      text: message,
+      confirmButtonColor: '#4a5e4a',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+  alert(message);
+}
+</script>
 <script>
 async function addToCartWithQty(productId) {
   const qty = parseInt(document.getElementById('quantityInput').value) || 1;

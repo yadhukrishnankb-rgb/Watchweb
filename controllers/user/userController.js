@@ -12,6 +12,7 @@ const { session } = require("passport");
 const { addToWallet } = require("./walletController");
 const { getOfferDetails } = require("../../helpers/priceUtils");
 const { offerPopulate } = require("../../helpers/populateUtils");
+
  const loadSignup = async (req,res)=>{
     try{
 
@@ -89,7 +90,7 @@ const addRatingsToProducts = async (products) => {
         }
     ]);
 
-    const ratingsMap = new Map();
+    const ratingsMap = new Map();  
     ratingsData.forEach(rating => {
         ratingsMap.set(rating._id.toString(), {
             averageRating: Math.round(rating.averageRating * 10) / 10, 
@@ -104,6 +105,7 @@ const addRatingsToProducts = async (products) => {
         numReviews: ratingsMap.get(product._id.toString())?.numReviews || 0
     }));
 };
+
 
 featuredProducts = featuredProducts.map(injectOffer);
 popularProducts = popularProducts.map(injectOffer);
@@ -417,7 +419,13 @@ const loadLogin = async (req, res) => {
         if (req.session.user) {
             return res.redirect('/');
         }
-        res.render('login');
+
+        const errorKey = req.query.error;
+        const loginError = errorKey === 'blocked'
+            ? messages.ACCOUNT_BLOCKED
+            : errorKey || '';
+
+        res.render('login', { loginError });
     } catch (error) {
         console.error('Load Login Error:', error);
         res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.SERVER_ERROR });
@@ -427,42 +435,42 @@ const loadLogin = async (req, res) => {
 
 
 const login = async (req, res) => {
+    const isJsonRequest = req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
+
+    const handleError = (status, message) => {
+        if (isJsonRequest) {
+            return res.status(status).json({ success: false, message });
+        }
+        return res.status(status).render('login', { loginError: message });
+    };
+
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
-        
+
         if (!user) {
-            return res.status(statusCodes.UNAUTHORIZED).json({
-                success: false,
-                message: messages.INVALID_CREDENTIALS
-            });
+            return handleError(statusCodes.UNAUTHORIZED, messages.INVALID_CREDENTIALS);
         }
 
-       
         if (user.isBlocked) {
-            return res.status(statusCodes.FORBIDDEN).json({
-                success: false,
-                message: messages.ACCOUNT_BLOCKED
-            });
+            if (isJsonRequest) {
+                return res.status(statusCodes.FORBIDDEN).json({
+                    success: false,
+                    message: messages.ACCOUNT_BLOCKED
+                });
+            }
+            return res.redirect('/login?error=blocked');
         }
 
-        
         if (!user.password) {
-            return res.status(statusCodes.UNAUTHORIZED).json({
-                success: false,
-                message: messages.GOOGLE_ACCOUNT
-            });
+            return handleError(statusCodes.UNAUTHORIZED, messages.GOOGLE_ACCOUNT);
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(statusCodes.UNAUTHORIZED).json({
-                success: false,
-                message: messages.INVALID_CREDENTIALS
-            });
+            return handleError(statusCodes.UNAUTHORIZED, messages.INVALID_CREDENTIALS);
         }
 
-        // Set session
         req.session.user = {
             _id: user._id,
             name: user.name,
@@ -470,13 +478,19 @@ const login = async (req, res) => {
             isBlocked: false
         };
 
-        res.json({ success: true, redirectUrl: '/' });
+        if (isJsonRequest) {
+            return res.json({ success: true, redirectUrl: '/' });
+        }
+        return res.redirect('/');
     } catch (error) {
         console.error('Login error:', error);
-        res.status(statusCodes.INTERNAL_ERROR).json({
-            success: false,
-            message: messages.LOGIN_ERROR
-        });
+        if (isJsonRequest) {
+            return res.status(statusCodes.INTERNAL_ERROR).json({
+                success: false,
+                message: messages.LOGIN_ERROR
+            });
+        }
+        return res.status(statusCodes.INTERNAL_ERROR).render('login', { loginError: messages.LOGIN_ERROR });
     }
 };
 
@@ -497,6 +511,8 @@ const logout = async (req, res) => {
     });
   }
 };
+
+
 
 
 

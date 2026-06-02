@@ -1,6 +1,25 @@
 <%- include('../partials/admin/header') %>
 
-
+<style>
+.error-message {
+    display: none;
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+.error-message.show {
+    display: block;
+}
+.is-invalid {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+</style>
 
 <div class="flex-1 p-8">
     <div class="mb-6 flex justify-between items-center">
@@ -122,16 +141,18 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Add New Category</h3>
-            <form id="addCategoryForm" class="mt-4">
+            <form id="addCategoryForm" class="mt-4" novalidate>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
                     <input type="text" name="name" required
                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <div id="addNameError" class="error-message"></div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
                     <textarea name="description" required
                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                    <div id="addDescriptionError" class="error-message"></div>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeAddModal()" 
@@ -153,17 +174,19 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Category</h3>
-            <form id="editCategoryForm" class="mt-4">
+            <form id="editCategoryForm" class="mt-4" novalidate>
                 <input type="hidden" id="editCategoryId">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
                     <input type="text" id="editName" name="name" required
                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <div id="editNameError" class="error-message"></div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
                     <textarea id="editDescription" name="description" required
                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                    <div id="editDescriptionError" class="error-message"></div>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeEditModal()" 
@@ -185,22 +208,25 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Category Offer</h3>
-            <form id="editOfferForm" class="mt-4">
+            <form id="editOfferForm" class="mt-4" novalidate>
                 <input type="hidden" id="editOfferCategoryId">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Percentage</label>
                     <input type="number" id="editPercentage" name="percentage" min="0" max="100" required
                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <div id="editPercentageError" class="error-message"></div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
                     <input type="date" id="editStartDate" name="startDate" required
                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <div id="editStartDateError" class="error-message"></div>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">End Date</label>
                     <input type="date" id="editEndDate" name="endDate" required
                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <div id="editEndDateError" class="error-message"></div>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeEditOfferModal()" 
@@ -226,6 +252,7 @@ function openAddModal() {
 function closeAddModal() {
     document.getElementById('addModal').classList.add('hidden');
     document.getElementById('addCategoryForm').reset();
+    clearErrors(['addNameError', 'addDescriptionError']);
 }
 
 function openEditModal(id, name, description) {
@@ -233,22 +260,98 @@ function openEditModal(id, name, description) {
     document.getElementById('editCategoryId').value = id;
     document.getElementById('editName').value = name;
     document.getElementById('editDescription').value = description;
+    clearErrors(['editNameError', 'editDescriptionError']);
 }
 
 function closeEditModal() {
     document.getElementById('editModal').classList.add('hidden');
     document.getElementById('editCategoryForm').reset();
+    clearErrors(['editNameError', 'editDescriptionError']);
 }
 
 function closeEditOfferModal() {
     document.getElementById('editOfferModal').classList.add('hidden');
     document.getElementById('editOfferForm').reset();
+    clearErrors(['editPercentageError', 'editStartDateError', 'editEndDateError']);
+}
+
+// Validation helpers
+function setFieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 5.75a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm0 9a.75.75 0 00-1.5 0 .75.75 0 001.5 0z" clip-rule="evenodd" />
+            </svg>
+            <span>${message}</span>
+        </span>
+    `;
+    field.classList.add('show');
+    const input = field.closest('.mb-4')?.querySelector('input, textarea');
+    if (input) input.classList.add('is-invalid');
+}
+
+function clearFieldError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.innerHTML = '';
+    field.classList.remove('show');
+    const input = field.closest('.mb-4')?.querySelector('input, textarea');
+    if (input) input.classList.remove('is-invalid');
+}
+
+function clearErrors(fieldIds) {
+    fieldIds.forEach(clearFieldError);
 }
 
 // Form Submissions
+function validateCategoryForm(prefix) {
+    const name = document.querySelector(`#${prefix}CategoryForm [name="name"]`).value.trim();
+    const description = document.querySelector(`#${prefix}CategoryForm [name="description"]`).value.trim();
+    const errors = [];
+    clearErrors([`${prefix}NameError`, `${prefix}DescriptionError`]);
+
+    if (!name) {
+        errors.push('Name is required.');
+        setFieldError(`${prefix}NameError`, 'Name is required.');
+    }
+    if (!description) {
+        errors.push('Description is required.');
+        setFieldError(`${prefix}DescriptionError`, 'Description is required.');
+    }
+
+    if (errors.length) {
+        return false;
+    }
+    return true;
+}
+
+['addCategoryForm', 'editCategoryForm', 'editOfferForm'].forEach((formId) => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    form.querySelectorAll('input,textarea').forEach((element) => {
+        element.addEventListener('input', () => {
+            switch (formId) {
+                case 'addCategoryForm':
+                    clearErrors(['addNameError', 'addDescriptionError']);
+                    break;
+                case 'editCategoryForm':
+                    clearErrors(['editNameError', 'editDescriptionError']);
+                    break;
+                case 'editOfferForm':
+                    clearErrors(['editPercentageError', 'editStartDateError', 'editEndDateError']);
+                    break;
+            }
+        });
+    });
+});
+
 document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!validateCategoryForm('add')) return;
     const formData = new FormData(e.target);
+    clearErrors(['addNameError', 'addDescriptionError']);
     
     try {
         const response = await fetch('/admin/categories', {
@@ -268,17 +371,19 @@ document.getElementById('addCategoryForm').addEventListener('submit', async (e) 
             closeAddModal();
             window.location.reload();
         } else {
-            Swal.fire({ icon: 'error', title: data.message || 'Error', timer: 2000 });
+            setFieldError('addNameError', data.message || 'Error adding category.');
         }
     } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error adding category' });
+        setFieldError('addNameError', 'Error adding category.');
     }
 });
 
 document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!validateCategoryForm('edit')) return;
     const id = document.getElementById('editCategoryId').value;
     const formData = new FormData(e.target);
+    clearErrors(['editNameError', 'editDescriptionError']);
     
     try {
         const response = await fetch(`/admin/categories/${id}`, {
@@ -298,18 +403,48 @@ document.getElementById('editCategoryForm').addEventListener('submit', async (e)
             closeEditModal();
             window.location.reload();
         } else {
-            Swal.fire({ icon: 'error', title: data.message || 'Error', timer: 2000 });
+            setFieldError('editNameError', data.message || 'Error updating category.');
         }
     } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error updating category' });
+        setFieldError('editNameError', 'Error updating category.');
     }
 });
 
 document.getElementById('editOfferForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const percentage = document.getElementById('editPercentage').value.trim();
+    const startDate = document.getElementById('editStartDate').value;
+    const endDate = document.getElementById('editEndDate').value;
     const id = document.getElementById('editOfferCategoryId').value;
-    const formData = new FormData(e.target);
-    
+
+    clearErrors(['editPercentageError', 'editStartDateError', 'editEndDateError']);
+    const errors = [];
+
+    if (!percentage) {
+        errors.push('Percentage is required.');
+        setFieldError('editPercentageError', 'Percentage is required.');
+    } else if (isNaN(Number(percentage)) || Number(percentage) < 0 || Number(percentage) > 100) {
+        errors.push('Percentage must be between 0 and 100.');
+        setFieldError('editPercentageError', 'Percentage must be between 0 and 100.');
+    }
+
+    if (!startDate) {
+        errors.push('Start date is required.');
+        setFieldError('editStartDateError', 'Start date is required.');
+    }
+    if (!endDate) {
+        errors.push('End date is required.');
+        setFieldError('editEndDateError', 'End date is required.');
+    }
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        errors.push('End date must be after start date.');
+        setFieldError('editEndDateError', 'End date must be after start date.');
+    }
+
+    if (errors.length) {
+        return;
+    }
+
     try {
         const response = await fetch(`/admin/categories/${id}/offer`, {
             method: 'PATCH',
@@ -317,9 +452,9 @@ document.getElementById('editOfferForm').addEventListener('submit', async (e) =>
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                percentage: formData.get('percentage'),
-                startDate: formData.get('startDate'),
-                endDate: formData.get('endDate')
+                percentage: Number(percentage),
+                startDate,
+                endDate
             })
         });
         
@@ -329,10 +464,10 @@ document.getElementById('editOfferForm').addEventListener('submit', async (e) =>
             closeEditOfferModal();
             window.location.reload();
         } else {
-            Swal.fire({ icon: 'error', title: data.message || 'Error', timer: 2000 });
+            setFieldError('editPercentageError', data.message || 'Error updating offer.');
         }
     } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error updating offer' });
+        setFieldError('editPercentageError', 'Error updating offer.');
     }
 });
 

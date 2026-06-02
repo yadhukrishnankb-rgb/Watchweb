@@ -196,7 +196,7 @@ exports.getProductDetails = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.redirect('/shop');
+            return res.status(404).render('page-404', { message: 'Product not found' });
         }
 
         const now = new Date();
@@ -208,21 +208,25 @@ exports.getProductDetails = async (req, res) => {
             .populate({ path: 'offer' })
             .lean();
 
-        let offerDetails = getOfferDetails(product);
-        product = {
-            ...product,
-            ...offerDetails
-        };
-        
         if (!product) {
-            return res.redirect('/shop');
+            return res.status(404).render('page-404', { message: 'Product not found' });
         }
 
         const blockedBrands = await Brand.find({ isBlocked: true }).distinct('name');
         const normalizedProductBrand = product.brand ? product.brand.toLowerCase() : '';
-        if (blockedBrands.some(b => b.toLowerCase() === normalizedProductBrand) || product.isBlocked) {
-            return res.redirect('/shop');
-        }
+        const isBrandBlocked = blockedBrands.some(b => b.toLowerCase() === normalizedProductBrand);
+        const blockedReason = product.isBlocked
+            ? 'This product has been blocked by the administrator.'
+            : isBrandBlocked
+                ? 'This product belongs to a blocked brand and is unavailable.'
+                : null;
+
+        let offerDetails = getOfferDetails(product);
+        product = {
+            ...product,
+            ...offerDetails,
+            isBlocked: product.isBlocked || isBrandBlocked
+        };
 
        
 
@@ -288,18 +292,23 @@ exports.getProductDetails = async (req, res) => {
             reviews,
             averageRating,
             stockStatus,
-            discounts, 
+            discounts,
             breadcrumbs,
             user: req.session.user,
             reviewMessage: req.query.review || null,
             isInWishlist,
+            blockedReason,
             isAvailable: ['IN_STOCK', 'LOW_STOCK'].includes(stockStatus),
             stockMessage: getStockMessage(stockStatus, product.quantity)
         });
 
     } catch (error) {
         console.error('Product details error:', error);
-        return res.redirect('/shop');
+        return res.status(statusCodes.INTERNAL_ERROR).render('error', {
+            status: statusCodes.INTERNAL_ERROR,
+            title: 'Product Error',
+            message: messages.PRODUCT_NOT_FOUND
+        });
     }
 };
 
@@ -312,7 +321,7 @@ exports.addReview = async (req, res) => {
         const { rating, comment } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.redirect('/shop');
+            return res.status(404).render('page-404', { message: 'Product not found' });
         }
 
         if (!rating || !comment || !comment.trim() || !['1','2','3','4','5'].includes(String(rating))) {
@@ -321,7 +330,7 @@ exports.addReview = async (req, res) => {
 
         const product = await Product.findById(id).lean();
         if (!product) {
-            return res.redirect('/shop');
+            return res.status(404).render('page-404', { message: 'Product not found' });
         }
 
         const existingReview = await Review.findOne({ product: id, user: req.session.user._id });
@@ -342,7 +351,11 @@ exports.addReview = async (req, res) => {
         res.redirect(`/product/${id}?review=success`);
     } catch (error) {
         console.error('Add review error:', error);
-        res.redirect(`/product/${req.params.id}?review=error`);
+        res.status(statusCodes.INTERNAL_ERROR).render('error', {
+            status: statusCodes.INTERNAL_ERROR,
+            title: 'Review Error',
+            message: 'Unable to submit review at this time.'
+        });
     }
 };
 

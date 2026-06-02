@@ -1,5 +1,26 @@
 <%- include('../partials/admin/header') %>
 
+<style>
+.error-message {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.error-message.show {
+  display: block;
+}
+.is-invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+</style>
+
 <div class="flex-1 p-8">
   <div class="mb-6 flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800">Coupon Management</h1>
@@ -87,11 +108,12 @@
   <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
     <div class="mt-3">
       <h3 class="text-lg leading-6 font-medium text-gray-900">Create New Coupon</h3>
-      <form id="createCouponForm" class="mt-4">
+      <form id="createCouponForm" class="mt-4" novalidate>
         <div class="grid grid-cols-2 gap-4">
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Coupon Code*</label>
             <input type="text" name="code" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="SUMMER25">
+            <div id="createCodeError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
@@ -100,36 +122,43 @@
               <option value="fixed">Fixed Amount</option>
               <option value="percentage">Percentage (%)</option>
             </select>
+            <div id="createDiscountTypeError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Discount Value*</label>
             <input type="number" name="discountValue" required min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="createDiscountValueError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Minimum Order (₹)*</label>
             <input type="number" name="minAmount" required min="0" value="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="createMinAmountError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Max Discount (₹)</label>
             <input type="number" name="maxDiscount" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="createMaxDiscountError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Expiry Date*</label>
             <input type="date" name="expiryDate" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="createExpiryDateError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Usage Limit (total)</label>
             <input type="number" name="usageLimit" min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Leave blank for unlimited">
+            <div id="createUsageLimitError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Per User Limit*</label>
             <input type="number" name="userUsageLimit" required min="1" value="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="createUserUsageLimitError" class="error-message"></div>
           </div>
         </div>
 
@@ -151,13 +180,14 @@
   <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
     <div class="mt-3">
       <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Coupon</h3>
-      <form id="editCouponForm" class="mt-4">
+      <form id="editCouponForm" class="mt-4" novalidate>
         <input type="hidden" name="id" id="editCouponId">
 
         <div class="grid grid-cols-2 gap-4">
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Coupon Code (cannot change)</label>
             <input type="text" id="editCode" disabled class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100">
+            <div id="editCodeError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
@@ -166,36 +196,43 @@
               <option value="fixed">Fixed Amount</option>
               <option value="percentage">Percentage (%)</option>
             </select>
+            <div id="editDiscountTypeError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Discount Value*</label>
             <input type="number" name="discountValue" id="editDiscountValue" required min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editDiscountValueError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Minimum Order (₹)*</label>
             <input type="number" name="minAmount" id="editMinAmount" required min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editMinAmountError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Max Discount (₹)</label>
             <input type="number" name="maxDiscount" id="editMaxDiscount" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editMaxDiscountError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Expiry Date*</label>
             <input type="date" name="expiryDate" id="editExpiryDate" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editExpiryDateError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Usage Limit (total)</label>
             <input type="number" name="usageLimit" id="editUsageLimit" min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editUsageLimitError" class="error-message"></div>
           </div>
 
           <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2">Per User Limit*</label>
             <input type="number" name="userUsageLimit" id="editUserUsageLimit" required min="1" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div id="editUserUsageLimitError" class="error-message"></div>
           </div>
         </div>
 
@@ -217,6 +254,16 @@
   // Open Add Coupon Modal
   function openAddCouponModal() {
     document.getElementById('createCouponForm').reset();
+    clearErrors([
+      'createCodeError',
+      'createDiscountTypeError',
+      'createDiscountValueError',
+      'createMinAmountError',
+      'createMaxDiscountError',
+      'createExpiryDateError',
+      'createUsageLimitError',
+      'createUserUsageLimitError'
+    ]);
     document.getElementById('addCouponModal').classList.remove('hidden');
   }
 
@@ -236,7 +283,16 @@
     document.getElementById('editExpiryDate').value = expiryDate;
     document.getElementById('editUsageLimit').value = usageLimit === 'null' ? '' : usageLimit;
     document.getElementById('editUserUsageLimit').value = userUsageLimit;
-
+    clearErrors([
+      'editCodeError',
+      'editDiscountTypeError',
+      'editDiscountValueError',
+      'editMinAmountError',
+      'editMaxDiscountError',
+      'editExpiryDateError',
+      'editUsageLimitError',
+      'editUserUsageLimitError'
+    ]);
     document.getElementById('editCouponModal').classList.remove('hidden');
   }
 
@@ -245,9 +301,105 @@
     document.getElementById('editCouponModal').classList.add('hidden');
   }
 
+  function setFieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.innerHTML = `<span class="inline-flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm.75 5.75a.75.75 0 00-1.5 0v5.5a.75.75 0 001.5 0v-5.5zm0 9a.75.75 0 00-1.5 0 .75.75 0 001.5 0z" clip-rule="evenodd"/></svg><span>${message}</span></span>`;
+    field.classList.add('show');
+    const input = field.closest('.mb-4')?.querySelector('input, textarea, select');
+    if (input) input.classList.add('is-invalid');
+  }
+
+  function clearFieldError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.innerHTML = '';
+    field.classList.remove('show');
+    const input = field.closest('.mb-4')?.querySelector('input, textarea, select');
+    if (input) input.classList.remove('is-invalid');
+  }
+
+  function clearErrors(fieldIds) {
+    fieldIds.forEach(clearFieldError);
+  }
+
+  function validateCouponForm(formId, prefix) {
+    const form = document.getElementById(formId);
+    const data = Object.fromEntries(new FormData(form));
+    const errors = [];
+    const requiredFields = [
+      { name: 'discountType', errorId: `${prefix}DiscountTypeError`, message: 'Choose a discount type.' },
+      { name: 'discountValue', errorId: `${prefix}DiscountValueError`, message: 'Enter a discount value.' },
+      { name: 'minAmount', errorId: `${prefix}MinAmountError`, message: 'Enter a minimum order amount.' },
+      { name: 'expiryDate', errorId: `${prefix}ExpiryDateError`, message: 'Select an expiry date.' },
+      { name: 'userUsageLimit', errorId: `${prefix}UserUsageLimitError`, message: 'Enter a per user limit.' }
+    ];
+
+    if (prefix === 'create') {
+      requiredFields.unshift({ name: 'code', errorId: 'createCodeError', message: 'Coupon code is required.' });
+    }
+
+    clearErrors(requiredFields.map(f => f.errorId).concat(prefix === 'create' ? ['createMaxDiscountError'] : ['editMaxDiscountError']));
+
+    requiredFields.forEach(({ name, errorId, message }) => {
+      if (!data[name] || data[name].toString().trim() === '') {
+        errors.push(errorId);
+        setFieldError(errorId, message);
+      }
+    });
+
+    if (data.discountValue) {
+      const discountValue = Number(data.discountValue);
+      if (isNaN(discountValue) || discountValue < 1) {
+        errors.push(`${prefix}DiscountValueError`);
+        setFieldError(`${prefix}DiscountValueError`, 'Discount value must be 1 or more.');
+      }
+    }
+
+    if (data.minAmount) {
+      const minAmount = Number(data.minAmount);
+      if (isNaN(minAmount) || minAmount < 0) {
+        errors.push(`${prefix}MinAmountError`);
+        setFieldError(`${prefix}MinAmountError`, 'Minimum order must be 0 or more.');
+      }
+    }
+
+    if (data.maxDiscount) {
+      const maxDiscount = Number(data.maxDiscount);
+      if (isNaN(maxDiscount) || maxDiscount < 0) {
+        errors.push(`${prefix}MaxDiscountError`);
+        setFieldError(`${prefix}MaxDiscountError`, 'Max discount cannot be negative.');
+      }
+    }
+
+    if (data.userUsageLimit) {
+      const userUsageLimit = Number(data.userUsageLimit);
+      if (isNaN(userUsageLimit) || userUsageLimit < 1) {
+        errors.push(`${prefix}UserUsageLimitError`);
+        setFieldError(`${prefix}UserUsageLimitError`, 'Per user limit must be at least 1.');
+      }
+    }
+
+    if (data.expiryDate && new Date(data.expiryDate) <= new Date()) {
+      errors.push(`${prefix}ExpiryDateError`);
+      setFieldError(`${prefix}ExpiryDateError`, 'Expiry date must be in the future.');
+    }
+
+    return errors.length === 0;
+  }
+
+  document.querySelectorAll('#createCouponForm input, #createCouponForm select, #editCouponForm input, #editCouponForm select').forEach((input) => {
+    input.addEventListener('input', () => {
+      const prefix = input.form?.id === 'createCouponForm' ? 'create' : 'edit';
+      const errorId = input.name ? `${prefix}${input.name.charAt(0).toUpperCase() + input.name.slice(1)}Error` : `${input.id}Error`;
+      clearFieldError(errorId);
+    });
+  });
+
   // Create Coupon (AJAX)
   document.getElementById('createCouponForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!validateCouponForm('createCouponForm', 'create')) return;
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
@@ -269,7 +421,7 @@
           location.reload();
         });
       } else {
-        Swal.fire('Error', result.message || 'Failed to create coupon', 'error');
+        setFieldError('createCodeError', result.message || 'Failed to create coupon');
       }
     } catch (err) {
       console.error('Create error:', err);
@@ -280,6 +432,7 @@
   // Save edited coupon
   document.getElementById('editCouponForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!validateCouponForm('editCouponForm', 'edit')) return;
     const form = document.getElementById('editCouponForm');
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
@@ -304,7 +457,7 @@
           location.reload();
         });
       } else {
-        Swal.fire('Error', result.message || 'Update failed', 'error');
+        setFieldError('editCodeError', result.message || 'Update failed');
       }
     } catch (err) {
       console.error('Save error:', err);

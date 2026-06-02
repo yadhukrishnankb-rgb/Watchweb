@@ -1,6 +1,8 @@
 
 const Wishlist = require('../../models/wishlistSchema');
 const Product = require('../../models/productSchema');
+const Brand = require('../../models/brandSchema');
+const Category = require('../../models/categorySchema');
 const messages = require('../../constants/messages');
 const statusCodes = require('../../constants/statusCodes');
 const { getOfferDetails } = require('../../helpers/priceUtils');
@@ -11,7 +13,9 @@ exports.viewWishlist = async (req, res) => {
     let wishlist = await Wishlist.findOne({ userId }).populate({
       path: 'products.productId',
       populate: { path: 'category' }
-    });
+    })
+
+      
     if (!wishlist) wishlist = { products: [] };
     if (wishlist.products && Array.isArray(wishlist.products)) {
       wishlist.products = wishlist.products.map(item => {
@@ -22,7 +26,7 @@ exports.viewWishlist = async (req, res) => {
         return item;
       });
     }
-    res.render('user/wishlist', { wishlist });
+    res.render('user/wishlist', { wishlist});
   } catch (err) {
     console.error('View wishlist error:', err);
     res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.WISHLIST_LOAD_ERROR });
@@ -38,7 +42,18 @@ exports.addToWishlist = async (req, res) => {
     if (!productId) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_ID_REQUIRED });
 
     const product = await Product.findById(productId);
-    if (!product || product.isBlocked) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_UNAVAILABLE });
+    if (!product) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_UNAVAILABLE });
+
+    const isBrandBlocked = await Brand.exists({ name: product.brand, isBlocked: true });
+    const category = await Category.findById(product.category).select('isBlocked').lean();
+    const isCategoryBlocked = category?.isBlocked;
+
+    if (product.isBlocked || isBrandBlocked || isCategoryBlocked) {
+      return res.status(statusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'This product is blocked and cannot be added to wishlist.'
+      });
+    }
 
     let wishlist = await Wishlist.findOne({ userId });
     if (!wishlist) {
@@ -76,6 +91,4 @@ exports.removeFromWishlist = async (req, res) => {
     console.error('Remove from wishlist error:', err);
     res.status(statusCodes.INTERNAL_ERROR).json({ success: false, message: messages.WISHLIST_REMOVE_ERROR });
   }
-};
-
-
+};  
