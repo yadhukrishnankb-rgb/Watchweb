@@ -591,8 +591,26 @@ if (window.location.pathname === '/profile/address') {
 function copyReferralCode() {
   const code = document.getElementById('referralCode');
   code.select();
-  navigator.clipboard.writeText(code.value);
-  alert('Referral code copied to clipboard!');
+  navigator.clipboard.writeText(code.value).then(() => {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Referral code copied to clipboard!',
+      showConfirmButton: false,
+      timer: 2200,
+      timerProgressBar: true,
+      customClass: {
+        popup: 'swal2-toast-template'
+      }
+    });
+  }).catch(() => {
+    Swal.fire({
+      icon: 'error',
+      title: 'Unable to copy',
+      text: 'Please copy the referral code manually.'
+    });
+  });
 }
 </script>
 
