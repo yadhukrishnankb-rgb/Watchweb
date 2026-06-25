@@ -325,23 +325,29 @@
       /* Auth Links (Updated Colors) */
       .auth-links {
         display: flex;
-        gap: 16px;
+        gap: 12px;
         align-items: center;
       }
 
       .sign-in-link {
-        color: #1f2937;
+        color: #ffffff;
         text-decoration: none;
         font-size: 14px;
         font-weight: 600;
-        padding: 8px 16px;
+        padding: 10px 20px;
         border-radius: 8px;
+        background-color: #4a5e4a;
+        border: 2px solid #e9f2e9;
         transition: all 0.3s ease;
+        display: inline-block;
       }
 
       .sign-in-link:hover {
-        background-color: #f0f4f0;
-        color: #4a5e4a;
+        background-color: #356235;
+        border-color: #3a4a3a;
+        color: #80e979;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(74, 94, 74, 0.3);
       }
 
       /* Header Top Bar (Updated Background) */
@@ -389,8 +395,8 @@
   </div>
 <%}else{%>
   <div class="auth-links">
+    <a href="/login" class="sign-in-link">Log In</a>
     <a href="/signup" class="sign-in-link">Sign Up</a>
-    <a href="/logout" class="sign-in-link">Log In</a>
   </div>
 <%}%>
 

@@ -3,6 +3,8 @@ module.exports = {
   ALL_FIELDS_REQUIRED: 'All fields are required',
   PASSWORD_MISMATCH: 'Passwords do not match',
   USER_ALREADY_EXISTS: 'User with this email already exists',
+  PHONE_ALREADY_EXISTS: 'This phone number is already registered',
+  INVALID_PHONE: 'Enter a valid Indian mobile number',
   ERROR_SENDING_EMAIL: 'Error sending email',
   SIGNUP_ERROR: 'An error occurred during signup',
 

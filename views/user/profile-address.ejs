@@ -630,7 +630,19 @@ body {
       i.classList.remove('is-invalid');
       clearFieldError(i);
     });
+  }
 
+  window.editAddress = function editAddress(button, index) {
+    formContainer.classList.add('active');
+    form.action = '/profile/address/' + index + '/edit';
+    addressIdInput.value = index;
+    line1Input.value = button.dataset.line1 || '';
+    landmarkInput.value = button.dataset.landmark || '';
+    cityInput.value = button.dataset.city || '';
+    stateInput.value = button.dataset.state || '';
+    zipInput.value = button.dataset.zip || '';
+    countryInput.value = button.dataset.country || '';
+    window.scrollTo({ top: formContainer.offsetTop - 80, behavior: 'smooth' });
   }
 
   window.deleteAddress = async function deleteAddress(index) {

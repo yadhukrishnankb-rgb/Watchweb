@@ -418,7 +418,7 @@ p {
             </svg>
             Time Remaining
         </div>
-        <div class="timer" id="timer">01:00</div>
+        <div class="timer" id="timer">02:00</div>
     </div>
 
     <form id="otp" action="/verify-otp" method="post" onsubmit="return validateOTPForm()">
@@ -427,7 +427,7 @@ p {
             name="otp" 
             class="otp-input" 
             maxlength="6" 
-            placeholder="● ● ● ● ● ●" 
+            placeholder="●●●●●●" 
             id="otpInput" 
             required
             autocomplete="off"
@@ -451,7 +451,7 @@ p {
   const otpInput = document.getElementById('otpInput');
 
   // Timer variables
-  let timeLeft = 300;
+    let timeLeft = 120;
   let timerInterval;
 
   function updateTimer() {
@@ -462,7 +462,7 @@ p {
 
   function startTimer() {
       clearInterval(timerInterval);
-      timeLeft = 60;
+      timeLeft = typeof window.initialOtpTimer === 'number' ? window.initialOtpTimer : 120;
       resendButton.disabled = true;
       resendButton.style.opacity = "0.5";
       updateTimer();
@@ -588,6 +588,9 @@ p {
 
   // Initialize when document is ready
   document.addEventListener('DOMContentLoaded', () => {
+      window.initialOtpTimer = 120;
+      otpInput.maxLength = 6;
+
       // Start initial timer
       startTimer();
       

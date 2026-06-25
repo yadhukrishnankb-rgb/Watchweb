@@ -6,7 +6,6 @@ process.noDeprecation = true;
 const session = require("express-session");
 const flash = require('connect-flash');
 
-
 let MongoStore;
 try {
     MongoStore = require('connect-mongo');
@@ -41,10 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.set('trust proxy', 1); 
 
-
 const store = MongoStore
   ? MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/project',
+      mongoUrl:  'mongodb+srv://yadhukrishnan9188_db_user:123456789qwertyu@cluster0.tpozzlm.mongodb.net/evertime',
       collectionName: 'sessions',
       ttl: 14 * 24 * 60 * 60
     })
@@ -59,7 +57,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'change-this-secret',
     resave: false,
     saveUninitialized: false,
-    store,
+     store,
     rolling: true, 
     cookie: {
         httpOnly: true,

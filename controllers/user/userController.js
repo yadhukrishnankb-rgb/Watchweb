@@ -189,11 +189,36 @@ const securepassword = async (password) => {
 
 const signup = async (req,res)=>{
     try {
-        const {name, email, phone, password, confirmpassword, referralCode} = req.body;
+        const { name, email, phone, password, confirmpassword, referralCode } = req.body;
+        const trimmedName = name ? name.trim() : '';
+        const trimmedEmail = email ? email.trim() : '';
+        const trimmedPhone = phone ? phone.trim() : '';
+        const trimmedReferralCode = referralCode ? referralCode.trim() : '';
 
         // Validate all required fields
-        if(!name || !email || !phone || !password || !confirmpassword) {
+        if (!trimmedName || !trimmedEmail || !trimmedPhone || !password || !confirmpassword) {
             return res.render('signup', {message: messages.ALL_FIELDS_REQUIRED});
+        }
+
+        const namePattern = /^[A-Za-z\s]+$/;
+        if (!namePattern.test(trimmedName)) {
+            return res.render('signup', { message: 'Name can only contain alphabets and spaces' });
+        }
+
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(trimmedEmail)) {
+            return res.render('signup', { message: 'Enter a valid email address' });
+        }
+
+        const phonePattern = /^[6-9]\d{9}$/;
+        if (!/^\d+$/.test(trimmedPhone)) {
+            return res.render('signup', { message: 'Phone number must contain only digits' });
+        }
+        if (trimmedPhone.length !== 10) {
+            return res.render('signup', { message: 'Phone number must be exactly 10 digits' });
+        }
+        if (!phonePattern.test(trimmedPhone)) {
+            return res.render('signup', { message: 'Phone number must start with 6, 7, 8, or 9' });
         }
 
         if(password !== confirmpassword) {
@@ -201,22 +226,22 @@ const signup = async (req,res)=>{
         }
 
         // Check if email already exists
-        const findUserByEmail = await User.findOne({email});
+        const findUserByEmail = await User.findOne({ email: trimmedEmail });
         if(findUserByEmail) {
             return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
         }
 
         // Check if phone already exists
-        const findUserByPhone = await User.findOne({phone});
+        const findUserByPhone = await User.findOne({ phone: trimmedPhone });
         if(findUserByPhone) {
-            return res.render('signup', {message: "Phone number already registered"});
+            return res.render('signup', {message: messages.PHONE_ALREADY_EXISTS});
         }
 
         //Find referral if code provided
         let referredBy = null;
-        if (referralCode && referralCode.trim()) {
+        if (trimmedReferralCode) {
             const referrer = await User.findOne({
-                referralCode: referralCode.trim().toUpperCase()
+                referralCode: trimmedReferralCode.toUpperCase()
             });
             if(referrer) {
                 referredBy = referrer._id;
@@ -227,7 +252,7 @@ const signup = async (req,res)=>{
     
         // Generate and send OTP
         const otp = generateOtp();
-        const emailSend = await sendVerficationEmail(email, otp);
+        const emailSend = await sendVerficationEmail(trimmedEmail, otp);
 
         if(!emailSend) {
             return res.render('signup', {message: messages.ERROR_SENDING_EMAIL});
@@ -235,11 +260,12 @@ const signup = async (req,res)=>{
 
         // Store OTP and user data in session
         req.session.userOtp = otp;
-        req.session.userData = {name, phone, email, password,referredBy};
+        req.session.userOtpExpires = Date.now() + 2 * 60 * 1000;
+        req.session.userData = { name: trimmedName, phone: trimmedPhone, email: trimmedEmail, password, referredBy };
 
        
 
-        return res.render("verify-otp");
+        return res.render("verify-otp", { timer: 120, otpLength: 6 });
 
     } catch(error) {
         console.error("Signup error:", error);
@@ -252,13 +278,23 @@ const signup = async (req,res)=>{
 
 const verifyOtp = async (req,res) => {
     try {
-        const {otp} = req.body;
+        const { otp } = req.body;
 
         // Check if session data exists
         if(!req.session.userOtp || !req.session.userData) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: messages.SESSION_EXPIRED
+            });
+        }
+
+        if (!req.session.userOtpExpires || req.session.userOtpExpires < Date.now()) {
+            req.session.userOtp = null;
+            req.session.userOtpExpires = null;
+            req.session.userData = null;
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: messages.OTP_EXPIRED
             });
         }
         
@@ -302,6 +338,7 @@ const verifyOtp = async (req,res) => {
 
             // Clear session immediately after successful user creation
             req.session.userOtp = null;
+            req.session.userOtpExpires = null;
             req.session.userData = null;
 
             //referal reward 
@@ -388,6 +425,16 @@ const resendOTP = async (req, res) => {
             });
         }
 
+        if (req.session.userOtpExpires && req.session.userOtpExpires < Date.now()) {
+            req.session.userOtp = null;
+            req.session.userOtpExpires = null;
+            req.session.userData = null;
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: messages.OTP_EXPIRED
+            });
+        }
+
         const { email } = req.session.userData;
         const newOTP = generateOtp();
         const emailSent = await sendVerficationEmail(email, newOTP);
@@ -400,6 +447,7 @@ const resendOTP = async (req, res) => {
         }
 
         req.session.userOtp = newOTP;
+        req.session.userOtpExpires = Date.now() + 2 * 60 * 1000;
         return res.json({
             success: true,
             message: messages.OTP_RESENT_SUCCESS
