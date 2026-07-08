@@ -264,9 +264,19 @@ body {
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  border-left: 4px solid var(--success);
+}
+
+.message.success {
   background: #d5f5e3;
   color: #1a7a45;
-  border-left: 4px solid var(--success);
+  border-left-color: var(--success);
+}
+
+.message.error {
+  background: #ffe4e6;
+  color: #b42318;
+  border-left-color: var(--red);
 }
 
 /* ─── RESPONSIVE ─── */
@@ -287,9 +297,7 @@ body {
       <% if (user.profileImage) { %>
         <img src="<%= user.profileImage %>" class="profile-image-img" id="profileImg" alt="Profile Image">
       <% } else { %>
-        <div class="profile-image" id="profileImg">
-          <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
-        </div>
+        <img src="/assets/img/default-profile.svg" class="profile-image-img" id="profileImg" alt="Default Profile Image">
       <% } %>
       <div class="upload-overlay">📷</div>
     </div>
@@ -327,7 +335,7 @@ body {
       </div>
 
       <% if (message) { %>
-        <div class="message"><%= message %></div>
+        <div class="message <%= messageType === 'error' ? 'error' : 'success' %>"><%= message %></div>
       <% } %>
     </form>
   </div>
@@ -364,9 +372,9 @@ body {
         }
         break;
       case 'phone':
-        if (!/^\d{10}$/.test(value)) {
+        if (!/^[6789]\d{9}$/.test(value)) {
           valid = false;
-          message = 'Phone must be 10 digits';
+          message = 'Phone must be 10 digits and start with 6, 7, 8, or 9';
         }
         break;
       case 'line1':

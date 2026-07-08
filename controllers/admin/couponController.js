@@ -11,27 +11,30 @@ const getCoupons = async (req, res) =>{
     }
 }
 
-const validateCouponInput = ({ discountType, discountValue, minAmount, expiryDate }) => {
+const validateCouponInput = ({ code, discountType, discountValue, minAmount, expiryDate }, requireCode = false) => {
     const discount = Number(discountValue);
     const minimum = Number(minAmount);
 
+    if (requireCode && (!code || typeof code !== 'string')) {
+        return { field: 'code', message: 'Coupon code is required.' };
+    }
     if (!discountType || typeof discountType !== 'string') {
-        return 'Discount type is required.';
+        return { field: 'discountType', message: 'Discount type is required.' };
     }
     if (Number.isNaN(discount) || discount <= 0) {
-        return 'Discount value must be a positive number.';
+        return { field: 'discountValue', message: 'Discount value must be a positive number.' };
     }
     if (Number.isNaN(minimum) || minimum < 0) {
-        return 'Minimum order amount must be 0 or greater.';
+        return { field: 'minAmount', message: 'Minimum order amount must be 0 or greater.' };
     }
     if (!expiryDate || isNaN(new Date(expiryDate).valueOf())) {
-        return 'Valid expiry date is required.';
+        return { field: 'expiryDate', message: 'Valid expiry date is required.' };
     }
     if (discountType === 'fixed' && minimum > 0 && discount > minimum) {
-        return 'Discount value cannot be greater than the minimum purchase amount.';
+        return { field: 'discountValue', message: 'Discount value cannot be greater than the minimum purchase amount.' };
     }
     if (discountType === 'percentage' && discount > 100) {
-        return 'Percentage discount value cannot exceed 100.';
+        return { field: 'discountValue', message: 'Percentage discount value cannot exceed 100.' };
     }
     return null;
 };
@@ -44,15 +47,15 @@ const createCoupon = async (req, res) => {
             maxDiscount, expiryDate, usageLimit, userUsageLimit
         } = req.body;
 
-        const validationError = validateCouponInput({ discountType, discountValue, minAmount, expiryDate });
+        const validationError = validateCouponInput({ code, discountType, discountValue, minAmount, expiryDate }, true);
         if (validationError) {
-            return res.status(400).json({ success: false, message: validationError });
+            return res.status(400).json({ success: false, ...validationError });
         }
 
-        const existing = await Coupon.findOne({ code: code.toUpperCase()});
+        const existing = await Coupon.findOne({ code: code.toUpperCase() });
 
         if (existing) {
-            return res.status(400).json({ success: false, message: 'Coupon code already exists'})
+            return res.status(400).json({ success: false, field: 'code', message: 'Coupon code already exists' });
         }
 
         const coupon = new Coupon({
@@ -87,7 +90,7 @@ const editCoupon = async (req,res) =>{
 
         const validationError = validateCouponInput({ discountType, discountValue, minAmount, expiryDate });
         if (validationError) {
-            return res.status(400).json({ success: false, message: validationError });
+            return res.status(400).json({ success: false, ...validationError });
         }
 
         const coupon = await Coupon.findById(id);

@@ -13,6 +13,7 @@ const { addToWallet } = require("./walletController");
 const { getOfferDetails } = require("../../helpers/priceUtils");
 const { offerPopulate } = require("../../helpers/populateUtils");
 
+
  const loadSignup = async (req,res)=>{
     try{
 
@@ -171,7 +172,7 @@ newArrivals = newArrivals.map(injectOffer);
             return false;
         }
     }
-
+ 
   
 
 const securepassword = async (password) => {

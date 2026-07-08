@@ -132,6 +132,17 @@
       <div class="mt-3">
         <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Product</h3>
         <form id="editProductForm" class="mt-4" enctype="multipart/form-data">
+          <div id="editProductErrorContainer" class="hidden mb-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">
+            <div class="flex items-start gap-2">
+              <svg class="h-5 w-5 flex-shrink-0 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 2a10 10 0 110 20 10 10 0 010-20z" />
+              </svg>
+              <div>
+                <p class="font-semibold">Please fix the highlighted fields.</p>
+                <ul id="editProductErrorsList" class="mt-2 list-disc pl-5 space-y-1"></ul>
+              </div>
+            </div>
+          </div>
           <input type="hidden" id="editProductId" name="productId">
           <input type="hidden" id="removedImagesInput" name="removedImages">
           <div class="grid grid-cols-2 gap-4">
@@ -197,8 +208,8 @@
             <div id="editImagePreview" class="mt-2 flex gap-2"></div>
           </div>
           <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">New Images (Optional, Min 3 Total)</label>
-            <input type="file" name="productImages" multiple accept="image/*"
+            <label class="block text-gray-700 text-sm font-bold mb-2">New Images (Optional, 1-4 total)</label>
+            <input type="file" name="productImages" multiple accept="image/jpeg,image/png,image/webp"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               onchange="previewAndCropImages(event, 'editNewImagePreview')">
             <div id="editNewImagePreview" class="mt-2 flex gap-2"></div>
@@ -340,13 +351,13 @@
           </div>
 
           <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Images* (Min 3, Max 4)</label>
-            <input type="file" name="productImages" required multiple accept="image/*"
+            <label class="block text-gray-700 text-sm font-bold mb-2">Images* (1-4 images)</label>
+            <input type="file" name="productImages" required multiple accept="image/jpeg,image/png,image/webp"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               onchange="previewAndCropImages(event)">
             <p id="errorProductImages" class="mt-1 text-sm text-red-600 hidden"></p>
             <div id="imagePreview" class="mt-2 flex gap-2"></div>
-            <p class="text-sm text-gray-500 mt-1">Please select 3-4 images</p>
+            <p class="text-sm text-gray-500 mt-1">JPG, JPEG, PNG, or WEBP only. Max 4 images, each under 5 MB.</p>
           </div>
 
           <div class="flex justify-end mt-6">
@@ -410,21 +421,42 @@
       const preview = document.getElementById(previewId);
       preview.innerHTML = '';
 
-      // For add form (default imagePreview) require 3-4 images.
-      // For edit form (editNewImagePreview) allow 1-4 images since existing images may remain.
-      if (previewId === 'imagePreview') {
-        if (files.length < 3 || files.length > 4) {
-          showAddProductErrors(['Please select 3-4 images.']);
-          showAddProductFieldError('ProductImages', 'Please select 3-4 images.');
-          event.target.value = '';
-          return;
+      if (!files || files.length === 0) {
+        if (previewId === 'imagePreview') {
+          showAddProductErrors(['Please upload at least one product image.']);
+          showAddProductFieldError('ProductImages', 'Please upload at least one product image.');
         }
-      } else {
-        if (files.length < 1 || files.length > 4) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: 'Please select 1-4 images' });
-          event.target.value = '';
-          return;
+        event.target.value = '';
+        return;
+      }
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const maxSize = 5 * 1024 * 1024;
+      const invalidFiles = Array.from(files).filter(file => !allowedTypes.includes(file.type) || file.size > maxSize);
+      if (invalidFiles.length > 0) {
+        const message = invalidFiles.some(file => file.size > maxSize)
+          ? 'Each image must be smaller than 5 MB.'
+          : 'Only JPG, JPEG, PNG, and WEBP images are allowed.';
+        if (previewId === 'imagePreview') {
+          showAddProductErrors([message]);
+          showAddProductFieldError('ProductImages', message);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error!', text: message });
         }
+        event.target.value = '';
+        return;
+      }
+
+      if (files.length > 4) {
+        const message = 'You can upload a maximum of 4 images.';
+        if (previewId === 'imagePreview') {
+          showAddProductErrors([message]);
+          showAddProductFieldError('ProductImages', message);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error!', text: message });
+        }
+        event.target.value = '';
+        return;
       }
 
       currentFileInput = event.target;
@@ -584,6 +616,22 @@
       if (list) list.innerHTML = '';
       ['ProductName','Brand','Category','RegularPrice','SalesPrice','Quantity','Color','Description','ProductImages']
         .forEach(clearAddProductFieldError);
+    }
+
+    function showEditProductErrors(errors) {
+      const container = document.getElementById('editProductErrorContainer');
+      const list = document.getElementById('editProductErrorsList');
+      if (container) {
+        list.innerHTML = errors.map(err => `<li>${err}</li>`).join('');
+        container.classList.remove('hidden');
+      }
+    }
+
+    function clearEditProductErrors() {
+      const container = document.getElementById('editProductErrorContainer');
+      const list = document.getElementById('editProductErrorsList');
+      if (container) container.classList.add('hidden');
+      if (list) list.innerHTML = '';
     }
 
     function closeEditModal() {
@@ -802,9 +850,20 @@
           errors.push(fieldErrors.Quantity);
         }
 
-        if (!fileInput?.files || fileInput.files.length < 3 || fileInput.files.length > 4) {
-          fieldErrors.ProductImages = 'Please select 3-4 product images.';
+        if (!fileInput?.files || fileInput.files.length === 0) {
+          fieldErrors.ProductImages = 'Please upload at least one product image.';
           errors.push(fieldErrors.ProductImages);
+        } else if (fileInput.files.length > 4) {
+          fieldErrors.ProductImages = 'You can upload a maximum of 4 images.';
+          errors.push(fieldErrors.ProductImages);
+        } else {
+          const invalidFiles = Array.from(fileInput.files).filter(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
+          if (invalidFiles.length > 0) {
+            fieldErrors.ProductImages = invalidFiles.some(file => file.size > 5 * 1024 * 1024)
+              ? 'Each image must be smaller than 5 MB.'
+              : 'Only JPG, JPEG, PNG, and WEBP images are allowed.';
+            errors.push(fieldErrors.ProductImages);
+          }
         }
 
         if (errors.length) {
@@ -833,15 +892,27 @@
     if (editForm) {
       editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        clearEditProductErrors();
         const productId = document.getElementById('editProductId').value;
         const formData = new FormData(e.target);
 
         const imageInput = e.target.querySelector('input[name="productImages"]');
         const existingImages = document.getElementById('editImagePreview').children.length;
         const newImages = imageInput?.files?.length || 0;
-        if (existingImages + newImages < 3 && newImages > 0) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: 'Total images must be at least 3' });
+        if (existingImages + newImages < 1 && newImages > 0) {
+          showEditProductErrors(['Please upload at least one product image.']);
           return;
+        }
+        if (existingImages + newImages > 4) {
+          showEditProductErrors(['You can upload a maximum of 4 images.']);
+          return;
+        }
+        if (imageInput?.files?.length > 0) {
+          const invalidFiles = Array.from(imageInput.files).filter(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024);
+          if (invalidFiles.length > 0) {
+            showEditProductErrors([invalidFiles.some(file => file.size > 5 * 1024 * 1024) ? 'Each image must be smaller than 5 MB.' : 'Only JPG, JPEG, PNG, and WEBP images are allowed.']);
+            return;
+          }
         }
 
         try {
@@ -851,7 +922,7 @@
               .then(() => location.reload());
           } else throw new Error(data.message || 'Update failed');
         } catch (err) {
-          Swal.fire({ icon: 'error', title: 'Error!', text: err.message || 'Error updating product' });
+          showEditProductErrors([err.message || 'Error updating product']);
         }
       });
     }

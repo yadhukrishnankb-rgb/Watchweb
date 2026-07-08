@@ -124,6 +124,9 @@ module.exports = {
   CATEGORY_DELETE_ERROR: 'Error deleting category'
 };
 
+// Product pricing validation
+module.exports.SALES_PRICE_INVALID = 'Sales price must be less than or equal to regular price';
+
 // Customers (admin)
 module.exports.CUSTOMERS_LOAD_ERROR = 'Error loading customers';
 module.exports.CUSTOMER_SEARCH_ERROR = 'Error searching customers';
@@ -134,8 +137,13 @@ module.exports.CUSTOMER_UNBLOCK_ERROR = 'Error unblocking customer';
 module.exports.INVALID_PRODUCT_ID = 'Invalid product ID';
 module.exports.PRODUCT_FETCH_ERROR = 'Error fetching product details';
 module.exports.PRODUCT_REQUIRED_FIELDS = 'Please fill all required fields';
-module.exports.PRODUCT_IMAGES_REQUIRED = 'Please upload at least 3 images';
-module.exports.PRODUCT_MIN_IMAGES = 'Product must have at least 3 images';
+module.exports.PRODUCT_IMAGES_REQUIRED = 'Please upload at least one product image.';
+module.exports.PRODUCT_MIN_IMAGES = 'Please upload at least one product image.';
+module.exports.PRODUCT_IMAGE_TYPE_INVALID = 'Only JPG, JPEG, PNG, and WEBP images are allowed.';
+module.exports.PRODUCT_IMAGE_SIZE_INVALID = 'Each image must be smaller than 5 MB.';
+module.exports.PRODUCT_MAX_IMAGES = 'You can upload a maximum of 4 images.';
+module.exports.PRODUCT_IMAGE_INVALID = 'Invalid image file. Please upload a valid image.';
+module.exports.PRODUCT_IMAGE_UPLOAD_FAILED = 'Image upload failed. Please try again.';
 module.exports.PRODUCT_ADD_SUCCESS = 'Product added successfully';
 module.exports.PRODUCT_ADD_ERROR = 'Error adding product';
 module.exports.PRODUCT_UPDATE_SUCCESS = 'Product updated successfully';

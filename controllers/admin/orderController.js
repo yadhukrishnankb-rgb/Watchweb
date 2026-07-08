@@ -177,6 +177,10 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    // snapshot previous item statuses so we can detect which items are newly cancelled
+    const prevItemStatuses = (order.orderedItems || []).map(it => ({ id: it._id ? it._id.toString() : null, status: (it.status || '').toString() }));
+
+    let fullRefundGiven = false;
     const isRefundableAdminAction = ['Cancelled', 'Returned'].includes(newStatusNormalized)
       && order.paymentStatus === 'Paid'
       && order.paymentMethod !== 'COD';
@@ -190,6 +194,45 @@ exports.updateOrderStatus = async (req, res) => {
 
         await addToWallet(order.user, refundAmount, 'credit', reason, order._id);
         order.refunded = round2(Number(order.refunded || 0) + refundAmount);
+        fullRefundGiven = true;
+      }
+    }
+
+    // If admin is cancelling the entire order, restock items that were NOT cancelled/returned before this update.
+    if (newStatusNormalized === 'Cancelled') {
+      try {
+        const prevMap = new Map(prevItemStatuses.map(p => [p.id, (p.status || '').toString().toLowerCase()]));
+
+        for (const it of order.orderedItems) {
+          if (!it) continue;
+          const id = it._id ? it._id.toString() : null;
+          const prev = id ? (prevMap.get(id) || '') : '';
+
+          // restock only if previously not cancelled/returned
+          if (['cancelled', 'returned'].includes(prev.toLowerCase())) continue;
+
+          if (it.product) {
+            await Product.updateOne({ _id: it.product }, { $inc: { quantity: it.quantity } });
+          }
+
+          // mark per-item fields for bookkeeping
+          it.approvedAt = it.approvedAt || new Date();
+          it.cancelReason = it.cancelReason || 'Cancelled by admin';
+
+          // compute per-item refund amount for records but avoid double-crediting wallet
+          try {
+            const itemRefund = computeItemRefund(order, it);
+            it.refundAmount = itemRefund;
+            if (!fullRefundGiven && itemRefund > 0 && order.paymentStatus === 'Paid' && order.paymentMethod !== 'COD') {
+              await addToWallet(order.user, itemRefund, 'credit', 'Item Cancel Refund', order._id);
+              order.refunded = round2(Number(order.refunded || 0) + itemRefund);
+            }
+          } catch (e) {
+            console.error('computeItemRefund error:', e);
+          }
+        }
+      } catch (e) {
+        console.error('Restock on cancel error:', e);
       }
     }
 

@@ -106,15 +106,14 @@ exports.addProduct = async (req, res) => {
             description,
             brand,
             category,
-            regularPrice,
-            salesPrice,
+            regularPrice: regularPriceRaw,
+            salesPrice: salesPriceRaw,
             quantity,
             color,
             status,
-            
         } = req.body;
 
-        if (!productName || !description || !brand || !category || !regularPrice || !salesPrice || !color) {
+        if (!productName || !description || !brand || !category || regularPriceRaw == null || salesPriceRaw == null || !color) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: messages.PRODUCT_REQUIRED_FIELDS
@@ -124,25 +123,52 @@ exports.addProduct = async (req, res) => {
            
         
      
-        if (!req.files || req.files.length < 3) {
+        const validationMessage = req.uploadValidationError || null;
+        if (validationMessage) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: validationMessage
+            });
+        }
+
+        if (!req.files || req.files.length === 0) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
                 message: messages.PRODUCT_IMAGES_REQUIRED
             });
         }
 
+        if (req.files.length > 4) {
+            return res.status(statusCodes.BAD_REQUEST).json({
+                success: false,
+                message: messages.PRODUCT_MAX_IMAGES
+            });
+        }
+
         const productImages = req.files.map(file => file.path);
+
+        const rPrice = parseFloat(regularPriceRaw);
+        const sPrice = parseFloat(salesPriceRaw);
+
+        if (isNaN(rPrice) || isNaN(sPrice)) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_REQUIRED_FIELDS });
+        }
+
+        // Validate pricing: sale price must not exceed regular price
+        if (sPrice > rPrice) {
+            return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.SALES_PRICE_INVALID || 'Sales price must be less than or equal to regular price' });
+        }
 
         const product = new Product({
             productName,
             description,
             brand,
             category,
-            regularPrice: parseFloat(regularPrice),
-            salesPrice: parseFloat(salesPrice),
+            regularPrice: rPrice,
+            salesPrice: sPrice,
             quantity: parseInt(quantity) || 0,
             color,
-        
+
             productImage: productImages,
             status: status || 'Available'
         });
@@ -218,11 +244,27 @@ exports.editProduct = async (req, res) => {
                 }
             }
         
+            const validationMessage = req.uploadValidationError || null;
+            if (validationMessage) {
+                return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: validationMessage });
+            }
+
             const newImagePaths = req.files?.length > 0 ? req.files.map(f => f.path) : [];
             const finalImages = [...remainingImages, ...newImagePaths];
 
-            if (finalImages.length < 3) {
+            if (finalImages.length < 1) {
                 return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_MIN_IMAGES });
+            }
+
+            if (finalImages.length > 4) {
+                return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_MAX_IMAGES });
+            }
+
+            // Pricing validation: determine effective regular and sale prices
+            const effectiveRegular = updateData.hasOwnProperty('regularPrice') ? updateData.regularPrice : oldProduct.regularPrice;
+            const effectiveSale = updateData.hasOwnProperty('salesPrice') ? updateData.salesPrice : oldProduct.salesPrice;
+            if (typeof effectiveRegular === 'number' && typeof effectiveSale === 'number' && effectiveSale > effectiveRegular) {
+                return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.SALES_PRICE_INVALID });
             }
 
             updateData.productImage = finalImages;

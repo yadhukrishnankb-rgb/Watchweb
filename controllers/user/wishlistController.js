@@ -12,7 +12,10 @@ exports.viewWishlist = async (req, res) => {
     const userId = req.session.user._id;
     let wishlist = await Wishlist.findOne({ userId }).populate({
       path: 'products.productId',
-      populate: { path: 'category' }
+      populate: [
+        { path: 'category', populate: { path: 'offer' } },
+        { path: 'offer' }
+      ]
     })
 
       
@@ -23,6 +26,9 @@ exports.viewWishlist = async (req, res) => {
         const offerDetails = getOfferDetails(p);
         p.offerPercent = offerDetails.offerPercent;
         p.offerSource = offerDetails.offerSource;
+        p.offerStart = offerDetails.offerStart;
+        p.offerEnd = offerDetails.offerEnd;
+        p.effectivePrice = offerDetails.effectivePrice;
         return item;
       });
     }

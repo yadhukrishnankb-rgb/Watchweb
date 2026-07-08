@@ -301,6 +301,27 @@
     document.getElementById('editCouponModal').classList.add('hidden');
   }
 
+  const couponErrorFieldMap = {
+    create: {
+      code: 'createCodeError',
+      discountType: 'createDiscountTypeError',
+      discountValue: 'createDiscountValueError',
+      minAmount: 'createMinAmountError',
+      expiryDate: 'createExpiryDateError',
+      usageLimit: 'createUsageLimitError',
+      userUsageLimit: 'createUserUsageLimitError'
+    },
+    edit: {
+      code: 'editCodeError',
+      discountType: 'editDiscountTypeError',
+      discountValue: 'editDiscountValueError',
+      minAmount: 'editMinAmountError',
+      expiryDate: 'editExpiryDateError',
+      usageLimit: 'editUsageLimitError',
+      userUsageLimit: 'editUserUsageLimitError'
+    }
+  };
+
   function setFieldError(fieldId, message) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -421,7 +442,8 @@
           location.reload();
         });
       } else {
-        setFieldError('createCodeError', result.message || 'Failed to create coupon');
+        const field = couponErrorFieldMap.create[result.field] || 'createCodeError';
+        setFieldError(field, result.message || 'Failed to create coupon');
       }
     } catch (err) {
       console.error('Create error:', err);
@@ -457,7 +479,8 @@
           location.reload();
         });
       } else {
-        setFieldError('editCodeError', result.message || 'Update failed');
+        const field = couponErrorFieldMap.edit[result.field] || 'editCodeError';
+        setFieldError(field, result.message || 'Update failed');
       }
     } catch (err) {
       console.error('Save error:', err);

@@ -11,6 +11,15 @@ const statusCodes = require('../../constants/statusCodes');
 
 
 
+const DEFAULT_PROFILE_IMAGE = '/assets/img/default-profile.svg';
+
+function normalizeProfileImage(user) {
+  if (user) {
+    user.profileImage = user.profileImage || DEFAULT_PROFILE_IMAGE;
+  }
+  return user;
+}
+
 // Helper to generate OTP
 function generateOtp() {
 return Math.floor(100000 + Math.random() * 900000).toString();
@@ -122,7 +131,7 @@ res.redirect('/login');
 exports.profilePage = async (req, res) => {
   const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
   if (!userId) return res.redirect('/login');
-  const user = await User.findById(userId).lean();
+  const user = normalizeProfileImage(await User.findById(userId).lean());
   user.addresses = user.addresses || [];
   const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
 
@@ -155,7 +164,7 @@ exports.addressPage = async (req, res) => {
   const userId = req.session.user?._id || req.user?._id;
   if (!userId) return res.redirect('/login');
 
-  const user = await User.findById(userId).lean();
+  const user = normalizeProfileImage(await User.findById(userId).lean());
   user.addresses = user.addresses || [];
 
   const successArr = req.flash('success') || [];
@@ -185,9 +194,9 @@ exports.addressPage = async (req, res) => {
 exports.editProfilePage = async (req, res) => {
 const userId = req.session.user ? req.session.user._id : (req.user ? req.user._id : null);
 if (!userId) return res.redirect('/login');
-const user = await User.findById(userId).lean();
+const user = normalizeProfileImage(await User.findById(userId).lean());
 user.addresses = user.addresses || []; 
-res.render('user/edit-profile', { user, message: null });
+res.render('user/edit-profile', { user, message: null, messageType: null });
 };
 
 
@@ -198,17 +207,19 @@ exports.updateProfile = async (req, res) => {
   if (!userId) return res.redirect('/login');
 
   const { name, phone, email, line1, landmark, city, state, zip, country } = req.body;
+  const cleanedName = name?.trim();
+  const cleanedEmail = email?.trim();
+  const cleanedPhone = phone?.trim();
   const errors = [];
 
-  
-  if (!name || name.trim().length < 2) {
+  if (!cleanedName || cleanedName.length < 2) {
     errors.push("Name must be at least 2 characters");
   }
-  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+  if (!cleanedEmail || !/^\S+@\S+\.\S+$/.test(cleanedEmail)) {
     errors.push("Enter a valid email address");
   }
-  if (!phone || !/^\d{10}$/.test(phone.trim())) {
-    errors.push("Phone must be exactly 10 digits");
+  if (!cleanedPhone || !/^[6789]\d{9}$/.test(cleanedPhone)) {
+    errors.push("Phone must be exactly 10 digits and start with 6, 7, 8, or 9");
   }
 
   const hasAddress = line1 || landmark || city || state || zip || country;
@@ -223,30 +234,32 @@ exports.updateProfile = async (req, res) => {
 
   if (errors.length > 0) {
     const user = await User.findById(userId).lean();
-    return res.render('user/edit-profile', {
+    return res.status(statusCodes.BAD_REQUEST).render('user/edit-profile', {
       user,
-      message: errors.join(' | ')
+      message: errors.join(' | '),
+      messageType: 'error'
     });
   }
 
   try {
     const user = await User.findById(userId);
 
-    if (email !== user.email) {
-      const existingUser = await User.findOne({ email });
+    if (cleanedEmail !== user.email) {
+      const existingUser = await User.findOne({ email: cleanedEmail });
       if (existingUser) {
-        return res.render('user/edit-profile', {
+        return res.status(statusCodes.CONFLICT).render('user/edit-profile', {
           user: user.toObject(),
-          message: messages.EMAIL_ALREADY_REGISTERED
+          message: messages.EMAIL_ALREADY_REGISTERED,
+          messageType: 'error'
         });
       }
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       req.session.emailChange = {
-        email: email.trim(),
+        email: cleanedEmail,
         otp,
-        name: name.trim(),
-        phone: phone.trim(),
+        name: cleanedName,
+        phone: cleanedPhone,
         address: hasAddress ? {
           street: line1?.trim(),
           line1: line1?.trim(),
@@ -260,7 +273,7 @@ exports.updateProfile = async (req, res) => {
       };
 
       await transporter.sendMail({
-        to: email,
+        to: cleanedEmail,
         from: process.env.NODEMAILER_EMAIL,
         subject: 'Verify Your New Email',
         html: `<p>Your OTP is <b style="font-size:18px">${otp}</b></p><p>Valid for 2 minutes.</p>`
@@ -269,8 +282,19 @@ exports.updateProfile = async (req, res) => {
       return res.redirect('/profile/verify-email');
     }
 
-    user.name = name.trim();
-    user.phone = phone.trim();
+    if (cleanedPhone !== user.phone) {
+      const existingPhoneUser = await User.findOne({ phone: cleanedPhone, _id: { $ne: userId } });
+      if (existingPhoneUser) {
+        return res.status(statusCodes.CONFLICT).render('user/edit-profile', {
+          user: user.toObject(),
+          message: messages.PHONE_ALREADY_EXISTS,
+          messageType: 'error'
+        });
+      }
+    }
+
+    user.name = cleanedName;
+    user.phone = cleanedPhone;
 
     if (hasAddress) {
       user.addresses = user.addresses || [];
@@ -294,14 +318,22 @@ exports.updateProfile = async (req, res) => {
 
     await user.save();
     req.flash('success', messages.PROFILE_UPDATE_SUCCESS);
-    res.redirect('/profile');
+    return res.redirect('/profile');
 
   } catch (err) {
     console.error(err);
     const user = await User.findById(userId).lean();
-    res.render('user/edit-profile', {
+    if (err?.code === 11000 && err?.keyPattern?.phone) {
+      return res.status(statusCodes.CONFLICT).render('user/edit-profile', {
+        user,
+        message: messages.PHONE_ALREADY_EXISTS,
+        messageType: 'error'
+      });
+    }
+    return res.status(statusCodes.INTERNAL_ERROR).render('user/edit-profile', {
       user,
-      message: messages.SERVER_ERROR
+      message: messages.SERVER_ERROR,
+      messageType: 'error'
     });
   }
 };
