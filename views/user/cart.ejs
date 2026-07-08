@@ -659,14 +659,19 @@ async function removeFromCart(productId) {
 function updateCartTotal() {
     let total = 0;
     document.querySelectorAll('.cart-item').forEach(item => {
-        const priceText = item.querySelector('.item-total').textContent;
-        const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+        const totalEl = item.querySelector('.item-total');
+        if (!totalEl) return; // skip out-of-stock items or items without a subtotal
+        const priceText = totalEl.textContent || '';
+        // keep digits and decimal point, remove currency/commas/labels
+        const normalized = priceText.replace(/[^0-9.]/g, '');
+        const price = parseFloat(normalized) || 0;
         total += price;
     });
 
     const totalElements = document.querySelectorAll('#cartTotal, #orderTotal');
     totalElements.forEach(el => {
-        el.textContent = '₹' + total.toLocaleString();
+        // show up to 2 decimal places when needed
+        el.textContent = '₹' + Number(total).toLocaleString(undefined, { maximumFractionDigits: 2 });
     });
 }
 

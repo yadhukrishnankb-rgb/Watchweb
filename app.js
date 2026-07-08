@@ -42,7 +42,7 @@ app.set('trust proxy', 1);
 
 const store = MongoStore
   ? MongoStore.create({
-      mongoUrl:  'mongodb+srv://yadhukrishnan9188_db_user:yadhukrishnan9188@cluster0.tpozzlm.mongodb.net/evertime',
+      mongoUrl:   process.env.MONGODB_URI,
       collectionName: 'sessions',
       ttl: 14 * 24 * 60 * 60
     })
