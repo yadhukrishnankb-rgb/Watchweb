@@ -99,7 +99,6 @@ const addRatingsToProducts = async (products) => {
         });
     });
 
-    // Add ratings to products
     return products.map(product => ({
         ...product,
         averageRating: ratingsMap.get(product._id.toString())?.averageRating || 0,
@@ -112,7 +111,6 @@ featuredProducts = featuredProducts.map(injectOffer);
 popularProducts = popularProducts.map(injectOffer);
 newArrivals = newArrivals.map(injectOffer);
 
-        // Add ratings to all product arrays
         featuredProducts = await addRatingsToProducts(featuredProducts);
         popularProducts = await addRatingsToProducts(popularProducts);
         newArrivals = await addRatingsToProducts(newArrivals);
@@ -154,7 +152,7 @@ newArrivals = newArrivals.map(injectOffer);
                 secure: true,
                 auth: {
                     user: process.env.NODEMAILER_EMAIL,
-                    pass: process.env.NODEMAILER_PASSWORD // no spaces in password
+                    pass: process.env.NODEMAILER_PASSWORD 
                 }
             });
     
@@ -196,7 +194,6 @@ const signup = async (req,res)=>{
         const trimmedPhone = phone ? phone.trim() : '';
         const trimmedReferralCode = referralCode ? referralCode.trim() : '';
 
-        // Validate all required fields
         if (!trimmedName || !trimmedEmail || !trimmedPhone || !password || !confirmpassword) {
             return res.render('signup', {message: messages.ALL_FIELDS_REQUIRED});
         }
@@ -232,13 +229,12 @@ const signup = async (req,res)=>{
             return res.render('signup', {message: messages.USER_ALREADY_EXISTS});
         }
 
-        // Check if phone already exists
+        
         const findUserByPhone = await User.findOne({ phone: trimmedPhone });
         if(findUserByPhone) {
             return res.render('signup', {message: messages.PHONE_ALREADY_EXISTS});
         }
 
-        //Find referral if code provided
         let referredBy = null;
         if (trimmedReferralCode) {
             const referrer = await User.findOne({
@@ -251,7 +247,6 @@ const signup = async (req,res)=>{
             }
         }
     
-        // Generate and send OTP
         const otp = generateOtp();
         const emailSend = await sendVerficationEmail(trimmedEmail, otp);
 
@@ -259,7 +254,6 @@ const signup = async (req,res)=>{
             return res.render('signup', {message: messages.ERROR_SENDING_EMAIL});
         }
 
-        // Store OTP and user data in session
         req.session.userOtp = otp;
         req.session.userOtpExpires = Date.now() + 2 * 60 * 1000;
         req.session.userData = { name: trimmedName, phone: trimmedPhone, email: trimmedEmail, password, referredBy };
@@ -281,7 +275,6 @@ const verifyOtp = async (req,res) => {
     try {
         const { otp } = req.body;
 
-        // Check if session data exists
         if(!req.session.userOtp || !req.session.userData) {
             return res.status(statusCodes.BAD_REQUEST).json({
                 success: false,
@@ -302,7 +295,6 @@ const verifyOtp = async (req,res) => {
         if(otp === req.session.userOtp) {
             const user = req.session.userData;
 
-            // Check if email already exists (race condition check)
             const existingEmail = await User.findOne({ email: user.email });
             if (existingEmail) {
                 req.session.userOtp = null;
@@ -313,7 +305,6 @@ const verifyOtp = async (req,res) => {
                 });
             }
 
-            // Check if phone already exists (race condition check)
             const existingPhone = await User.findOne({ phone: user.phone });
             if (existingPhone) {
                 req.session.userOtp = null;
@@ -337,12 +328,10 @@ const verifyOtp = async (req,res) => {
 
             await saveUserData.save();
 
-            // Clear session immediately after successful user creation
             req.session.userOtp = null;
             req.session.userOtpExpires = null;
             req.session.userData = null;
 
-            //referal reward 
             if(saveUserData.referredBy && !saveUserData.referralRewardClaimed) {
                 const referrer = await User.findById(saveUserData.referredBy);
 
@@ -351,7 +340,6 @@ const verifyOtp = async (req,res) => {
             if(referrer) {
                 const referrerReward = 100;
                 const referredReward = 50;
-              //credit referrer
                 await addToWallet(
                     referrer._id,
                     referrerReward,
@@ -384,7 +372,7 @@ const verifyOtp = async (req,res) => {
 
             return res.json({
                 success: true,
-                redirectUrl: "/"
+                redirectUrl: "/login"
             });
         } else {
             return res.status(statusCodes.BAD_REQUEST).json({
@@ -395,11 +383,9 @@ const verifyOtp = async (req,res) => {
     } catch(error) {
         console.error("Error verifying OTP:", error);
 
-        // Clear session on error
         req.session.userOtp = null;
         req.session.userData = null;
 
-        // Handle MongoDB E11000 duplicate key errors
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
             const message = field === 'phone' ? 'Phone number already registered' : 'Email already registered';

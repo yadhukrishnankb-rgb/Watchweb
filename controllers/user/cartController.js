@@ -10,7 +10,6 @@ const MAX_QUANTITY_PER_ITEM = 10;
 const { getEffectivePrice, getFinalPrice, calculateCartSubtotal } = require('../../helpers/priceUtils');
 
 
-// View Cart
 exports.viewCart = async (req, res) => {
     try {
         const userId = req.session.user._id;
@@ -68,7 +67,6 @@ exports.addToCart = async (req, res) => {
         }
         const userId = user._id;
 
-        // Validate productId
         if (!productId) return res.status(statusCodes.BAD_REQUEST).json({ success: false, message: messages.PRODUCT_ID_REQUIRED });
 
         const now = new Date();
@@ -160,7 +158,6 @@ exports.addToCart = async (req, res) => {
 
 
 
-// Update quantity
 exports.updateQuantity = async (req, res) => {
     try {
         const { productId, action } = req.body;
@@ -217,7 +214,6 @@ exports.updateQuantity = async (req, res) => {
     }
 };
 
-// Remove from cart
 exports.removeFromCart = async (req, res) => {
     try {
         const { productId } = req.params;

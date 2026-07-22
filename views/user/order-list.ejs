@@ -725,8 +725,8 @@ body {
                 </button>
               <% } %>
               <% 
-                const orderHasDeliveredItem = order.orderedItems?.some(item => ['delivered','returned'].includes(((item.status||'').toString().toLowerCase())));
-                const canShowInvoice = (orderStatusLC === 'delivered') || orderHasDeliveredItem;
+                const orderHasDeliveredItem = order.orderedItems?.some(item => ((item.status||'').toString().toLowerCase() === 'delivered'));
+                const canShowInvoice = orderHasDeliveredItem;
               %>
               <% if (canShowInvoice) { %>
                 <a href="/orders/<%= order._id %>/invoice" class="action-btn btn-invoice">

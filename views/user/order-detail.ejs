@@ -816,8 +816,8 @@ body {
 
             <div class="card">
                 <% 
-                    const hasDeliveredItem = order.orderedItems.some(item => ['delivered', 'returned'].includes(((item.status||'').toString().toLowerCase())));
-                    const canDownloadInvoice = ((order.status||'').toString().trim().toLowerCase() === 'delivered') || hasDeliveredItem;
+                    const hasDeliveredItem = order.orderedItems.some(item => ((item.status||'').toString().toLowerCase() === 'delivered'));
+                    const canDownloadInvoice = hasDeliveredItem;
                 %>
 
                 <% if (canDownloadInvoice) { %>

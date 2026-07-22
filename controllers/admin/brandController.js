@@ -6,8 +6,21 @@ const statusCodes = require('../../constants/statusCodes');
 
 exports.getBrandPage = async (req, res) =>{
     try {
-        const brands = await Brand.find({}).lean();
-        res.render('admin/brands', { brands});
+        const page = parseInt(req.query.page) || 1;
+        const limit = 3;
+        const skip = (page - 1) * limit;
+
+        const totalBrands = await Brand.countDocuments();
+        const brands = await Brand.find({}).skip(skip).limit(limit).lean();
+        
+        const totalPages = Math.ceil(totalBrands / limit);
+
+        res.render('admin/brands', { 
+            brands,
+            currentPage: page,
+            totalPages: totalPages,
+            totalBrands: totalBrands
+        });
     } catch (err) {
         console.error('Error fetching brands:', err)
         res.status(statusCodes.INTERNAL_ERROR).render('error', { message: messages.BRAND_LOAD_ERROR});
